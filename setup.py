@@ -1,0 +1,23 @@
+from setuptools import setup
+
+setup(name='mapshader',
+      version='0.0.1',
+      description='Simple Python GIS Web Services',
+      packages=['mapshader',
+                'mapshader.tests'],
+      install_requires=['xarray-spatial',
+                        'datashader',
+                        'geopandas',
+                        'psycopg2',
+                        'geoalchemy2',
+                        'pytest',
+                        'rtree',
+                        'matplotlib',
+                        'descartes',
+                        'jupyter',
+                        'pyarrow'],
+      zip_safe=False,
+      classifiers=["Programming Language :: Python :: 3",
+                   "License :: OSI Approved :: MIT License",
+                   "Operating System :: OS Independent"],
+      include_package_data=True)
