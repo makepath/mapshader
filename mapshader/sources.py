@@ -42,8 +42,6 @@ def find_and_set_categoricals(df):
     return categorical_fields, non_categorical_object_fields
 
 
-
-
 class MapSource():
 
     def __init__(self, name=None, df=None, data=None,
@@ -93,20 +91,19 @@ class MapSource():
                 '/geojson')
         return url
 
-
     @classmethod
     def from_object(obj):
         return MapSource(**obj)
 
 
-def to_geojson(source:MapSource):
+def to_geojson(source: MapSource):
     # TODO: Add in where clause
     # TODO: Add in select by geometry
     # TODO: Add in limit and offset
     return source.df.to_json()
 
 
-def to_tile(self, xfield, yfield, zfield, agg_func, cmap, how, z, x, y, dynspread=None, extras=None):
+def to_tile(source, xfield, yfield, zfield, agg_func, cmap, how, z, x, y, dynspread=None, extras=None):
     x = int(x)
     y = int(y)
     z = int(z)
@@ -125,7 +122,8 @@ def to_tile(self, xfield, yfield, zfield, agg_func, cmap, how, z, x, y, dynsprea
             extras = None
 
     dataset_obj = datasets[dataset]
-    img = create_tile(dataset_obj, xfield, yfield, zfield, agg_func, colors[cmap], how, z, x, y, dynspread, extras).to_bytesio()
+    img = create_tile(source, xfield, yfield, zfield, agg_func,
+                      colors[cmap], how, z, x, y, dynspread, extras).to_bytesio()
 
     return send_file(img, mimetype='image/png')
 
