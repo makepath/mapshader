@@ -1,24 +1,20 @@
 # mapshader
-Simple Python GIS Web Services
+![Test Suite Status](https://github.com/makepath/mapshader/workflows/Python%20Test%20Suite/badge.svg)
 --------
 
-![Test Suite Status](https://github.com/makepath/mapshader/workflows/Python%20Test%20Suite/badge.svg)
+Simple Python GIS Web Services
 
--------
-
-# Install
-
-### TODO: Add to pypi
+#### TODO: Add to pypi
 ```bash
 pip install mapshader (coming soon...)
 ```
 
-### TODO: Add to conda-forge
+#### TODO: Add to conda-forge
 ```bash
 conda install -c conda-forge mapshader (coming soon...)
 ```
 
-# Setup Mapshader Conda Environment
+#### Setup Mapshader Conda Environment
 ```bash
 conda create -n mapshader python=3.8
 conda activate mapshader
@@ -27,13 +23,13 @@ cd mapshader
 pip install -e .
 ```
 
-# Run Tests
+#### Run Tests
 ```bash
 conda activate mapshader
 pytest mapshader/tests -sv
 ```
 
-# Run Flask Server
+#### Run Flask Server
 ```bash
 conda activate mapshader
 python mapshader/flask_app.py
