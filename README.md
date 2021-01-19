@@ -4,6 +4,9 @@
 
 Simple Python GIS Web Services
 
+- Create `mapshader.MapSource` objects and render them as geojson, tiles, or images
+- This project should still be considered experimental
+
 ```bash
 pip install mapshader
 ```
