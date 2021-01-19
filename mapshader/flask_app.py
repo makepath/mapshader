@@ -4,6 +4,7 @@ try:
     from flask import Flask
     from flask import send_file
     from flask import url_for
+    from flask import request
 except ImportError:
     raise ImportError('You must install flask `pip install flask` to use this module')
 
@@ -22,7 +23,19 @@ def flask_to_image(source,
                    xmax=20e6, ymax=20e6,
                    height=500, width=500):
 
-    img = render_map(source, xmin=float(xmin), ymin=float(ymin), xmax=float(xmax), ymax=float(ymax),
+    img = render_map(source, xmin=float(xmin), ymin=float(ymin),
+                     xmax=float(xmax), ymax=float(ymax),
+                     height=int(height), width=int(width))
+    return send_file(img.to_bytesio(), mimetype='image/png')
+
+
+def flask_to_wms(source):
+    height = request.args.get('height')
+    width = request.args.get('width')
+    bbox = request.args.get('bbox')
+    xmin, ymin, xmax, ymax = bbox.split(',')
+    img = render_map(source, xmin=float(xmin), ymin=float(ymin),
+                     xmax=float(xmax), ymax=float(ymax),
                      height=int(height), width=int(width))
     return send_file(img.to_bytesio(), mimetype='image/png')
 
@@ -73,6 +86,10 @@ def create_app():
         app.add_url_rule(source.image_url,
                          source.key + '-image',
                          partial(flask_to_image, source=source))
+
+        app.add_url_rule(source.wms_url,
+                         source.key + '-wms',
+                         partial(flask_to_wms, source=source))
 
         app.add_url_rule(source.geojson_url,
                          source.key + '-geojson',

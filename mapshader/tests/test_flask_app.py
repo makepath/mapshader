@@ -60,6 +60,23 @@ def test_default_images(source_func):
     assert resp.status_code == 200
     assert resp
 
+
+@pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
+def test_default_wms(source_func):
+    source = source_func()
+    url = source.wms_url
+    xmin = -20e6
+    xmax = 20e6
+    ymin = -20e6
+    ymax = 20e6
+    W = 500
+    H = 500
+    url += f'?height={H}&width={W}&bbox={xmin},{ymin},{xmax},{ymax}'
+    resp = CLIENT.get(url)
+    assert resp.status_code == 200
+    assert resp
+
+
 def test_site_index():
     resp = CLIENT.get('/')
     assert resp.status_code == 200

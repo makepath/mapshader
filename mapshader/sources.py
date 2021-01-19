@@ -3,12 +3,11 @@ from os import path
 import geopandas as gpd
 import pandas as pd
 import spatialpandas
-import datashader as ds
 
 from mapshader.colors import colors
+from mapshader.io import load_raster
 from mapshader.transforms import reproject_raster
 from mapshader.transforms import reproject_vector
-from mapshader.transforms import load_raster
 
 
 
@@ -62,6 +61,13 @@ class MapSource():
         return url
 
     @property
+    def wms_url(self):
+        url = (f'/{self.key}'
+               '/wms')
+        return url
+
+
+    @property
     def geojson_url(self):
         url = (f'/{self.key}'
                '/geojson')
@@ -84,7 +90,7 @@ def world_countries_source():
     data = gpd.datasets.get_path('naturalearth_lowres')
     world = gpd.read_file(data)
     world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
-    world = world.to_crs(epsg=3857)
+    world = reproject_vector(world)
     spgdf = spatialpandas.GeoDataFrame(world, geometry='geometry')
     return MapSource(name='World Countries',
                      geometry_type='polygon',
@@ -102,7 +108,7 @@ def world_countries_source():
 def world_cities_source():
     data = gpd.datasets.get_path('naturalearth_cities')
     gdf = gpd.read_file(data)
-    gdf = gdf.to_crs(epsg=3857)
+    gdf = reproject_vector(gdf)
     gdf['X'] = gdf.geometry.apply(lambda p: p.x)
     gdf['Y'] = gdf.geometry.apply(lambda p: p.y)
     spgdf = spatialpandas.GeoDataFrame(gdf, geometry='geometry')
@@ -120,7 +126,7 @@ def world_cities_source():
 def nybb_source():
     data = gpd.datasets.get_path('nybb')
     gdf = gpd.read_file(data)
-    gdf = gdf.to_crs(epsg=3857)
+    gdf = reproject_vector(gdf)
     spgdf = spatialpandas.GeoDataFrame(gdf, geometry='geometry')
     return MapSource(name='NYC Admin',
                      df=spgdf,
