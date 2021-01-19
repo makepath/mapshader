@@ -1,0 +1,29 @@
+
+package:
+  name: mapshader
+  version: 0.0.1
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - xarray-spatial
+    - datashader
+    - geopandas
+    - flask
+    - descartes
+    - matplotlib
+    - spatialpandas
+
+test:
+  requires:
+    - pytest >=2.8.5
+  imports:
+    - mapshader
+
+about:
+  home: https://github.com/makepath/mapshader
+  license: MIT
