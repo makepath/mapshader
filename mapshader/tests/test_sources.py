@@ -1,6 +1,11 @@
+import json
 from os import path
 
+from io import BytesIO
+
 import pytest
+
+from PIL import Image
 
 from mapshader.sources import MapSource
 
