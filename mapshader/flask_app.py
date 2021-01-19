@@ -13,14 +13,17 @@ from mapshader.sources import datasets
 
 
 def flask_to_tile(source, z=0, x=0, y=0):
-    img = render_map(source, x=x, y=y, z=z)
+    img = render_map(source, x=int(x), y=int(y), z=int(z))
     return send_file(img.to_bytesio(), mimetype='image/png')
 
 
-def flask_to_image(source, xmin=-20e6, ymin=-20e6, xmax=20e6, ymax=20e6,
+def flask_to_image(source,
+                   xmin=-20e6, ymin=-20e6,
+                   xmax=20e6, ymax=20e6,
                    height=500, width=500):
 
-    img = render_map(source, xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax, height=height, width=width)
+    img = render_map(source, xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax,
+                     height=height, width=width)
     return send_file(img.to_bytesio(), mimetype='image/png')
 
 
@@ -65,18 +68,15 @@ def create_app():
 
         app.add_url_rule(source.tile_url,
                          source.key + '-tiles',
-                         partial(flask_to_tile, source=source),
-                         defaults=source.tile_defaults)
+                         partial(flask_to_tile, source=source))
 
         app.add_url_rule(source.image_url,
                          source.key + '-image',
-                         partial(flask_to_image, source=source),
-                         defaults=source.image_defaults)
+                         partial(flask_to_image, source=source))
 
         app.add_url_rule(source.geojson_url,
                          source.key + '-geojson',
-                         partial(flask_to_geojson, source=source),
-                         defaults=source.geojson_defaults)
+                         partial(flask_to_geojson, source=source))
 
     app.add_url_rule('/', 'home', get_site_map(app))
 
