@@ -1,3 +1,4 @@
+import json
 
 import datashader as ds
 import numpy as np
@@ -82,9 +83,8 @@ def polygon_aggregation(cvs, df, zfield, agg_func):
         return cvs.polygons(df, 'geometry')
 
 
-def raster_aggregation(cvs, data, xmin, ymin, xmax, ymax,
-                       height, width, agg_func='linear'):
-    return cvs.raster(data, interpolate=agg_func)
+def raster_aggregation(cvs, data, interpolate='linear'):
+    return cvs.raster(data, interpolate=interpolate)
 
 
 additional_transforms = {'hillshade': hillshade,
@@ -155,4 +155,6 @@ def render_geojson(source: MapSource):
     if isinstance(source.df, spatialpandas.GeoDataFrame):
         return source.df.to_geopandas().to_json()
     else:
+        if source.geometry_type == 'raster':
+            return json.dumps(source.df.to_dict())
         return source.df.to_json()

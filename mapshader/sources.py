@@ -1,10 +1,15 @@
+from os import path
+
 import geopandas as gpd
-
 import pandas as pd
-
 import spatialpandas
+import datashader as ds
 
 from mapshader.colors import colors
+from mapshader.transforms import reproject_raster
+from mapshader.transforms import reproject_vector
+from mapshader.transforms import load_raster
+
 
 
 class MapSource():
@@ -17,8 +22,7 @@ class MapSource():
                  shade_how='linear', cmap=colors['viridis'],
                  dynspread=None, extras=None):
 
-        if fields is None and isinstance(df, (pd.DataFrame, gpd.GeoDataFrame)):
-            fields = [dict(key=c, text=c, value=c) for c in df.columns if c != 'geometry']
+        if fields is None and isinstance(df, (pd.DataFrame, gpd.GeoDataFrame)): fields = [dict(key=c, text=c, value=c) for c in df.columns if c != 'geometry']
 
         if extras is None:
             extras = []
@@ -131,6 +135,24 @@ def nybb_source():
                      text='NYC Admin')
 
 
+def elevation_source():
+    HERE = path.abspath(path.dirname(__file__))
+    FIXTURES_DIR = path.join(HERE, 'tests', 'fixtures')
+    elevation_path = path.join(FIXTURES_DIR, 'elevation.tif')
+    arr = load_raster(elevation_path)
+    arr.data = arr.data.astype('f8')
+    arr = reproject_raster(arr)
+    return MapSource(name='NYC Admin',
+                     df=arr,
+                     xfield='geometry',
+                     yfield='geometry',
+                     raster_interpolate='linear',
+                     shade_how='linear',
+                     geometry_type='raster',
+                     key='elevation',
+                     text='Elevation')
+
+
 def get_user_datasets() -> dict:
     return {}
 
@@ -139,7 +161,8 @@ def get_user_datasets() -> dict:
 default_datasets = {
     'world-countries': world_countries_source(),
     'world-cities': world_cities_source(),
-    'nybb': nybb_source()
+    'nybb': nybb_source(),
+    'elevation': elevation_source()
 }
 
 user_datasets = get_user_datasets()
