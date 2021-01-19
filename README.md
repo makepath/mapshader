@@ -5,11 +5,7 @@
 Simple Python GIS Web Services
 
 ```bash
-pip install mapshader (coming soon...)
-```
-
-```bash
-conda install -c conda-forge mapshader (coming soon...)
+pip install mapshader
 ```
 
 #### Setup Mapshader Conda Environment
