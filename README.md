@@ -11,7 +11,7 @@ Simple Python GIS Web Services
 ### TODO: Add to pypi
 ```bash
 pip install mapshader (coming soon...)
-``
+```
 
 ### TODO: Add to conda-forge
 ```bash
