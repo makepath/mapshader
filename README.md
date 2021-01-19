@@ -16,7 +16,7 @@ pip install mapshader (coming soon...)
 ### TODO: Add to conda-forge
 ```bash
 conda install -c conda-forge mapshader (coming soon...)
-``
+```
 
 # Setup Mapshader Conda Environment
 ```bash
