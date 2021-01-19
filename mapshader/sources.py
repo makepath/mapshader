@@ -53,7 +53,7 @@ class MapSource():
     def image_url(self):
         url = (f'/{self.key}'
                '/image'
-               '/<xmin>/<xmax>/<ymin>/<ymax>'
+               '/<xmin>/<ymin>/<xmax>/<ymax>'
                '/<width>/<height>')
         return url
 
@@ -63,9 +63,18 @@ class MapSource():
                '/geojson')
         return url
 
-    @classmethod
-    def from_object(obj):
-        return MapSource(**obj)
+    @property
+    def tile_defaults(self):
+        return dict(x=0, y=0, z=0)
+
+    @property
+    def image_defaults(self):
+        return dict(xmin=-20e6, ymin=-20e6, xmax=20e6, ymax=20e6, height=500, width=500)
+
+    @property
+    def geojson_defaults(self):
+        return dict()
+
 
 def world_countries_source():
     data = gpd.datasets.get_path('naturalearth_lowres')

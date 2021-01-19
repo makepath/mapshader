@@ -1,28 +1,59 @@
 from functools import partial
 
-from flask import Flask
-from flask import send_file
-from flask import jsonify
+try:
+    from flask import Flask
+    from flask import send_file
+    from flask import url_for
+except ImportError:
+    raise ImportError('You must install flask `pip install flask` to use this module')
 
+from mapshader.core import render_map
+from mapshader.core import render_geojson
 from mapshader.sources import datasets
-from mapshader.sources import to_tile
-from mapshader.sources import to_geojson
-from mapshader.sources import to_image
 
 
-def flask_to_tile(source):
-    img = to_tile(source)
-    return send_file(img, mimetype='image/png')
+def flask_to_tile(source, z=0, x=0, y=0):
+    img = render_map(source, x=x, y=y, z=z)
+    return send_file(img.to_bytesio(), mimetype='image/png')
+
+
+def flask_to_image(source, xmin=-20e6, ymin=-20e6, xmax=20e6, ymax=20e6,
+                   height=500, width=500):
+
+    img = render_map(source, xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax, height=height, width=width)
+    return send_file(img.to_bytesio(), mimetype='image/png')
 
 
 def flask_to_geojson(source):
-    resp = to_geojson(source)
+    resp = render_geojson(source)
     return resp
 
 
-def flask_to_image(source):
-    img = to_image(source)
-    return send_file(img, mimetype='image/png')
+def get_site_map(app):
+
+    def has_no_empty_params(rule):
+        defaults = rule.defaults if rule.defaults is not None else ()
+        arguments = rule.arguments if rule.arguments is not None else ()
+        return len(defaults) >= len(arguments)
+
+    def site_map():
+        links = []
+        for rule in app.url_map.iter_rules():
+            if "GET" in rule.methods and has_no_empty_params(rule):
+                url = url_for(rule.endpoint, **(rule.defaults or {}))
+                links.append(f'<li><a href="{url}">{rule.endpoint}</a></li>')
+
+        html = '<html>'
+        html += '<body>'
+        html += '<ul>'
+        html += ''.join(links)
+        html += '</ul>'
+        html += '</body>'
+        html += '</html>'
+
+        return html
+
+    return site_map
 
 
 def create_app():
@@ -31,12 +62,23 @@ def create_app():
 
     # TODO: Add Client-specific metadata urls for tiles and services...
     for source in datasets.values():
-        app.add_url_rule(source.tile_url, source.key + '-tiles',
-                         partial(flask_to_tile, source=source))
-        app.add_url_rule(source.image_url, source.key + '-image',
-                         partial(flask_to_image, source=source))
-        app.add_url_rule(source.geojson_url, source.key + '-geojson',
-                         partial(flask_to_geojson, source=source))
+
+        app.add_url_rule(source.tile_url,
+                         source.key + '-tiles',
+                         partial(flask_to_tile, source=source),
+                         defaults=source.tile_defaults)
+
+        app.add_url_rule(source.image_url,
+                         source.key + '-image',
+                         partial(flask_to_image, source=source),
+                         defaults=source.image_defaults)
+
+        app.add_url_rule(source.geojson_url,
+                         source.key + '-geojson',
+                         partial(flask_to_geojson, source=source),
+                         defaults=source.geojson_defaults)
+
+    app.add_url_rule('/', 'home', get_site_map(app))
 
     return app
 

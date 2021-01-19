@@ -19,13 +19,14 @@ CLIENT = create_app().test_client()
 def test_default_geojson(source_func):
     source = source_func()
     resp = CLIENT.get(source.geojson_url)
+    assert resp.status_code == 200
     data = json.loads(resp.data)
     assert isinstance(data, dict)
     assert data.get('type') == 'FeatureCollection'
 
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
-def est_default_tiles(source_func):
+def test_default_tiles(source_func):
     source = source_func()
     url = source.tile_url
     X = 0
@@ -35,21 +36,20 @@ def est_default_tiles(source_func):
               .replace('<y>', str(Y))
               .replace('<z>', str(Z)))
     resp = CLIENT.get(url)
-    data = json.loads(resp.data)
-    assert isinstance(data, dict)
-    assert data.get('type') == 'FeatureCollection'
+    assert resp.status_code == 200
+    assert resp
 
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_images(source_func):
     source = source_func()
     url = source.image_url
-    xmin = -180
-    xmax = 180
-    ymin = -90
-    ymax = 90
-    W = 300
-    H = 150
+    xmin = -20e6
+    xmax = 20e6
+    ymin = -20e6
+    ymax = 20e6
+    W = 500
+    H = 500
     url = (url.replace('<xmin>', str(xmin))
               .replace('<ymin>', str(ymin))
               .replace('<xmax>', str(xmax))
@@ -57,5 +57,11 @@ def test_default_images(source_func):
               .replace('<width>', str(W))
               .replace('<height>', str(H)))
     resp = CLIENT.get(url)
-    print(resp)
+    assert resp.status_code == 200
     assert resp
+
+def test_site_index():
+    resp = CLIENT.get('/')
+    assert resp.status_code == 200
+    assert resp
+
