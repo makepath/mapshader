@@ -1,5 +1,10 @@
 # mapshader
 Simple Python GIS Web Services
+--------
+
+![Test Suite Status](https://github.com/makepath/mapshader/workflows/Python%20Test%20Suite/badge.svg)
+
+-------
 
 # Install
 
