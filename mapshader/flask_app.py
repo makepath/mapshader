@@ -22,8 +22,8 @@ def flask_to_image(source,
                    xmax=20e6, ymax=20e6,
                    height=500, width=500):
 
-    img = render_map(source, xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax,
-                     height=height, width=width)
+    img = render_map(source, xmin=float(xmin), ymin=float(ymin), xmax=float(xmax), ymax=float(ymax),
+                     height=int(height), width=int(width))
     return send_file(img.to_bytesio(), mimetype='image/png')
 
 
