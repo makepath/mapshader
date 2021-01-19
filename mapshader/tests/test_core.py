@@ -26,7 +26,7 @@ def test_default_to_geojson(source_func):
     data = json.loads(geojson)
     assert isinstance(data, dict)
 
-    if not source.geometry_type == 'raster':
+    if not source.geometry_type in ('raster', 'line'):
         assert data.get('type') == 'FeatureCollection'
     else:
         assert data

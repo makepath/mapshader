@@ -14,6 +14,7 @@ from xrspatial.classify import quantile
 from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
 
+
 import spatialpandas
 
 
@@ -47,7 +48,7 @@ def create_agg(source: MapSource,
         return point_aggregation(cvs, dataset, xfield, yfield, zfield, agg_func)
 
     elif geometry_type == 'line':
-        return line_aggregation(cvs, dataset, xfield, zfield, agg_func)
+        return line_aggregation(cvs, dataset, xfield, yfield, zfield, agg_func)
 
     elif geometry_type == 'polygon':
         return polygon_aggregation(cvs, dataset, zfield, agg_func)
@@ -66,12 +67,12 @@ def point_aggregation(cvs, df, xfield, yfield, zfield, agg_func):
         return cvs.points(df, xfield, yfield)
 
 
-def line_aggregation(cvs, df, xfield, zfield, agg_func):
+def line_aggregation(cvs, df, xfield, yfield, zfield, agg_func):
     if zfield:
-        return cvs.line(df, xfield,
+        return cvs.line(df, xfield, yfield,
                         agg=getattr(ds, agg_func)(zfield))
     else:
-        return cvs.line(df, xfield)
+        return cvs.line(df, xfield, yfield)
 
 
 def polygon_aggregation(cvs, df, zfield, agg_func):
@@ -155,6 +156,7 @@ def render_geojson(source: MapSource):
     if isinstance(source.df, spatialpandas.GeoDataFrame):
         return source.df.to_geopandas().to_json()
     else:
-        if source.geometry_type == 'raster':
+        # TODO: add proper line geojson (core.render_geojson)
+        if source.geometry_type in ('line', 'raster'):
             return json.dumps(source.df.to_dict())
         return source.df.to_json()

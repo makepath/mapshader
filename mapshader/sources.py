@@ -10,7 +10,6 @@ from mapshader.transforms import reproject_raster
 from mapshader.transforms import reproject_vector
 
 
-
 class MapSource():
 
     def __init__(self, name=None, df=None, data=None,
@@ -21,10 +20,14 @@ class MapSource():
                  shade_how='linear', cmap=colors['viridis'],
                  dynspread=None, extras=None):
 
-        if fields is None and isinstance(df, (pd.DataFrame, gpd.GeoDataFrame)): fields = [dict(key=c, text=c, value=c) for c in df.columns if c != 'geometry']
+        if fields is None and isinstance(df, (pd.DataFrame, gpd.GeoDataFrame)):
+            fields = [dict(key=c, text=c, value=c) for c in df.columns if c != 'geometry']
 
         if extras is None:
             extras = []
+
+        if span == 'min/max' and zfield is None and geometry_type != 'raster':
+            raise ValueError('You must include a zfield for min/max scan calculation')
 
         self.name = name
         self.df = df
@@ -66,7 +69,6 @@ class MapSource():
                '/wms')
         return url
 
-
     @property
     def geojson_url(self):
         url = (f'/{self.key}'
@@ -95,6 +97,7 @@ def world_countries_source():
     return MapSource(name='World Countries',
                      geometry_type='polygon',
                      df=spgdf,
+                     span='min/max',
                      xfield='geometry',
                      yfield='geometry',
                      zfield='pop_est',
@@ -103,6 +106,36 @@ def world_countries_source():
                      shade_how='linear',
                      key='world-countries',
                      text='World Countries')
+
+
+def world_boundaries_source():
+
+    from mapshader.transforms import line_geoseries_to_datashader_line
+
+    data = gpd.datasets.get_path('naturalearth_lowres')
+    world = gpd.read_file(data)
+    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
+    world = reproject_vector(world)
+
+    # convert polys to datashader compatible lines
+    world['geometry'] = world['geometry'].exterior
+
+    line_df = line_geoseries_to_datashader_line(world['geometry'])
+
+    if not len(world) == len(line_df):
+        print('WARNING: dropping records during line conversion')
+
+    return MapSource(name='World Boundaries',
+                     geometry_type='line',
+                     df=line_df,
+                     cmap=['black', 'black'],
+                     xfield='x',
+                     yfield='y',
+                     agg_func='max',
+                     dynspread=2,
+                     shade_how='linear',
+                     key='world-boundaries',
+                     text='World Boundaries')
 
 
 def world_cities_source():
@@ -114,6 +147,7 @@ def world_cities_source():
     spgdf = spatialpandas.GeoDataFrame(gdf, geometry='geometry')
     return MapSource(name='World Cities',
                      geometry_type='point',
+                     cmap=['black', 'black'],
                      df=spgdf,
                      xfield='X',
                      yfield='Y',
@@ -134,6 +168,7 @@ def nybb_source():
                      yfield='geometry',
                      zfield='BoroCode',
                      agg_func='max',
+                     span='min/max',
                      dynspread=None,
                      shade_how='linear',
                      geometry_type='polygon',
@@ -154,6 +189,7 @@ def elevation_source():
                      yfield='geometry',
                      raster_interpolate='linear',
                      shade_how='linear',
+                     span='min/max',
                      geometry_type='raster',
                      key='elevation',
                      text='Elevation')
@@ -166,6 +202,7 @@ def get_user_datasets() -> dict:
 # TODO: Add default line and raster datasets
 default_datasets = {
     'world-countries': world_countries_source(),
+    'world-boundaries': world_boundaries_source(),
     'world-cities': world_cities_source(),
     'nybb': nybb_source(),
     'elevation': elevation_source()
