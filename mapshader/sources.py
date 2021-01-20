@@ -240,6 +240,9 @@ def parse_sources(config_obj):
 
 def get_all_sources(config_path=None, include_default=True):
 
+    import os
+
+
     if include_default:
         default_datasets = {
             'world-countries': world_countries_source(),
@@ -253,9 +256,13 @@ def get_all_sources(config_path=None, include_default=True):
 
     if config_path is not None:
         with open(config_path, 'r') as f:
+            config_dir = path.abspath(path.dirname(config_path))
             content = f.read()
             config_obj = yaml.load(content)
+            ogcwd = os.getcwd()
+            os.chdir(config_dir)
             user_datasets = parse_sources(config_obj)
+            os.chdir(ogcwd)
     else:
         user_datasets = {}
 
