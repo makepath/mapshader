@@ -12,6 +12,7 @@ setup(name='mapshader',
       install_requires=['xarray-spatial',
                         'datashader',
                         'geopandas',
+                        'click',
                         'spatialpandas',
                         'pytest',
                         'tbb',
@@ -24,6 +25,10 @@ setup(name='mapshader',
                         'jupyter',
                         'pyarrow'],
       zip_safe=False,
+      entry_points='''
+        [console_scripts]
+        mapshader=mapshader.cli:serve
+        ''',
       classifiers=["Programming Language :: Python :: 3",
                    "License :: OSI Approved :: MIT License",
                    "Operating System :: OS Independent"],
