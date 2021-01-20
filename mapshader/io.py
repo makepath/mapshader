@@ -1,6 +1,7 @@
 import rioxarray
 import xarray as xr
 import datashader as ds
+import geopandas as gpd
 
 
 def load_raster(filepath: str):
@@ -12,3 +13,7 @@ def load_raster(filepath: str):
     # nx, ny = da.sizes['x'], da.sizes['y']
     # x, y = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)+0.5) * transform
     return da
+
+
+def load_vector(filepath: str):
+    return gpd.read_file(filepath)

@@ -10,7 +10,7 @@ except ImportError:
 
 from mapshader.core import render_map
 from mapshader.core import render_geojson
-from mapshader.sources import datasets
+from mapshader.sources import get_all_sources
 
 
 def flask_to_tile(source, z=0, x=0, y=0):
@@ -71,13 +71,11 @@ def get_site_map(app):
 
     return site_map
 
-
-def create_app():
-
-    app = Flask(__name__)
+def configure_app(app, user_source_filepath=None):
+    sources = get_all_sources(user_source_filepath)
 
     # TODO: Add Client-specific metadata urls for tiles and services...
-    for source in datasets.values():
+    for source in sources.values():
 
         app.add_url_rule(source.tile_url,
                          source.key + '-tiles',
@@ -100,5 +98,19 @@ def create_app():
     return app
 
 
-if __name__ == "__main__":
-    create_app().run(host='0.0.0.0', debug=True)
+def create_app(user_source_filepath=None):
+
+    app = Flask(__name__)
+    return configure_app(app, user_source_filepath)
+
+
+if __name__ == '__main__':
+    from argparse import ArgumentParser
+    from os import path
+
+    parser = ArgumentParser()
+    parser.add_argument('-f')
+    user_file = parser.parse_args().f
+    user_file_path = path.abspath(path.expanduser(user_file))
+    app = create_app(user_file).run(host='0.0.0.0', debug=True)
+    app.run()

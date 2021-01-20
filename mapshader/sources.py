@@ -1,14 +1,21 @@
 from os import path
 
+import yaml
+
 import geopandas as gpd
 import pandas as pd
 import spatialpandas
-import datashader as ds
 
 from mapshader.colors import colors
 from mapshader.io import load_raster
+from mapshader.io import load_vector
 from mapshader.transforms import reproject_raster
 from mapshader.transforms import reproject_vector
+from mapshader.transforms import cast
+from mapshader.transforms import flip_coords
+from mapshader.transforms import orient_array
+from mapshader.transforms import squeeze
+from mapshader.transforms import get_transform_by_name
 
 
 class MapSource():
@@ -182,10 +189,10 @@ def elevation_source():
     FIXTURES_DIR = path.join(HERE, 'tests', 'fixtures')
     elevation_path = path.join(FIXTURES_DIR, 'elevation.tif')
     arr = load_raster(elevation_path)
-    arr = arr.squeeze().drop("band")
-    arr.data = arr.data.astype('f8')
-    arr.data = ds.utils.orient_array(arr)
-    arr = arr.assign_coords(y=list(reversed(arr.coords['y'])))
+    arr = squeeze(arr, "band")
+    arr = cast(arr, 'f8')
+    arr = orient_array(arr)
+    arr = flip_coords(arr, 'y')
     arr = reproject_raster(arr)
     return MapSource(name='Elevation',
                      df=arr,
@@ -199,18 +206,57 @@ def elevation_source():
                      text='Elevation')
 
 
-def get_user_datasets() -> dict:
-    return {}
+def parse_sources(config_obj):
+    user_datasets = {}
+    for source in config_obj['sources']:
+
+        data_path = path.abspath(path.expanduser(source['filepath']))
+        if source['geometry_type'] == 'raster':
+            df = load_raster(data_path)
+        else:
+            df = load_vector(data_path)
+
+        if 'transforms' in source:
+            for trans in source['transforms']:
+                transform_name = trans['name']
+                func = get_transform_by_name(transform_name)
+                args = trans.get('args', {})
+                df = func(df, **args)
+
+        source_obj = MapSource(name=source.get('name'),
+                               df=df,
+                               geometry_type=source['geometry_type'],
+                               key=source['key'],
+                               xfield=source.get('xfield'),
+                               yfield=source.get('yfield'),
+                               raster_interpolate=source.get('raster_interpolate'),
+                               shade_how=source.get('shade_how'),
+                               span=source.get('span'),
+                               text=source.get('text'))
+        user_datasets[source['key']] = source_obj
+
+    return user_datasets
 
 
-# TODO: Add default line and raster datasets
-default_datasets = {
-    'world-countries': world_countries_source(),
-    'world-boundaries': world_boundaries_source(),
-    'world-cities': world_cities_source(),
-    'nybb': nybb_source(),
-    'elevation': elevation_source()
-}
+def get_all_sources(config_path=None, include_default=True):
 
-user_datasets = get_user_datasets()
-datasets = {**default_datasets, **user_datasets}
+    if include_default:
+        default_datasets = {
+            'world-countries': world_countries_source(),
+            'world-boundaries': world_boundaries_source(),
+            'world-cities': world_cities_source(),
+            'nybb': nybb_source(),
+            'elevation': elevation_source()
+        }
+    else:
+        default_datasets = {}
+
+    if config_path is not None:
+        with open(config_path, 'r') as f:
+            content = f.read()
+            config_obj = yaml.load(content)
+            user_datasets = parse_sources(config_obj)
+    else:
+        user_datasets = {}
+
+    return {**default_datasets, **user_datasets}

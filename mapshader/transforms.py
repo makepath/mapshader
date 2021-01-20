@@ -1,5 +1,6 @@
 import rioxarray  # NOQA
 import xarray as xr
+import datashader as ds
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -18,6 +19,39 @@ def reproject_raster(arr: xr.DataArray, epsg=3857):
 
 def reproject_vector(gdf: gpd.GeoDataFrame, epsg=3857):
     return gdf.to_crs(epsg=epsg)
+
+
+def flip_coords(arr, dim):
+    args = {dim: list(reversed(arr.coords[dim]))}
+    arr = arr.assign_coords(**args)
+    return arr
+
+
+def squeeze(arr, dim):
+    return arr.squeeze().drop(dim)
+
+
+def cast(arr, dtype):
+    arr.data = arr.data.astype(dtype)
+    return arr
+
+
+def orient_array(arr):
+    arr.data = ds.utils.orient_array(arr)
+    return arr
+
+
+_transforms = {
+    'reproject_raster': reproject_raster,
+    'reproject_vector': reproject_vector,
+    'orient_array': orient_array,
+    'cast': cast,
+    'flip_coords': flip_coords,
+    'squeeze': squeeze,
+}
+
+def get_transform_by_name(name: str):
+    return _transforms[name]
 
 
 def line_geoseries_to_datashader_line(series: gpd.GeoSeries):

@@ -13,7 +13,6 @@ from mapshader.sources import MapSource
 from mapshader.core import render_map
 from mapshader.core import render_geojson
 
-from mapshader.sources import get_user_datasets
 
 from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
 

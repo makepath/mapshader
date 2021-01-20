@@ -9,10 +9,6 @@ from PIL import Image
 
 from mapshader.sources import MapSource
 
-from mapshader.sources import datasets
-from mapshader.sources import default_datasets
-from mapshader.sources import user_datasets
-from mapshader.sources import get_user_datasets
 from mapshader.sources import world_countries_source
 from mapshader.sources import world_cities_source
 from mapshader.sources import nybb_source
@@ -29,8 +25,3 @@ DEFAULT_SOURCES_FUNCS = [world_countries_source,
 def test_load_default_dataset(source_func):
     source = source_func()
     assert isinstance(source, MapSource)
-
-
-def test_get_user_datasets():
-    user_datasets = get_user_datasets()
-    assert isinstance(user_datasets, dict)
