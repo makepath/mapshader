@@ -3,6 +3,7 @@ from os import path
 import geopandas as gpd
 import pandas as pd
 import spatialpandas
+import datashader as ds
 
 from mapshader.colors import colors
 from mapshader.io import load_raster
@@ -181,9 +182,12 @@ def elevation_source():
     FIXTURES_DIR = path.join(HERE, 'tests', 'fixtures')
     elevation_path = path.join(FIXTURES_DIR, 'elevation.tif')
     arr = load_raster(elevation_path)
+    arr = arr.squeeze().drop("band")
     arr.data = arr.data.astype('f8')
+    arr.data = ds.utils.orient_array(arr)
+    arr = arr.assign_coords(y=list(reversed(arr.coords['y'])))
     arr = reproject_raster(arr)
-    return MapSource(name='NYC Admin',
+    return MapSource(name='Elevation',
                      df=arr,
                      xfield='geometry',
                      yfield='geometry',

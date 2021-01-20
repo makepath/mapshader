@@ -84,8 +84,19 @@ def polygon_aggregation(cvs, df, zfield, agg_func):
         return cvs.polygons(df, 'geometry')
 
 
-def raster_aggregation(cvs, data, interpolate='linear'):
-    return cvs.raster(data, interpolate=interpolate)
+def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=4):
+    xmin, xmax = cvs.x_range
+    ymin, ymax = cvs.y_range
+    xdrange = (xmax - xmin) * (1 + 2 * padding)
+    ydrange = (ymax - ymin) * (1 + 2 * padding)
+    xsize = cvs.plot_width * (1 + 2 * padding)
+    ysize = cvs.plot_height * (1 + 2 * padding)
+    stcvs = ds.Canvas(plot_width=xsize,
+                      plot_height=ysize,
+                      x_range=(xmin - xdrange, xmax + xdrange),
+                      y_range=(ymin - ydrange, ymax + ydrange))
+    agg = stcvs.raster(data, interpolate=interpolate)
+    return agg
 
 
 additional_transforms = {'hillshade': hillshade,
@@ -105,7 +116,7 @@ def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
     return source, agg
 
 
-def shade_agg(source: MapSource, agg: xr.DataArray):
+def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
     df = source.df
     zfield = source.zfield
     geometry_type = source.geometry_type
@@ -117,11 +128,16 @@ def shade_agg(source: MapSource, agg: xr.DataArray):
         return tf.shade(agg, color_key=cmap)
     else:
         if span and span == 'min/max' and geometry_type == 'raster':
-            print('Shade Raster with Span ({}, {})'.format(int(df.min().item()),
-                                                           int(df.max().item() + 1)))
-            img = tf.shade(agg, cmap=cmap, how=how, span=(int(df.min().item()),
-                                                          int(df.max().item())))
-            return img
+
+            # TODO: don't need to calculate min each time...move into MapSource
+            print('Shade Raster with Span ({}, {})'.format(float(df.min().item()),
+                                                           float(df.max().item()) + 1))
+            img = tf.shade(agg, cmap=cmap,
+                           how=how, span=(int(df.min(skipna=True).item()),
+                                          int(df.max(skipna=True).item())+1))
+
+            # TODO: don't do this unless we need to...check source.padding
+            return img.loc[{'x': slice(xmin, xmax), 'y': slice(ymax, ymin)}]
 
         elif span and span == 'min/max':
             print('Shade with Span')
@@ -143,7 +159,7 @@ def render_map(source: MapSource,
 
     agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
     source, agg = apply_additional_transforms(source, agg)
-    img = shade_agg(source, agg)
+    img = shade_agg(source, agg, xmin, ymin, xmax, ymax)
 
     # apply dynamic spreading ----------
     if source.dynspread and source.dynspread > 0:

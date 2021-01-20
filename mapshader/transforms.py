@@ -1,3 +1,4 @@
+import rioxarray  # NOQA
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ wgs84_proj_str = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
 
 def reproject_raster(arr: xr.DataArray, epsg=3857):
     if epsg == 3857:
-        return arr.rio.reproject("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+        return arr.rio.reproject(wb_proj_str)
     else:
         raise ValueError(f'Raster Projection Error: Invalid EPSG {epsg}')
     pass
