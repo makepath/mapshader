@@ -26,7 +26,7 @@ class MapSource():
                  xfield='geometry', yfield='geometry', zfield=None,
                  agg_func=None, raster_interpolate='linear',
                  shade_how='linear', cmap=colors['viridis'],
-                 dynspread=None, extras=None):
+                 dynspread=None, extras=None, raster_padding=0):
 
         if fields is None and isinstance(df, (pd.DataFrame, gpd.GeoDataFrame)):
             fields = [dict(key=c, text=c, value=c) for c in df.columns if c != 'geometry']
