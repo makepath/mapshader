@@ -47,9 +47,11 @@ class MapSource():
         self.span = span
         self.route = route
         self.xfield = xfield
+        self.raster_padding = 0
         self.yfield = yfield
         self.zfield = zfield
         self.agg_func = agg_func
+        self.overviews = []
         self.raster_agg_func = raster_interpolate
         self.shade_how = shade_how
         self.cmap = cmap
@@ -216,23 +218,28 @@ def parse_sources(config_obj):
         else:
             df = load_vector(data_path)
 
-        if 'transforms' in source:
-            for trans in source['transforms']:
-                transform_name = trans['name']
-                func = get_transform_by_name(transform_name)
-                args = trans.get('args', {})
-                df = func(df, **args)
-
         source_obj = MapSource(name=source.get('name'),
                                df=df,
                                geometry_type=source['geometry_type'],
                                key=source['key'],
                                xfield=source.get('xfield'),
                                yfield=source.get('yfield'),
-                               raster_interpolate=source.get('raster_interpolate'),
-                               shade_how=source.get('shade_how'),
+                               raster_padding=source.get('raster_padding', 0),
+                               raster_interpolate=source.get('raster_interpolate', 'linear'),
+                               shade_how=source.get('shade_how', 'linear'),
                                span=source.get('span'),
                                text=source.get('text'))
+
+        if 'transforms' in source:
+            for trans in source['transforms']:
+                transform_name = trans['name']
+                func = get_transform_by_name(transform_name)
+                args = trans.get('args', {})
+                if transform_name == 'build_raster_overviews':
+                    source_obj.overviews = func(source_obj.df, **args)
+                else:
+                    source_obj.df = func(source_obj.df, **args)
+
         user_datasets[source['key']] = source_obj
 
     return user_datasets

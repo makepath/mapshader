@@ -38,8 +38,8 @@ def create_agg(source: MapSource,
     yfield = source.yfield
     zfield = source.zfield
     agg_func = source.agg_func
-    dataset = source.df
     geometry_type = source.geometry_type
+    dataset = source.df
 
     cvs = ds.Canvas(plot_width=width, plot_height=height,
                     x_range=(xmin, xmax), y_range=(ymin, ymax))
@@ -54,7 +54,21 @@ def create_agg(source: MapSource,
         return polygon_aggregation(cvs, dataset, zfield, agg_func)
 
     elif geometry_type == 'raster':
-        return raster_aggregation(cvs, dataset, agg_func)
+
+        if z is not None and len(source.overviews) > 0:
+            if z < 3:
+                dataset = source.overviews[0]
+                print('Using overviews!')
+            elif z < 6:
+                dataset = source.overviews[1]
+                print('Using overviews!')
+            elif z < 9:
+                dataset = source.overviews[2]
+                print('Using overviews!')
+
+        return raster_aggregation(cvs, dataset,
+                                  agg_func,
+                                  padding=source.raster_padding)
 
     else:
         raise ValueError('Unkown geometry type for {}'.format(dataset['name']))
@@ -84,18 +98,40 @@ def polygon_aggregation(cvs, df, zfield, agg_func):
         return cvs.polygons(df, 'geometry')
 
 
-def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=4):
+def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=0):
+
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
     xdrange = (xmax - xmin) * (1 + 2 * padding)
     ydrange = (ymax - ymin) * (1 + 2 * padding)
     xsize = cvs.plot_width * (1 + 2 * padding)
     ysize = cvs.plot_height * (1 + 2 * padding)
+
+    if padding > 0:
+        new_xmin = xmin - xdrange
+        new_ymin = ymin - ydrange
+        new_xmax = xmin + xdrange
+        new_ymax = xmin + ydrange
+    else:
+        new_xmin = xmin
+        new_ymin = ymin
+        new_xmax = xmax
+        new_ymax = ymax
+
     stcvs = ds.Canvas(plot_width=xsize,
                       plot_height=ysize,
-                      x_range=(xmin - xdrange, xmax + xdrange),
-                      y_range=(ymin - ydrange, ymax + ydrange))
-    agg = stcvs.raster(data, interpolate=interpolate)
+                      x_range=(new_xmin, new_xmax),
+                      y_range=(new_ymin, new_ymax))
+
+    #cargs = dict(scheduler='synchronous')
+    xs = slice(new_xmin, new_xmax)
+    ys = slice(new_ymax, new_ymin)
+    data_to_rasterize = data.loc[{'x': xs, 'y': ys}]
+
+    if len(data_to_rasterize) == 0:
+        raise ValueError('No data to rasterize')
+
+    agg = stcvs.raster(data_to_rasterize, interpolate=interpolate)
     return agg
 
 
@@ -164,6 +200,7 @@ def render_map(source: MapSource,
     # apply dynamic spreading ----------
     if source.dynspread and source.dynspread > 0:
         img = tf.dynspread(img, threshold=1, max_px=int(source.dynspread))
+
 
     return img
 

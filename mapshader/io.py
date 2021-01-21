@@ -2,10 +2,21 @@ import rioxarray
 import xarray as xr
 import datashader as ds
 import geopandas as gpd
+import numpy as np
 
 
 def load_raster(filepath: str):
+
     da = xr.open_rasterio(filepath)
+
+    if hasattr(da, 'nodatavals'):
+
+        if np.issubdtype(da.data.dtype, np.integer):
+            da.data = da.data.astype('f8')
+
+        for val in da.nodatavals:
+            da.data[da.data == float(val)] = np.nan
+
     #res = ds.utils.calc_res(da)
     #da.data = ds.utils.orient_array(da, res=(abs(res[0]), -1 * abs(res[1])))
     # move pixel centers (do we need this?)
