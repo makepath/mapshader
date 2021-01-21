@@ -4,26 +4,35 @@ import datashader as ds
 import geopandas as gpd
 import numpy as np
 
+from os.path import expanduser
 
-def load_raster(filepath: str):
 
-    da = xr.open_rasterio(filepath)
+def load_raster(file_path, xmin=None, ymin=None,
+                xmax=None, ymax=None, chunks=None):
 
-    if hasattr(da, 'nodatavals'):
+    if file_path.endswith('.tif'):
 
-        if np.issubdtype(da.data.dtype, np.integer):
-            da.data = da.data.astype('f8')
+        arr = xr.open_rasterio(expanduser(file_path))
 
-        for val in da.nodatavals:
-            da.data[da.data == float(val)] = np.nan
+        if hasattr(arr, 'nodatavals'):
 
-    #res = ds.utils.calc_res(da)
-    #da.data = ds.utils.orient_array(da, res=(abs(res[0]), -1 * abs(res[1])))
-    # move pixel centers (do we need this?)
-    # transform = Affine.from_gdal(*da.attrs['transform'])
-    # nx, ny = da.sizes['x'], da.sizes['y']
-    # x, y = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)+0.5) * transform
-    return da
+            if np.issubdtype(arr.data.dtype, np.integer):
+                arr.data = arr.data.astype('f8')
+
+            for val in arr.nodatavals:
+                arr.data[arr.data == val] = np.nan
+
+        arr.name = file_path
+
+    elif file_path.endswith('.nc'):
+        # TODO: add chunk parameter to config
+        arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})['data']
+        arr['name'] = file_path
+
+    else:
+        raise TypeError(f"Unable to load raster {file_path}")
+
+    return arr
 
 
 def load_vector(filepath: str):

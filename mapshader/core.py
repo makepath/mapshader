@@ -2,6 +2,7 @@ import json
 
 import datashader as ds
 import numpy as np
+import dask.array as da
 
 
 import datashader.transfer_functions as tf
@@ -58,13 +59,13 @@ def create_agg(source: MapSource,
         if z is not None and len(source.overviews) > 0:
             if z < 3:
                 dataset = source.overviews[0]
-                print('Using overviews!')
+                print('Using overviews 0!')
             elif z < 6:
                 dataset = source.overviews[1]
-                print('Using overviews!')
+                print('Using overviews 1!')
             elif z < 9:
                 dataset = source.overviews[2]
-                print('Using overviews!')
+                print('Using overviews 2!')
 
         return raster_aggregation(cvs, dataset,
                                   agg_func,
@@ -123,10 +124,13 @@ def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=0):
                       x_range=(new_xmin, new_xmax),
                       y_range=(new_ymin, new_ymax))
 
-    #cargs = dict(scheduler='synchronous')
     xs = slice(new_xmin, new_xmax)
     ys = slice(new_ymax, new_ymin)
-    data_to_rasterize = data.loc[{'x': xs, 'y': ys}]
+
+    if isinstance(data, da.Array):
+        data_to_rasterize = data.copy().loc[{'x': xs, 'y': ys}].compute()
+    else:
+        data_to_rasterize = data.loc[{'x': xs, 'y': ys}]
 
     if len(data_to_rasterize) == 0:
         raise ValueError('No data to rasterize')
@@ -165,6 +169,8 @@ def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
     else:
         if span and span == 'min/max' and geometry_type == 'raster':
 
+            # TODO: make this work for dask
+
             # TODO: don't need to calculate min each time...move into MapSource
             print('Shade Raster with Span ({}, {})'.format(float(df.min().item()),
                                                            float(df.max().item()) + 1))
@@ -200,7 +206,6 @@ def render_map(source: MapSource,
     # apply dynamic spreading ----------
     if source.dynspread and source.dynspread > 0:
         img = tf.dynspread(img, threshold=1, max_px=int(source.dynspread))
-
 
     return img
 

@@ -1,3 +1,4 @@
+import os
 from os import path
 
 import yaml
@@ -247,30 +248,22 @@ def parse_sources(config_obj):
 
 def get_all_sources(config_path=None, include_default=True):
 
-    import os
-
-
-    if include_default:
-        default_datasets = {
+    if config_path is None:
+        return {
             'world-countries': world_countries_source(),
             'world-boundaries': world_boundaries_source(),
             'world-cities': world_cities_source(),
             'nybb': nybb_source(),
             'elevation': elevation_source()
         }
-    else:
-        default_datasets = {}
 
-    if config_path is not None:
-        with open(config_path, 'r') as f:
-            config_dir = path.abspath(path.dirname(config_path))
-            content = f.read()
-            config_obj = yaml.load(content)
-            ogcwd = os.getcwd()
-            os.chdir(config_dir)
-            user_datasets = parse_sources(config_obj)
+    with open(config_path, 'r') as f:
+        config_dir = path.abspath(path.dirname(config_path))
+        content = f.read()
+        config_obj = yaml.load(content)
+        ogcwd = os.getcwd()
+        os.chdir(config_dir)
+        try:
+            return parse_sources(config_obj)
+        finally:
             os.chdir(ogcwd)
-    else:
-        user_datasets = {}
-
-    return {**default_datasets, **user_datasets}
