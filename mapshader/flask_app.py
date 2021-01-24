@@ -160,6 +160,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-f')
     user_file = parser.parse_args().f
-    user_file_path = path.abspath(path.expanduser(user_file))
+    if user_file:
+        user_file_path = path.abspath(path.expanduser(user_file))
     app = create_app(user_file).run(host='0.0.0.0', debug=True)
     app.run()
