@@ -40,7 +40,7 @@ def create_agg(source: MapSource,
     zfield = source.zfield
     agg_func = source.agg_func
     geometry_type = source.geometry_type
-    dataset = source.df
+    dataset = source.data
 
     cvs = ds.Canvas(plot_width=width, plot_height=height,
                     x_range=(xmin, xmax), y_range=(ymin, ymax))
@@ -75,28 +75,28 @@ def create_agg(source: MapSource,
         raise ValueError('Unkown geometry type for {}'.format(dataset['name']))
 
 
-def point_aggregation(cvs, df, xfield, yfield, zfield, agg_func):
+def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
     if zfield:
-        return cvs.points(df, xfield, yfield, getattr(ds, agg_func)(zfield))
+        return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
     else:
-        return cvs.points(df, xfield, yfield)
+        return cvs.points(data, xfield, yfield)
 
 
-def line_aggregation(cvs, df, xfield, yfield, zfield, agg_func):
+def line_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
     if zfield:
-        return cvs.line(df, xfield, yfield,
+        return cvs.line(data, xfield, yfield,
                         agg=getattr(ds, agg_func)(zfield))
     else:
-        return cvs.line(df, xfield, yfield)
+        return cvs.line(data, xfield, yfield)
 
 
-def polygon_aggregation(cvs, df, zfield, agg_func):
+def polygon_aggregation(cvs, data, zfield, agg_func):
     if zfield:
-        return cvs.polygons(df,
+        return cvs.polygons(data,
                             'geometry',
                             agg=getattr(ds, agg_func)(zfield))
     else:
-        return cvs.polygons(df, 'geometry')
+        return cvs.polygons(data, 'geometry')
 
 
 def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=0):
@@ -157,7 +157,7 @@ def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
 
 
 def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
-    df = source.df
+    df = source.data
     zfield = source.zfield
     geometry_type = source.geometry_type
     how = source.shade_how
@@ -211,10 +211,10 @@ def render_map(source: MapSource,
 
 
 def render_geojson(source: MapSource):
-    if isinstance(source.df, spatialpandas.GeoDataFrame):
-        return source.df.to_geopandas().to_json()
+    if isinstance(source.data, spatialpandas.GeoDataFrame):
+        return source.data.to_geopandas().to_json()
     else:
         # TODO: add proper line geojson (core.render_geojson)
         if source.geometry_type in ('line', 'raster'):
-            return json.dumps(source.df.to_dict())
-        return source.df.to_json()
+            return json.dumps(source.data.to_dict())
+        return source.data.to_json()

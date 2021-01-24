@@ -1,24 +1,29 @@
 from functools import partial
 
+from bokeh.plotting import figure
+from bokeh.models.tiles import WMTSTileSource
+
 try:
     from flask import Flask
     from flask import send_file
-    from flask import url_for
     from flask import request
 except ImportError:
     raise ImportError('You must install flask `pip install flask` to use this module')
 
 from mapshader.core import render_map
 from mapshader.core import render_geojson
-from mapshader.sources import get_all_sources
+
+from mapshader.sources import get_services
+from mapshader.sources import MapSource
+from mapshader.sources import MapService
 
 
-def flask_to_tile(source, z=0, x=0, y=0):
+def flask_to_tile(source: MapSource, z=0, x=0, y=0):
     img = render_map(source, x=int(x), y=int(y), z=int(z))
     return send_file(img.to_bytesio(), mimetype='image/png')
 
 
-def flask_to_image(source,
+def flask_to_image(source: MapSource,
                    xmin=-20e6, ymin=-20e6,
                    xmax=20e6, ymax=20e6,
                    height=500, width=500):
@@ -29,7 +34,7 @@ def flask_to_image(source,
     return send_file(img.to_bytesio(), mimetype='image/png')
 
 
-def flask_to_wms(source):
+def flask_to_wms(source: MapSource):
     height = request.args.get('height')
     width = request.args.get('width')
     bbox = request.args.get('bbox')
@@ -40,66 +45,110 @@ def flask_to_wms(source):
     return send_file(img.to_bytesio(), mimetype='image/png')
 
 
-def flask_to_geojson(source):
+def flask_to_geojson(source: MapSource):
     resp = render_geojson(source)
     return resp
 
 
-def get_site_map(app):
+def tile_previewer(tileset_url,
+                   full_extent=(-20e6, -20e6, 20e6, 20e6),
+                   output_dir=None,
+                   title='Mapshader Tileset',
+                   min_zoom=0, max_zoom=40,
+                   **kwargs):
+    '''Helper function for creating a simple Bokeh figure with
+    a WMTS Tile Source.
+    Notes
+    -----
+    - if you don't supply height / width, stretch_both sizing_mode is used.
+    - supply an output_dir to write figure to disk.
+    '''
 
-    def has_no_empty_params(rule):
-        defaults = rule.defaults if rule.defaults is not None else ()
-        arguments = rule.arguments if rule.arguments is not None else ()
-        return len(defaults) >= len(arguments)
+    xmin, ymin, xmax, ymax = full_extent
 
-    def site_map():
-        links = []
-        for rule in app.url_map.iter_rules():
-            if "GET" in rule.methods and has_no_empty_params(rule):
-                url = url_for(rule.endpoint, **(rule.defaults or {}))
-                links.append(f'<li><a href="{url}">{rule.endpoint}</a></li>')
+    p = figure(sizing_mode='stretch_both',
+               x_range=(xmin, xmax),
+               y_range=(ymin, ymax),
+               tools="pan,wheel_zoom,reset", **kwargs)
 
-        html = '<html>'
-        html += '<body>'
-        html += '<ul>'
-        html += ''.join(links)
-        html += '</ul>'
-        html += '</body>'
-        html += '</html>'
+    p.background_fill_color = 'black'
+    p.grid.grid_line_alpha = 0
+    p.axis.visible = True
 
-        return html
+    tile_source = WMTSTileSource(url=tileset_url,
+                                 min_zoom=min_zoom,
+                                 max_zoom=max_zoom)
 
-    return site_map
+    p.add_tile(tile_source, render_parents=False)
+
+    return p
+
+
+def service_page(service: MapService):
+    html = '<html>'
+    html += '<body>'
+    html += '<h3>Service Info</h3>'
+    html += '<hr />'
+    html += f'<h4>{service.name}</h4>'
+    html += f'<h4>{service.client_url}</h4>'
+    html += f'<h4>{service.service_type}</h4>'
+    html += f'<h4>{service.client_url}</h4>'
+    html += '<h3>Data Source Info</h3>'
+    html += '<hr />'
+    html += f'<h4>{service.source.name}</h4>'
+    html += f'<h4>{service.source.filepath}</h4>'
+    html += f'<h4>{service.source.geometry_type}</h4>'
+    html += '</body>'
+    html += '</html>'
+    return html
+
+
+def index_page(services):
+    links = []
+    for s in services:
+        links.append(f'<li><a href="{s.service_page_url}">{s.name}</a></li>')
+
+    html = '<html>'
+    html += '<body>'
+    html += '<ul>'
+    html += ''.join(links)
+    html += '</ul>'
+    html += '</body>'
+    html += '</html>'
+
+    return html
+
 
 def configure_app(app, user_source_filepath=None):
-    sources = get_all_sources(user_source_filepath)
 
-    # TODO: Add Client-specific metadata urls for tiles and services...
-    for source in sources.values():
+    view_func_creators = {
+        'tile': flask_to_tile,
+        'image': flask_to_image,
+        'wms': flask_to_wms,
+        'geojson': flask_to_geojson,
+    }
 
-        app.add_url_rule(source.tile_url,
-                         source.key + '-tiles',
-                         partial(flask_to_tile, source=source))
+    services = list(get_services(config_path=user_source_filepath))
+    for service in services:
 
-        app.add_url_rule(source.image_url,
-                         source.key + '-image',
-                         partial(flask_to_image, source=source))
+        view_func = view_func_creators[service.service_type]
 
-        app.add_url_rule(source.wms_url,
-                         source.key + '-wms',
-                         partial(flask_to_wms, source=source))
+        # add operational endpoint
+        app.add_url_rule(service.service_url,
+                         service.name,
+                         partial(view_func, source=service.source))
 
-        app.add_url_rule(source.geojson_url,
-                         source.key + '-geojson',
-                         partial(flask_to_geojson, source=source))
+        # add service page endpoint
+        app.add_url_rule(service.service_page_url,
+                         service.service_page_name,
+                         partial(service_page, service=service))
 
-    app.add_url_rule('/', 'home', get_site_map(app))
+    app.add_url_rule('/', 'home', partial(index_page, services=services))
 
     return app
 
 
 def create_app(user_source_filepath=None):
-
     app = Flask(__name__)
     return configure_app(app, user_source_filepath)
 

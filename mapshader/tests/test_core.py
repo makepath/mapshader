@@ -19,7 +19,7 @@ from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_to_geojson(source_func):
-    source = source_func()
+    source = MapSource.from_obj(source_func()).load()
     geojson = render_geojson(source)
     assert isinstance(geojson, str)
     data = json.loads(geojson)
@@ -33,7 +33,7 @@ def test_default_to_geojson(source_func):
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_to_image(source_func):
-    source = source_func()
+    source = MapSource.from_obj(source_func()).load()
     img = render_map(source, xmin=-20e6, ymin=-20e6,
                      xmax=20e6, ymax=20e6, width=500, height=500)
     assert isinstance(img, Image)
@@ -41,6 +41,6 @@ def test_default_to_image(source_func):
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_to_tile(source_func):
-    source = source_func()
+    source = MapSource.from_obj(source_func()).load()
     img = render_map(source, x=0, y=0, z=0)
     assert isinstance(img, Image)

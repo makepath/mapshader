@@ -23,5 +23,5 @@ DEFAULT_SOURCES_FUNCS = [world_countries_source,
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_load_default_dataset(source_func):
-    source = source_func()
+    source = MapSource.from_obj(source_func()).load()
     assert isinstance(source, MapSource)

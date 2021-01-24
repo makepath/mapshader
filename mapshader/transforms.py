@@ -4,7 +4,7 @@ import datashader as ds
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-import datashader as ds
+import spatialpandas
 
 from xrspatial.utils import height_implied_by_aspect_ratio
 
@@ -17,7 +17,6 @@ def reproject_raster(arr: xr.DataArray, epsg=3857):
         return arr.rio.reproject(wb_proj_str)
     else:
         raise ValueError(f'Raster Projection Error: Invalid EPSG {epsg}')
-    pass
 
 
 def reproject_vector(gdf: gpd.GeoDataFrame, epsg=3857):
@@ -28,6 +27,10 @@ def flip_coords(arr, dim):
     args = {dim: list(reversed(arr.coords[dim]))}
     arr = arr.assign_coords(**args)
     return arr
+
+
+def to_spatialpandas(gdf: gpd.GeoDataFrame, geometry_field='geometry'):
+    return spatialpandas.GeoDataFrame(gdf, geometry=geometry_field)
 
 
 def squeeze(arr, dim):
@@ -77,22 +80,48 @@ def build_raster_overviews(arr, levels=(1000, 2000, 4000), interpolate='linear')
     return overviews
 
 
-_transforms = {
-    'reproject_raster': reproject_raster,
-    'reproject_vector': reproject_vector,
-    'orient_array': orient_array,
-    'cast': cast,
-    'flip_coords': flip_coords,
-    'build_raster_overviews': build_raster_overviews,
-    'squeeze': squeeze
-}
-
-def get_transform_by_name(name: str):
-    return _transforms[name]
+def add_xy_fields(gdf, geometry_field='geometry'):
+    gdf['X'] = gdf[geometry_field].apply(lambda p: p.x)
+    gdf['Y'] = gdf[geometry_field].apply(lambda p: p.y)
+    return gdf
 
 
-def line_geoseries_to_datashader_line(series: gpd.GeoSeries):
-    # TODO: This is slow! Make this faster!
+def select_by_attributes(gdf, field, value, operator='IN'):
+
+    if operator == 'IN':
+        return gdf[gdf[field].isin(value)]
+
+    elif operator == 'NOT IN':
+        return gdf[~gdf[field].isin(value)]
+
+    elif operator == 'EQUALS':
+        return gdf[gdf[field] == value]
+
+    elif operator == 'NOT EQUALS':
+        return gdf[gdf[field] != value]
+
+    elif operator == 'LT':
+        return gdf[gdf[field] < value]
+
+    elif operator == 'GT':
+        return gdf[gdf[field] > value]
+
+    elif operator == 'LTE':
+        return gdf[gdf[field] <= value]
+
+    elif operator == 'GTE':
+        return gdf[gdf[field] >= value]
+
+
+def polygon_to_line(gdf, geometry_field='geometry'):
+    gdf[geometry_field] = gdf[geometry_field].exterior
+    return gdf
+
+
+def geopandas_line_to_datashader_line(gdf, geometry_field='geometry', ignore_errors=True):
+
+    # TODO: This is slow! Make this faster! super hacky!
+    series = gdf[geometry_field]
     xs = []
     ys = []
     for s in series.values:
@@ -104,6 +133,33 @@ def line_geoseries_to_datashader_line(series: gpd.GeoSeries):
             xs.append(np.nan)
             ys.append(np.nan)
         except:
-            continue
+            if ignore_errors:
+                continue
+            raise
 
-    return pd.DataFrame(dict(x=xs, y=ys))
+    line_df = pd.DataFrame(dict(x=xs, y=ys))
+
+    if not len(gdf) == len(line_df):
+        print('WARNING: dropping records during line conversion')
+
+    return line_df
+
+
+_transforms = {
+    'reproject_raster': reproject_raster,
+    'reproject_vector': reproject_vector,
+    'orient_array': orient_array,
+    'cast': cast,
+    'flip_coords': flip_coords,
+    'build_raster_overviews': build_raster_overviews,
+    'squeeze': squeeze,
+    'to_spatialpandas': to_spatialpandas,
+    'add_xy_fields': add_xy_fields,
+    'select_by_attributes': select_by_attributes,
+    'polygon_to_line': polygon_to_line,
+    'geopandas_line_to_datashader_line': geopandas_line_to_datashader_line
+}
+
+
+def get_transform_by_name(name: str):
+    return _transforms[name]
