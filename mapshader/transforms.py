@@ -1,3 +1,4 @@
+import sys
 import rioxarray  # NOQA
 import xarray as xr
 import datashader as ds
@@ -73,8 +74,11 @@ def build_vector_overviews(gdf, levels, geometry_field='geometry'):
     overviews = {}
     for level, simplify_tol in levels.items():
 
+        print(f'Generating Vector Overview level {level} at {resolution} simplify tolerance', file=sys.stdout)
+
         if simplify_tol in values:
             overviews[int(level)] = values[simplify_tol]
+            continue
 
         simplified_gdf = gdf.copy()
         simplified_gdf[geometry_field] = simplified_gdf[geometry_field].simplify(simplify_tol)
@@ -89,14 +93,20 @@ def build_raster_overviews(arr, levels, interpolate='linear'):
     overviews = {}
     for level, resolution in levels.items():
 
+        print(f'Generating Raster Overview level {level} at {resolution} pixel width', file=sys.stdout)
+
         if resolution in values:
             overviews[int(level)] = values[resolution]
+            continue
 
         cvs = canvas_like(arr)
         height = height_implied_by_aspect_ratio(resolution, cvs.x_range, cvs.y_range)
         cvs.plot_height = height
         cvs.plot_width = resolution
-        agg = cvs.raster(arr, interpolate=interpolate).compute().chunk(512, 512)
+        agg = (cvs.raster(arr, interpolate=interpolate)
+                  .compute()
+                  .chunk(512, 512)
+                  .persist())
 
         overviews[int(level)] = agg
         values[resolution] = agg

@@ -105,7 +105,10 @@ class MapSource(object):
         self.is_loaded = False
         self.data = data
 
-        if self.preload:
+        # autoload if overviews are present
+        contains_overviews = bool(len([t for t in transforms if 'overviews' in t['name']]))
+
+        if self.preload or contains_overviews:
             self.load()
 
     @property
