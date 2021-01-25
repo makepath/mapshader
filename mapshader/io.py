@@ -3,8 +3,11 @@ import xarray as xr
 import datashader as ds
 import geopandas as gpd
 import numpy as np
+from affine import Affine
 
 from os.path import expanduser
+
+from datashader.utils import calc_res
 
 
 def load_raster(file_path, xmin=None, ymin=None,
@@ -12,7 +15,7 @@ def load_raster(file_path, xmin=None, ymin=None,
 
     if file_path.endswith('.tif'):
 
-        arr = xr.open_rasterio(expanduser(file_path))
+        arr = xr.open_rasterio(expanduser(file_path), chunks={'y': 512, 'x': 512})
 
         if hasattr(arr, 'nodatavals'):
 

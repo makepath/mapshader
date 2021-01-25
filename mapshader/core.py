@@ -32,6 +32,7 @@ def create_agg(source: MapSource,
 
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
+
     elif xmin is None or xmax is None or ymin is None or ymax is None:
         raise ValueError('extent must be provided to create_agg()')
 
@@ -99,8 +100,14 @@ def polygon_aggregation(cvs, data, zfield, agg_func):
         return cvs.polygons(data, 'geometry')
 
 
-def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=0):
+def get_data_array_extent(dataarray):
+    return (dataarray.coords['x'].min().item(),
+            dataarray.coords['y'].min().item(),
+            dataarray.coords['x'].max().item(),
+            dataarray.coords['y'].max().item())
 
+
+def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=0):
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
     xdrange = (xmax - xmin) * (1 + 2 * padding)
@@ -124,18 +131,8 @@ def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=0):
                       x_range=(new_xmin, new_xmax),
                       y_range=(new_ymin, new_ymax))
 
-    xs = slice(new_xmin, new_xmax)
-    ys = slice(new_ymax, new_ymin)
+    agg = stcvs.raster(data, interpolate=interpolate)
 
-    if isinstance(data, da.Array):
-        data_to_rasterize = data.copy().loc[{'x': xs, 'y': ys}].compute()
-    else:
-        data_to_rasterize = data.loc[{'x': xs, 'y': ys}]
-
-    if len(data_to_rasterize) == 0:
-        raise ValueError('No data to rasterize')
-
-    agg = stcvs.raster(data_to_rasterize, interpolate=interpolate)
     return agg
 
 
@@ -185,7 +182,7 @@ def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
             print('Shade with Span')
             return tf.shade(agg, cmap=cmap, how=how, span=(np.nanmin(df[zfield]),
                                                            np.nanmax(df[zfield])))
-        elif isinstance(span, tuple):
+        elif isinstance(span, (tuple, list)):
             return tf.shade(agg, cmap=cmap, how=how, span=span)
         else:
             print('Shade without Span')
@@ -198,6 +195,9 @@ def render_map(source: MapSource,
                x: float = None, y: float = None,
                z: float = None,
                height: int = 256, width: int = 256):
+
+    if x is not None and y is not None and z is not None:
+        xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
 
     agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
     source, agg = apply_additional_transforms(source, agg)

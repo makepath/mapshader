@@ -5,6 +5,7 @@ from io import BytesIO
 
 import pytest
 
+import numpy as np
 import xarray as xr
 
 from datashader.transfer_functions import Image
@@ -12,9 +13,9 @@ from datashader.transfer_functions import Image
 from mapshader.sources import MapSource
 from mapshader.core import render_map
 from mapshader.core import render_geojson
-
-
+from mapshader.core import create_agg
 from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
+from mapshader.sources import elevation_source
 
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
@@ -43,4 +44,24 @@ def test_default_to_image(source_func):
 def test_default_to_tile(source_func):
     source = MapSource.from_obj(source_func()).load()
     img = render_map(source, x=0, y=0, z=0)
+    assert isinstance(img, Image)
+
+
+def test_tile_render_edge_effects():
+    source = MapSource.from_obj(elevation_source()).load()
+
+    # this tile was bad...
+    agg = create_agg(source, x=10, y=11, z=5)
+
+    first_col = agg.data[:, 0]
+    last_col = agg.data[:, -1]
+    top_row = agg.data[0, :] # TODO: do i have these flipped?
+    bottom_row = agg.data[-1, :]
+
+    assert np.all(~np.isnan(first_col))
+    assert np.all(~np.isnan(last_col))
+    assert np.all(~np.isnan(top_row))
+    assert np.all(~np.isnan(bottom_row))
+
+    img = render_map(source, x=10, y=11, z=5)
     assert isinstance(img, Image)

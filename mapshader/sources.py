@@ -63,7 +63,8 @@ class MapSource(object):
             raise ValueError('You must include a zfield for min/max scan calculation')
 
         if default_extent is None:
-            default_extent = [-20e6, -20e6, 20e6, 20e6]
+            val = 20037508.3427892
+            default_extent = [-val, -val, val, val]
 
         self.name = name
         self.description = description
@@ -110,7 +111,7 @@ class MapSource(object):
 
     def load(self):
 
-        if self._is_loaded:
+        if self.is_loaded:
             return self
 
         if self.config_path:
@@ -133,6 +134,7 @@ class MapSource(object):
 
         self.data = self.load_func(data_path)
         self.apply_transforms()
+        self._is_load = True
 
         return self
 
@@ -343,8 +345,6 @@ def world_countries_source():
     source_obj['geometry_type'] = 'polygon'
     source_obj['agg_func'] = 'max'
     source_obj['shade_how'] = 'linear'
-    source_obj['cmap'] = ['black', 'black']
-    source_obj['dynspread'] = 2
     source_obj['span'] = 'min/max'
     source_obj['raster_interpolate'] = 'linear'
     source_obj['xfield'] = 'x'
@@ -479,7 +479,40 @@ def elevation_source():
     source_obj['description'] = 'Global Elevation Dataset'
     source_obj['geometry_type'] = 'raster'
     source_obj['shade_how'] = 'linear'
-    source_obj['span'] = 'min/max'
+    source_obj['cmap'] = ['white', 'black']
+    source_obj['span'] = (58, 248)
+    source_obj['raster_padding'] = 0
+    source_obj['raster_interpolate'] = 'linear'
+    source_obj['xfield'] = 'geometry'
+    source_obj['yfield'] = 'geometry'
+    source_obj['filepath'] = elevation_path
+    source_obj['transforms'] = transforms
+    source_obj['service_types'] = ['tile', 'wms', 'image', 'geojson']
+
+    return source_obj
+
+
+def elevation_source_netcdf():
+
+    # find data path
+    HERE = path.abspath(path.dirname(__file__))
+    FIXTURES_DIR = path.join(HERE, 'tests', 'fixtures')
+    elevation_path = path.join(FIXTURES_DIR, 'elevation.nc')
+
+    # construct transforms
+    transforms = []
+
+    # construct value obj
+    source_obj = dict()
+    source_obj['name'] = 'Elevation NetCDF'
+    source_obj['key'] = 'elevation-netcdf'
+    source_obj['text'] = 'Elevation NetCDF'
+    source_obj['description'] = 'Global Elevation Dataset (NetCDF)'
+    source_obj['geometry_type'] = 'raster'
+    source_obj['shade_how'] = 'linear'
+    source_obj['cmap'] = ['white', 'black']
+    source_obj['span'] = (58, 248)
+    source_obj['raster_padding'] = 0
     source_obj['raster_interpolate'] = 'linear'
     source_obj['xfield'] = 'geometry'
     source_obj['yfield'] = 'geometry'
@@ -504,7 +537,7 @@ def parse_sources(source_objs, config_path=None):
             source['config_path'] = config_path
 
             # create sources
-            source_obj = MapSource.from_obj(source).load()
+            source_obj = MapSource.from_obj(source)
 
             # create services
             ServiceKlass = service_classes[service_type]
@@ -522,7 +555,8 @@ def get_services(config_path=None, include_default=True):
                        world_boundaries_source(),
                        world_cities_source(),
                        nybb_source(),
-                       elevation_source()]
+                       elevation_source(),
+                       elevation_source_netcdf()]
     else:
         with open(config_path, 'r') as f:
             content = f.read()
