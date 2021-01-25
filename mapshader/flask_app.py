@@ -29,6 +29,7 @@ from mapshader.sources import MapService
 def flask_to_tile(source: MapSource, z=0, x=0, y=0):
 
     if not source.is_loaded:
+        print(f'Dynamically Loading Data {source.name}', file=sys.stdout)
         source.load()
 
     img = render_map(source, x=int(x), y=int(y), z=int(z))
@@ -247,6 +248,6 @@ if __name__ == '__main__':
     user_file = parsed.f
     service_grep = parsed.k
     if user_file:
-        user_file_path = path.abspath(path.expanduser(user_file))
+        user_file = path.abspath(path.expanduser(user_file))
     app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=True)
     app.run()

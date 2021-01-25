@@ -1,6 +1,6 @@
 import os
 from os import path
-
+import sys
 import yaml
 
 import geopandas as gpd
@@ -9,6 +9,7 @@ from mapshader.colors import colors
 from mapshader.io import load_raster
 from mapshader.io import load_vector
 from mapshader.transforms import get_transform_by_name
+import spatialpandas
 
 
 class MapSource(object):
@@ -37,11 +38,13 @@ class MapSource(object):
                  extras=None,
                  raster_padding=0,
                  service_types=None,
+                 full_extent=None,
                  default_extent=None,
                  default_height=256,
                  default_width=256,
                  overviews=None,
                  transforms=None,
+                 attrs=None,
                  preload=False):
 
         if fields is None and isinstance(data, (gpd.GeoDataFrame)):
@@ -64,8 +67,9 @@ class MapSource(object):
         if span == 'min/max' and zfield is None and geometry_type != 'raster':
             raise ValueError('You must include a zfield for min/max scan calculation')
 
+        val = 20037508.3427892
+
         if default_extent is None:
-            val = 20037508.3427892
             default_extent = [-val, -val, val, val]
 
         self.name = name
@@ -91,27 +95,25 @@ class MapSource(object):
         self.extras = extras
         self.service_types = service_types
         self.transforms = transforms
+        self.full_extent = full_extent
         self.default_extent = default_extent
         self.default_width = default_width
         self.default_height = default_height
+        self.preload = preload
+        self.geometry_field = geometry_field
 
-        self._is_loaded = False
-
+        self.is_loaded = False
         self.data = data
 
-        if data is not None:
-            self._is_loaded = True
-
-        if preload:
+        if self.preload:
             self.load()
 
     @property
     def load_func(self):
         raise NotImplementedError()
 
-    @property
-    def is_loaded(self):
-        return self._is_loaded
+    def get_full_extent(self):
+        raise NotImplementedError()
 
     def load(self):
 
@@ -127,13 +129,16 @@ class MapSource(object):
             finally:
                 os.chdir(ogcwd)
 
-        if self.filepath.startswith('zip'):
+        elif self.filepath.startswith('zip'):
+            print('Zipfile Path', file=sys.stdout)
             data_path = self.filepath
 
         elif not path.isabs(self.filepath):
+            print('Not Absolute', file=sys.stdout)
             data_path = path.abspath(path.expanduser(self.filepath))
 
         else:
+            print('Using Given Filepath unmodified: config{self.config_file}', file=sys.stdout)
             data_path = self.filepath
 
         data = self.load_func(data_path)
@@ -142,14 +147,29 @@ class MapSource(object):
             data = data[self.fields]
 
         self.data = data
-        self.apply_transforms()
-
-        self._is_load = True
+        self._finish_load()
         return self
 
-    def apply_transforms(self):
+    def _finish_load(self):
+
+        if self.is_loaded:
+            return self
+
+        self._apply_transforms()
+
+        if self.full_extent is None:
+            self.full_extent = self.get_full_extent()
+
+        self.is_loaded = True
+
+    def _apply_transforms(self):
+
+        print(f'# ----------------------', file=sys.stdout)
+        print(f'# APPLYING TRANSFORMS {self.name}', file=sys.stdout)
+        print(f'# ----------------------', file=sys.stdout)
         for trans in self.transforms:
             transform_name = trans['name']
+            print(f'\tApplying {transform_name}', file=sys.stdout)
             func = get_transform_by_name(transform_name)
             args = trans.get('args', {})
 
@@ -179,12 +199,24 @@ class RasterSource(MapSource):
     def load_func(self):
         return load_raster
 
+    def get_full_extent(self):
+        return (self.data.coords['x'].min().compute().item(),
+                self.data.coords['y'].min().compute().item(),
+                self.data.coords['x'].max().compute().item(),
+                self.data.coords['y'].max().compute().item())
+
 
 class VectorSource(MapSource):
 
     @property
     def load_func(self):
         return load_vector
+
+    def get_full_extent(self):
+        if isinstance(self.data, spatialpandas.GeoDataFrame):
+            return self.data.to_geopandas()[self.geometry_field].total_bounds
+        else:
+            return self.data[self.geometry_field].total_bounds
 
 
 class MapService():
@@ -362,8 +394,8 @@ def world_countries_source():
                                                  '10': 5},
                                          geometry_field='geometry'))
     transforms = [select_by_attrs_transform,
-                  overviews_transform,
                   reproject_transform,
+                  overviews_transform,
                   sp_transform]
 
     # construct value obj
@@ -383,8 +415,6 @@ def world_countries_source():
     source_obj['filepath'] = gpd.datasets.get_path('naturalearth_lowres')
     source_obj['transforms'] = transforms
     source_obj['service_types'] = ['tile', 'wms', 'image', 'geojson']
-    source_obj['preload'] = True
-
 
     return source_obj
 
@@ -400,8 +430,8 @@ def world_boundaries_source():
     polygon_to_line_transform = dict(name='polygon_to_line', args=dict(geometry_field='geometry'))
     sp_transform = dict(name='to_spatialpandas', args=dict(geometry_field='geometry'))
     transforms = [select_by_attrs_transform,
-                  reproject_transform,
                   polygon_to_line_transform,
+                  reproject_transform,
                   sp_transform]
 
     # construct value obj
@@ -569,9 +599,6 @@ def parse_sources(source_objs, config_path=None):
             # create sources
             source_obj = MapSource.from_obj(source)
 
-            if source.get('preload'):
-                source_obj.load()
-
             # create services
             ServiceKlass = service_classes[service_type]
 
@@ -584,6 +611,7 @@ def get_services(config_path=None, include_default=True):
     source_objs = None
 
     if config_path is None:
+        print('No Config Found...using default services...', file=sys.stdout)
         source_objs = [world_countries_source(),
                        world_boundaries_source(),
                        world_cities_source(),

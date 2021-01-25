@@ -1,4 +1,5 @@
 import json
+import sys
 
 import datashader as ds
 import numpy as np
@@ -43,6 +44,7 @@ def create_agg(source: MapSource,
     geometry_type = source.geometry_type
 
     if z and z in source.overviews:
+        print(f'Using overview: {z}', file=sys.stdout)
         dataset = source.overviews[z]
     else:
         dataset = source.data
@@ -121,7 +123,13 @@ def raster_aggregation(cvs, data, interpolate='linear', padding=0):
                       x_range=(new_xmin, new_xmax),
                       y_range=(new_ymin, new_ymax))
 
-    agg = stcvs.raster(data, interpolate=interpolate)
+    try:
+        agg = stcvs.raster(data, interpolate=interpolate)
+    except ValueError:
+        agg = xr.DataArray(np.zeros(shape=(ysize, xsize), dtype=np.uint32),
+                           coords={'x': np.linspace(new_xmin, new_xmax, xsize),
+                                   'y': np.linspace(new_ymin, new_ymax, ysize)},
+                           dims=['x', 'y'])
 
     return agg
 
@@ -188,6 +196,17 @@ def render_map(source: MapSource,
 
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
+
+    sxmin, symin, sxmax, symax = source.full_extent
+
+    # handle out of bounds
+    if xmin < sxmin and ymin < symin and xmax > symax and ymax > symax:
+        agg = tf.Image(np.zeros(shape=(height, width), dtype=np.uint32),
+                       coords={'x': np.linspace(xmin, xmax, width),
+                               'y': np.linspace(ymin, ymax, height)},
+                       dims=['x', 'y'])
+        img = shade_agg(source, agg, xmin, ymin, xmax, ymax)
+        return img
 
     agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
 

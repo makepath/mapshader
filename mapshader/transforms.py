@@ -52,7 +52,7 @@ def get_data_array_extent(dataarray):
             dataarray.coords['x'].max().item(),
             dataarray.coords['y'].max().item())
 
-def canvas_like(dataarray, plot_height=None, plot_width=None):
+def canvas_like(dataarray):
 
     if isinstance(dataarray, xr.DataArray):
         extent = get_data_array_extent(dataarray)
@@ -61,8 +61,8 @@ def canvas_like(dataarray, plot_height=None, plot_width=None):
 
     x_range = (extent[0], extent[2])
     y_range = (extent[1], extent[3])
-    H = plot_height if plot_height else len(dataarray.coords['y'])
-    W = plot_width if plot_width else len(dataarray.coords['x'])
+    H = len(dataarray.coords['y'])
+    W = len(dataarray.coords['x'])
 
     return ds.Canvas(plot_width=W, plot_height=H,
                      x_range=x_range, y_range=y_range)
@@ -84,6 +84,7 @@ def build_vector_overviews(gdf, levels, geometry_field='geometry'):
 
 
 def build_raster_overviews(arr, levels, interpolate='linear'):
+    print(arr, levels)
     values = {}
     overviews = {}
     for level, resolution in levels.items():
@@ -92,10 +93,11 @@ def build_raster_overviews(arr, levels, interpolate='linear'):
             overviews[int(level)] = values[resolution]
 
         cvs = canvas_like(arr)
-        height = height_implied_by_aspect_ratio(level, cvs.x_range, cvs.y_range)
+        height = height_implied_by_aspect_ratio(resolution, cvs.x_range, cvs.y_range)
         cvs.plot_height = height
-        cvs.plot_width = level
-        agg = cvs.raster(arr, interpolate=interpolate)
+        cvs.plot_width = resolution
+        agg = cvs.raster(arr, interpolate=interpolate).compute().chunk(512, 512)
+
         overviews[int(level)] = agg
         values[resolution] = agg
     return overviews
@@ -139,33 +141,6 @@ def polygon_to_line(gdf, geometry_field='geometry'):
     return gdf
 
 
-def geopandas_line_to_datashader_line(gdf, geometry_field='geometry', ignore_errors=True):
-
-    # TODO: This is slow! Make this faster! super hacky!
-    series = gdf[geometry_field]
-    xs = []
-    ys = []
-    for s in series.values:
-        try:
-            coords = s.coords.xy
-            xs += coords[0].tolist()
-            ys += coords[1].tolist()
-
-            xs.append(np.nan)
-            ys.append(np.nan)
-        except:
-            if ignore_errors:
-                continue
-            raise
-
-    line_df = pd.DataFrame(dict(x=xs, y=ys))
-
-    if not len(gdf) == len(line_df):
-        print('WARNING: dropping records during line conversion')
-
-    return line_df
-
-
 _transforms = {
     'reproject_raster': reproject_raster,
     'reproject_vector': reproject_vector,
@@ -179,7 +154,6 @@ _transforms = {
     'add_xy_fields': add_xy_fields,
     'select_by_attributes': select_by_attributes,
     'polygon_to_line': polygon_to_line,
-    'geopandas_line_to_datashader_line': geopandas_line_to_datashader_line
 }
 
 
