@@ -14,18 +14,8 @@ def run(input_file, output_file, chunks=(512, 512),
     arr = squeeze(arr, 'band')
     arr = cast(arr, dtype='float64')
     arr = orient_array(arr)
-    arr = flip_coords(arr, dim='y')
+    arr = flip_coords(arr, dim='y')  # do we need this?
     arr = reproject_raster(arr, epsg=3857)
-
-    dataset = xr.Dataset({'data': (['y', 'x'], arr.chunk(chunks))},
-                         coords={'x': arr.coords['x'],
-                                 'y': arr.coords['y']})
-    print(dataset, file=sys.stdout)
-
-    dataset.attrs = dict(name=name)
-    dataset.to_netcdf(f'{name}.nc', encoding={'data': {'dtype': 'int16',
-                                                       'scale_factor': scale_factor,
-                                                       '_FillValue': fill_value}})
 
     dataset = xr.Dataset({name: (['y', 'x'], arr.chunk(chunks))},
                          coords={'x': arr.coords['x'],
