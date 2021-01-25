@@ -15,7 +15,8 @@ def load_raster(file_path, xmin=None, ymin=None,
 
     if file_path.endswith('.tif'):
 
-        arr = xr.open_rasterio(expanduser(file_path), chunks={'y': 512, 'x': 512})
+        arr = xr.open_rasterio(expanduser(file_path),
+                               chunks={'y': 512, 'x': 512})
 
         if hasattr(arr, 'nodatavals'):
 

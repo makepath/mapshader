@@ -2,7 +2,7 @@ import json
 
 import datashader as ds
 import numpy as np
-import dask.array as da
+import geopandas as gpd
 
 
 import datashader.transfer_functions as tf
@@ -41,7 +41,11 @@ def create_agg(source: MapSource,
     zfield = source.zfield
     agg_func = source.agg_func
     geometry_type = source.geometry_type
-    dataset = source.data
+
+    if z and z in source.overviews:
+        dataset = source.overviews[z]
+    else:
+        dataset = source.data
 
     cvs = ds.Canvas(plot_width=width, plot_height=height,
                     x_range=(xmin, xmax), y_range=(ymin, ymax))
@@ -50,28 +54,13 @@ def create_agg(source: MapSource,
         return point_aggregation(cvs, dataset, xfield, yfield, zfield, agg_func)
 
     elif geometry_type == 'line':
-        return line_aggregation(cvs, dataset, xfield, yfield, zfield, agg_func)
+        return line_aggregation(cvs, dataset, zfield, agg_func)
 
     elif geometry_type == 'polygon':
         return polygon_aggregation(cvs, dataset, zfield, agg_func)
 
     elif geometry_type == 'raster':
-
-        if z is not None and len(source.overviews) > 0:
-            if z < 3:
-                dataset = source.overviews[0]
-                print('Using overviews 0!')
-            elif z < 6:
-                dataset = source.overviews[1]
-                print('Using overviews 1!')
-            elif z < 9:
-                dataset = source.overviews[2]
-                print('Using overviews 2!')
-
-        return raster_aggregation(cvs, dataset,
-                                  agg_func,
-                                  padding=source.raster_padding)
-
+        return raster_aggregation(cvs, dataset, agg_func, padding=source.raster_padding)
     else:
         raise ValueError('Unkown geometry type for {}'.format(dataset['name']))
 
@@ -83,12 +72,13 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
         return cvs.points(data, xfield, yfield)
 
 
-def line_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
+def line_aggregation(cvs, data, zfield, agg_func):
     if zfield:
-        return cvs.line(data, xfield, yfield,
+        return cvs.line(data,
+                        geometry='geometry',
                         agg=getattr(ds, agg_func)(zfield))
     else:
-        return cvs.line(data, xfield, yfield)
+        return cvs.line(data, geometry='geometry')
 
 
 def polygon_aggregation(cvs, data, zfield, agg_func):
@@ -107,7 +97,7 @@ def get_data_array_extent(dataarray):
             dataarray.coords['y'].max().item())
 
 
-def raster_aggregation(cvs, data, interpolate='linear', span=None, padding=0):
+def raster_aggregation(cvs, data, interpolate='linear', padding=0):
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
     xdrange = (xmax - xmin) * (1 + 2 * padding)
@@ -200,6 +190,10 @@ def render_map(source: MapSource,
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
 
     agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
+
+    if source.span and isinstance(source.span, (list, tuple)):
+        agg = agg.where((agg >= source.span[0]) & (agg <= source.span[1]))
+
     source, agg = apply_additional_transforms(source, agg)
     img = shade_agg(source, agg, xmin, ymin, xmax, ymax)
 
@@ -210,11 +204,22 @@ def render_map(source: MapSource,
     return img
 
 
-def render_geojson(source: MapSource):
+def render_geojson(source: MapSource, simplify=None):
+
     if isinstance(source.data, spatialpandas.GeoDataFrame):
-        return source.data.to_geopandas().to_json()
+        gdf = source.data.to_geopandas()
+
+    elif isinstance(source.data, gpd.GeoDataFrame):
+        gdf = source.data
+
     else:
         # TODO: add proper line geojson (core.render_geojson)
         if source.geometry_type in ('line', 'raster'):
             return json.dumps(source.data.to_dict())
         return source.data.to_json()
+
+    if simplify:
+        gdf = gdf.copy()
+        gdf[source.geometry_field] = gdf[source.geometry_field].simplify(simplify)
+
+    return gdf.to_json()

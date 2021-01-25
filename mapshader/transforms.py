@@ -67,16 +67,37 @@ def canvas_like(dataarray, plot_height=None, plot_width=None):
     return ds.Canvas(plot_width=W, plot_height=H,
                      x_range=x_range, y_range=y_range)
 
-def build_raster_overviews(arr, levels=(1000, 2000, 4000), interpolate='linear'):
 
-    overviews = []
-    for level in levels:
+def build_vector_overviews(gdf, levels, geometry_field='geometry'):
+    values = {}
+    overviews = {}
+    for level, simplify_tol in levels.items():
+
+        if simplify_tol in values:
+            overviews[int(level)] = values[simplify_tol]
+
+        simplified_gdf = gdf.copy()
+        simplified_gdf[geometry_field] = simplified_gdf[geometry_field].simplify(simplify_tol)
+        overviews[int(level)] = simplified_gdf
+        values[simplify_tol] = simplified_gdf
+    return overviews
+
+
+def build_raster_overviews(arr, levels, interpolate='linear'):
+    values = {}
+    overviews = {}
+    for level, resolution in levels.items():
+
+        if resolution in values:
+            overviews[int(level)] = values[resolution]
+
         cvs = canvas_like(arr)
         height = height_implied_by_aspect_ratio(level, cvs.x_range, cvs.y_range)
         cvs.plot_height = height
         cvs.plot_width = level
         agg = cvs.raster(arr, interpolate=interpolate)
-        overviews.append(agg)
+        overviews[int(level)] = agg
+        values[resolution] = agg
     return overviews
 
 
@@ -114,7 +135,7 @@ def select_by_attributes(gdf, field, value, operator='IN'):
 
 
 def polygon_to_line(gdf, geometry_field='geometry'):
-    gdf[geometry_field] = gdf[geometry_field].exterior
+    gdf[geometry_field] = gdf[geometry_field].boundary
     return gdf
 
 
@@ -152,6 +173,7 @@ _transforms = {
     'cast': cast,
     'flip_coords': flip_coords,
     'build_raster_overviews': build_raster_overviews,
+    'build_vector_overviews': build_vector_overviews,
     'squeeze': squeeze,
     'to_spatialpandas': to_spatialpandas,
     'add_xy_fields': add_xy_fields,

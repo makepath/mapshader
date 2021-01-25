@@ -4,7 +4,6 @@ from os import path
 import yaml
 
 import geopandas as gpd
-import pandas as pd
 
 from mapshader.colors import colors
 from mapshader.io import load_raster
@@ -42,10 +41,13 @@ class MapSource(object):
                  default_height=256,
                  default_width=256,
                  overviews=None,
-                 transforms=None):
+                 transforms=None,
+                 preload=False):
 
-        if fields is None and isinstance(data, (pd.DataFrame, gpd.GeoDataFrame)):
-            fields = [dict(key=c, text=c, value=c) for c in data.columns if c != geometry_field]
+        if fields is None and isinstance(data, (gpd.GeoDataFrame)):
+            fields = ['geometry']
+            if zfield:
+                fields.append(zfield)
 
         if extras is None:
             extras = []
@@ -54,7 +56,7 @@ class MapSource(object):
             transforms = []
 
         if overviews is None:
-            overviews = []
+            overviews = {}
 
         if service_types is None:
             service_types = ('tile', 'image', 'wms', 'geojson')
@@ -81,7 +83,7 @@ class MapSource(object):
         self.yfield = yfield
         self.zfield = zfield
         self.agg_func = agg_func
-        self.overviews = []
+        self.overviews = overviews
         self.raster_agg_func = raster_interpolate
         self.shade_how = shade_how
         self.cmap = cmap
@@ -93,13 +95,15 @@ class MapSource(object):
         self.default_width = default_width
         self.default_height = default_height
 
-        self.overviews = overviews
         self._is_loaded = False
 
         self.data = data
 
         if data is not None:
             self._is_loaded = True
+
+        if preload:
+            self.load()
 
     @property
     def load_func(self):
@@ -132,10 +136,15 @@ class MapSource(object):
         else:
             data_path = self.filepath
 
-        self.data = self.load_func(data_path)
-        self.apply_transforms()
-        self._is_load = True
+        data = self.load_func(data_path)
 
+        if self.fields:
+            data = data[self.fields]
+
+        self.data = data
+        self.apply_transforms()
+
+        self._is_load = True
         return self
 
     def apply_transforms(self):
@@ -143,10 +152,17 @@ class MapSource(object):
             transform_name = trans['name']
             func = get_transform_by_name(transform_name)
             args = trans.get('args', {})
-            if transform_name == 'build_raster_overviews':
+
+            if 'overviews' in transform_name:
                 self.overviews = func(self.data, **args)
+
             else:
                 self.data = func(self.data, **args)
+
+                # apply transforms to overviews if they exist
+                for level, overview_data in self.overviews.items():
+                    self.overviews[level] = func(overview_data, **args)
+
         return self
 
     @staticmethod
@@ -332,7 +348,21 @@ def world_countries_source():
                                                operator='NOT IN'))
     reproject_transform = dict(name='reproject_vector', args=dict(epsg=3857))
     sp_transform = dict(name='to_spatialpandas', args=dict(geometry_field='geometry'))
+    overviews_transform = dict(name='build_vector_overviews',
+                               args=dict(levels={'0': 10000,
+                                                 '1': 2500,
+                                                 '2': 1250,
+                                                 '3': 650,
+                                                 '4': 300,
+                                                 '5': 150,
+                                                 '6': 75,
+                                                 '7': 32,
+                                                 '8': 20,
+                                                 '9': 10,
+                                                 '10': 5},
+                                         geometry_field='geometry'))
     transforms = [select_by_attrs_transform,
+                  overviews_transform,
                   reproject_transform,
                   sp_transform]
 
@@ -353,6 +383,8 @@ def world_countries_source():
     source_obj['filepath'] = gpd.datasets.get_path('naturalearth_lowres')
     source_obj['transforms'] = transforms
     source_obj['service_types'] = ['tile', 'wms', 'image', 'geojson']
+    source_obj['preload'] = True
+
 
     return source_obj
 
@@ -366,12 +398,11 @@ def world_boundaries_source():
                                                operator='NOT IN'))
     reproject_transform = dict(name='reproject_vector', args=dict(epsg=3857))
     polygon_to_line_transform = dict(name='polygon_to_line', args=dict(geometry_field='geometry'))
-    geopandas_line_to_datashader_line_transform = dict(name='geopandas_line_to_datashader_line',
-                                                       args=dict(geometry_field='geometry'))
+    sp_transform = dict(name='to_spatialpandas', args=dict(geometry_field='geometry'))
     transforms = [select_by_attrs_transform,
                   reproject_transform,
                   polygon_to_line_transform,
-                  geopandas_line_to_datashader_line_transform]
+                  sp_transform]
 
     # construct value obj
     source_obj = dict()
@@ -382,8 +413,7 @@ def world_boundaries_source():
     source_obj['geometry_type'] = 'line'
     source_obj['agg_func'] = 'max'
     source_obj['shade_how'] = 'linear'
-    source_obj['cmap'] = ['black', 'black']
-    source_obj['dynspread'] = 2
+    source_obj['cmap'] = ['aqua', 'aqua']
     source_obj['raster_interpolate'] = 'linear'
     source_obj['xfield'] = 'x'
     source_obj['yfield'] = 'y'
@@ -538,6 +568,9 @@ def parse_sources(source_objs, config_path=None):
 
             # create sources
             source_obj = MapSource.from_obj(source)
+
+            if source.get('preload'):
+                source_obj.load()
 
             # create services
             ServiceKlass = service_classes[service_type]
