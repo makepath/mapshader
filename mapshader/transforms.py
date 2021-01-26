@@ -74,7 +74,7 @@ def build_vector_overviews(gdf, levels, geometry_field='geometry'):
     overviews = {}
     for level, simplify_tol in levels.items():
 
-        print(f'Generating Vector Overview level {level} at {resolution} simplify tolerance', file=sys.stdout)
+        print(f'Generating Vector Overview level {level} at {simplify_tol} simplify tolerance', file=sys.stdout)
 
         if simplify_tol in values:
             overviews[int(level)] = values[simplify_tol]

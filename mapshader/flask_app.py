@@ -18,6 +18,7 @@ try:
 except ImportError:
     raise ImportError('You must install flask `pip install flask` to use this module')
 
+from mapshader import hello
 from mapshader.core import render_map
 from mapshader.core import render_geojson
 
@@ -228,7 +229,7 @@ def configure_app(app, user_source_filepath=None, contains=None):
                          partial(service_page, service=service))
 
     app.add_url_rule('/', 'home', partial(index_page, services=services))
-
+    hello(services)
     return app
 
 
