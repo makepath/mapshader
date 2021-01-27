@@ -17,6 +17,7 @@ try:
     from flask import request
 except ImportError:
     raise ImportError('You must install flask `pip install flask` to use this module')
+from flask_cors import CORS
 
 from mapshader import hello
 from mapshader.core import render_map
@@ -201,6 +202,8 @@ def index_page(services):
 
 
 def configure_app(app, user_source_filepath=None, contains=None):
+
+    CORS(app)
 
     view_func_creators = {
         'tile': flask_to_tile,
