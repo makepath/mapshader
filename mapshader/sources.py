@@ -34,6 +34,7 @@ class MapSource(object):
                  raster_interpolate='linear',
                  shade_how='linear',
                  cmap=colors['viridis'],
+                 color_key=None,
                  dynspread=None,
                  extras=None,
                  raster_padding=0,
@@ -91,6 +92,7 @@ class MapSource(object):
         self.raster_agg_func = raster_interpolate
         self.shade_how = shade_how
         self.cmap = cmap
+        self.color_key = color_key
         self.dynspread = dynspread
         self.extras = extras
         self.service_types = service_types
@@ -167,9 +169,9 @@ class MapSource(object):
 
     def _apply_transforms(self):
 
-        print(f'# ----------------------', file=sys.stdout)
+        print('# ----------------------', file=sys.stdout)
         print(f'# APPLYING TRANSFORMS {self.name}', file=sys.stdout)
-        print(f'# ----------------------', file=sys.stdout)
+        print('# ----------------------', file=sys.stdout)
         for trans in self.transforms:
             transform_name = trans['name']
             print(f'\tApplying {transform_name}', file=sys.stdout)
@@ -190,7 +192,9 @@ class MapSource(object):
 
     @staticmethod
     def from_obj(obj: dict):
-        if obj['geometry_type'] == 'raster':
+        transforms = obj.get('transforms')
+        has_to_vector = len([t for t in transforms if t['name'] == 'raster_to_categorical_points'])
+        if obj['geometry_type'] == 'raster' or has_to_vector:
             return RasterSource(**obj)
         else:
             return VectorSource(**obj)
@@ -586,7 +590,7 @@ def elevation_source_netcdf():
     return source_obj
 
 
-def parse_sources(source_objs, config_path=None):
+def parse_sources(source_objs, config_path=None, contains=None):
 
     service_classes = {
         'tile': TileService,
@@ -599,6 +603,9 @@ def parse_sources(source_objs, config_path=None):
         for service_type in source['service_types']:
             source['config_path'] = config_path
 
+            if contains and contains not in source.get('key'):
+                continue
+
             # create sources
             source_obj = MapSource.from_obj(source)
 
@@ -609,11 +616,14 @@ def parse_sources(source_objs, config_path=None):
             yield ServiceKlass(source=source_obj)
 
 
-def get_services(config_path=None, include_default=True):
+def get_services(config_path=None, include_default=True, contains=None, sources=None):
 
     source_objs = None
 
-    if config_path is None:
+    if sources is not None:
+        source_objs = sources
+
+    elif config_path is None:
         print('No Config Found...using default services...', file=sys.stdout)
         source_objs = [world_countries_source(),
                        world_boundaries_source(),
@@ -634,5 +644,5 @@ def get_services(config_path=None, include_default=True):
                             nybb_source(),
                             elevation_source()]
 
-    for service in parse_sources(source_objs, config_path=config_path):
+    for service in parse_sources(source_objs, config_path=config_path, contains=contains):
         yield service

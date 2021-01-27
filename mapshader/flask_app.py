@@ -209,12 +209,10 @@ def configure_app(app, user_source_filepath=None, contains=None):
         'geojson': flask_to_geojson,
     }
 
-    services = list(get_services(config_path=user_source_filepath))
+    services = []
+    for service in get_services(config_path=user_source_filepath, contains=contains):
 
-    if contains is not None:
-        services = [s for s in services if contains in s.key]
-
-    for service in services:
+        services.append(service)
 
         view_func = view_func_creators[service.service_type]
 

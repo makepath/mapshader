@@ -1,15 +1,15 @@
 import sys
-import rioxarray  # NOQA
+import rioxarray  # NOQA - always import before xarray...
 import xarray as xr
+import dask.array as da
 import datashader as ds
-import numpy as np
-import pandas as pd
 import geopandas as gpd
 import spatialpandas
 
 from xrspatial.utils import height_implied_by_aspect_ratio
 
-wb_proj_str = '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs'
+wb_proj_str = ('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0'
+               ' +units=m +nadgrids=@null +wktext +no_defs')
 
 wgs84_proj_str = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
 
@@ -74,7 +74,8 @@ def build_vector_overviews(gdf, levels, geometry_field='geometry'):
     overviews = {}
     for level, simplify_tol in levels.items():
 
-        print(f'Generating Vector Overview level {level} at {simplify_tol} simplify tolerance', file=sys.stdout)
+        msg = f'Generating Vector Overview level {level} at {simplify_tol} simplify tolerance'
+        print(msg, file=sys.stdout)
 
         if simplify_tol in values:
             overviews[int(level)] = values[simplify_tol]
@@ -88,12 +89,12 @@ def build_vector_overviews(gdf, levels, geometry_field='geometry'):
 
 
 def build_raster_overviews(arr, levels, interpolate='linear'):
-    print(arr, levels)
     values = {}
     overviews = {}
     for level, resolution in levels.items():
 
-        print(f'Generating Raster Overview level {level} at {resolution} pixel width', file=sys.stdout)
+        print(f'Generating Raster Overview level {level} at {resolution} pixel width',
+              file=sys.stdout)
 
         if resolution in values:
             overviews[int(level)] = values[resolution]
@@ -110,6 +111,7 @@ def build_raster_overviews(arr, levels, interpolate='linear'):
 
         overviews[int(level)] = agg
         values[resolution] = agg
+
     return overviews
 
 
@@ -151,6 +153,21 @@ def polygon_to_line(gdf, geometry_field='geometry'):
     return gdf
 
 
+def raster_to_categorical_points(arr, cats: dict, dim: str = 'data'):
+    df = None
+    if isinstance(arr, da.Array):
+        df = arr.compute().to_dataframe()
+    else:
+        df = arr.to_dataframe()
+
+    df = df.head(1000000)
+    df.reset_index(inplace=True)
+    df[dim] = [dim].astype('int')
+    df[dim] = [dim].astype('category')
+    df[dim].cat.categories = [cats.get(s) for s in df[dim].cat.categories]
+    return df
+
+
 _transforms = {
     'reproject_raster': reproject_raster,
     'reproject_vector': reproject_vector,
@@ -164,6 +181,7 @@ _transforms = {
     'add_xy_fields': add_xy_fields,
     'select_by_attributes': select_by_attributes,
     'polygon_to_line': polygon_to_line,
+    'raster_to_categorical_points': raster_to_categorical_points
 }
 
 
