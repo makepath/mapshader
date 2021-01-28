@@ -19,6 +19,8 @@ from mapshader.sources import MapSource
 
 import spatialpandas
 
+#TODO: add in support for discrete colormaps
+
 
 tile_def = MercatorTileDefinition(x_range=(-20037508.34, 20037508.34),
                                   y_range=(-20037508.34, 20037508.34))
