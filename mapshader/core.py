@@ -167,8 +167,19 @@ def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
     else:
         data = data.copy()
 
-    cats = color_key.keys()
-    colors = [rgb(color_key[c]) for c in cats]
+    # support grouped color_key
+    first_cat = tuple(color_key.keys())[0]
+    if isinstance(first_cat, (list, tuple)):
+        cats = []
+        colors = []
+        for categories, val in color_key.items():
+            cor = rgb(val)
+            for c in categories:
+                cats.append(c)
+                colors.append(cor)
+    else:
+        cats = color_key.keys()
+        colors = [rgb(color_key[c]) for c in cats]
 
     rs, gs, bs = map(np.array, zip(*colors))
     h, w = agg.shape
