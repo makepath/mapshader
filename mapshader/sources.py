@@ -18,6 +18,7 @@ class MapSource(object):
                  name=None,
                  description=None,
                  filepath=None,
+                 legend=None,
                  config_path=None,
                  data=None,
                  geometry_type=None,
@@ -68,8 +69,10 @@ class MapSource(object):
         if span == 'min/max' and zfield is None and geometry_type != 'raster':
             raise ValueError('You must include a zfield for min/max scan calculation')
 
-        val = 20037508.3427892
+        if legend is not None and geometry_type == 'raster':
+            cmap = dict(((l['value'], l['color']) for l in legend))
 
+        val = 20037508.3427892
         if default_extent is None:
             default_extent = [-val, -val, val, val]
 
@@ -80,6 +83,7 @@ class MapSource(object):
         self.geometry_type = geometry_type
         self.key = key
         self.text = text
+        self.legend = legend
         self.fields = fields
         self.span = span
         self.route = route
@@ -193,7 +197,11 @@ class MapSource(object):
     @staticmethod
     def from_obj(obj: dict):
         transforms = obj.get('transforms')
-        has_to_vector = len([t for t in transforms if t['name'] == 'raster_to_categorical_points'])
+        if transforms and isinstance(transforms, (list, tuple)):
+            has_to_vector = len([t for t in transforms if t['name'] == 'raster_to_categorical_points'])
+        else:
+            has_to_vector = False
+
         if obj['geometry_type'] == 'raster' or has_to_vector:
             return RasterSource(**obj)
         else:
@@ -241,6 +249,10 @@ class MapService():
         return f'{self.source.name} {self.service_type}'
 
     @property
+    def legend_name(self):
+        return f'{self.name}-legend'
+
+    @property
     def default_extent(self):
         return self.source.default_extent
 
@@ -255,6 +267,10 @@ class MapService():
     @property
     def service_page_url(self):
         return f'/{self.key}'
+
+    @property
+    def legend_url(self):
+        return f'/{self.key}/legend'
 
     @property
     def service_page_name(self):

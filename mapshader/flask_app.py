@@ -22,6 +22,7 @@ from flask_cors import CORS
 from mapshader import hello
 from mapshader.core import render_map
 from mapshader.core import render_geojson
+from mapshader.core import render_legend
 
 from mapshader.sources import get_services
 from mapshader.sources import MapSource
@@ -80,6 +81,11 @@ def flask_to_geojson(source: MapSource):
 
 
     resp = render_geojson(source)
+    return resp
+
+
+def flask_to_legend(source: MapSource):
+    resp = render_legend(source)
     return resp
 
 
@@ -210,6 +216,7 @@ def configure_app(app, user_source_filepath=None, contains=None):
         'image': flask_to_image,
         'wms': flask_to_wms,
         'geojson': flask_to_geojson,
+        'legend': flask_to_legend,
     }
 
     services = []
@@ -223,6 +230,11 @@ def configure_app(app, user_source_filepath=None, contains=None):
         app.add_url_rule(service.service_url,
                          service.name,
                          partial(view_func, source=service.source))
+
+        # add legend endpoint
+        app.add_url_rule(service.legend_url,
+                         service.legend_name,
+                         partial(view_func_creators['legend'], source=service.source))
 
         # add service page endpoint
         app.add_url_rule(service.service_page_url,

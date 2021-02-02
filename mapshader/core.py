@@ -4,9 +4,12 @@ import sys
 import datashader as ds
 import numpy as np
 import geopandas as gpd
+import dask.array as da
 
 
 import datashader.transfer_functions as tf
+import datashader.reductions as rd
+from datashader.colors import rgb
 
 import xarray as xr
 
@@ -99,7 +102,7 @@ def get_data_array_extent(dataarray):
             dataarray.coords['y'].max().item())
 
 
-def raster_aggregation(cvs, data, interpolate='linear', padding=0):
+def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd.max()):
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
     xdrange = (xmax - xmin) * (1 + 2 * padding)
@@ -124,7 +127,7 @@ def raster_aggregation(cvs, data, interpolate='linear', padding=0):
                       y_range=(new_ymin, new_ymax))
 
     try:
-        agg = stcvs.raster(data, interpolate=interpolate)
+        agg = stcvs.raster(data, interpolate=interpolate, agg=agg_method)
     except ValueError:
         agg = xr.DataArray(np.zeros(shape=(ysize, xsize), dtype=np.uint32),
                            coords={'x': np.linspace(new_xmin, new_xmax, xsize),
@@ -151,6 +154,40 @@ def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
     return source, agg
 
 
+def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
+
+    if not agg.ndim == 2:
+        raise ValueError("agg must be 2D")
+
+    data = ds.utils.orient_array(agg)
+
+    # check for dask array
+    if isinstance(data, da.Array):
+        data = data.compute()
+    else:
+        data = data.copy()
+
+    cats = color_key.keys()
+    colors = [rgb(color_key[c]) for c in cats]
+
+    rs, gs, bs = map(np.array, zip(*colors))
+    h, w = agg.shape
+
+    r = np.zeros((h, w), dtype=np.uint8)
+    g = np.zeros((h, w), dtype=np.uint8)
+    b = np.zeros((h, w), dtype=np.uint8)
+
+    for i, c in enumerate(cats):
+        value_mask = data == c
+        r[value_mask] = rs[i]
+        g[value_mask] = gs[i]
+        b[value_mask] = bs[i]
+
+    a = np.where(np.logical_or(np.isnan(r), r <= nodata), 0, alpha)
+    img = np.dstack((r, g, b, a)).astype('uint8').view(dtype=np.uint32).reshape(a.shape)
+    return tf.Image(img, coords=agg.coords, dims=agg.dims, name=name)
+
+
 def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
     df = source.data
     zfield = source.zfield
@@ -160,7 +197,8 @@ def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
     span = source.span
 
     if isinstance(cmap, dict):
-        return tf.shade(agg, color_key=cmap)
+        agg.data = agg.data.astype(np.uint64)
+        return shade_discrete(agg, color_key=cmap)
     else:
         if span and span == 'min/max' and geometry_type == 'raster':
 
@@ -242,3 +280,9 @@ def render_geojson(source: MapSource, simplify=None):
         gdf[source.geometry_field] = gdf[source.geometry_field].simplify(simplify)
 
     return gdf.to_json()
+
+def render_legend(source: MapSource):
+    if source.legend is not None:
+        return json.dumps(source.legend)
+    else:
+        return json.dumps([])

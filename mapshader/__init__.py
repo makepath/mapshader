@@ -3,7 +3,7 @@ import sys
 try:
     from ._version import __version__
 except ImportError:
-    __version__ = "unknown"
+    __version__ = "Unknown"
 
 
 def test():
@@ -16,6 +16,7 @@ def test():
         sys.stderr.write("You need to install py.test to run tests.\n\n")
         raise
     pytest.main([os.path.dirname(__file__)])
+
 
 def hello(services=None):
     msg = r'''

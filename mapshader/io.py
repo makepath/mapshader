@@ -7,11 +7,11 @@ from affine import Affine
 
 from os.path import expanduser
 
-from datashader.utils import calc_res
 
 
 def load_raster(file_path, xmin=None, ymin=None,
-                xmax=None, ymax=None, chunks=None):
+                xmax=None, ymax=None, chunks=None,
+                layername='data'):
 
     if file_path.endswith('.tif'):
 
@@ -30,7 +30,7 @@ def load_raster(file_path, xmin=None, ymin=None,
 
     elif file_path.endswith('.nc'):
         # TODO: add chunk parameter to config
-        arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})['data']
+        arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})[layername]
         arr['name'] = file_path
 
     else:

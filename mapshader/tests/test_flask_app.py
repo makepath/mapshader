@@ -25,6 +25,16 @@ def test_default_geojson(service):
     assert isinstance(data, dict)
 
 
+@pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES])
+def test_legend(service):
+
+    resp = CLIENT.get(service.legend_url)
+    assert resp.status_code == 200
+
+    data = json.loads(resp.data)
+    assert isinstance(data, list)
+
+
 @pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES if s.service_type == 'tile'])
 def test_default_tiles(service):
     resp = CLIENT.get(service.default_url)
