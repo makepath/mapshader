@@ -1,6 +1,13 @@
 ## Mapshader Changelog
 -----------
 
+## Version 0.0.5 - 2/2/2021
+- added support for grouped / non-grouped discrete colormaps via legend
+- added legend endpoints
+- added legend config object
+- added discrete colormaps for raster (should be moved into datashader later)
+- added flask cors rule #35
+
 ## Version 0.0.4 - 1/27/2020
 - added raster_to_categorical_points transform; added ability to manully instantiate services to support integrations
 - added hello message
