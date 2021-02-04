@@ -1,4 +1,6 @@
-# mapshader
+[![Mapshader](img/logo.png)](https://makepath.com)
+--------
+
 ![Test Suite Status](https://github.com/makepath/mapshader/workflows/Python%20Test%20Suite/badge.svg)
 [![PyPI version](https://badge.fury.io/py/mapshader.svg)](https://badge.fury.io/py/mapshader)
 [![Downloads](https://img.shields.io/pypi/dm/mapshader.svg)]()
