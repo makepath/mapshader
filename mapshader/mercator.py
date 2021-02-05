@@ -19,11 +19,11 @@ class MercatorTileDefinition(object):
       A maximum zoom level for the tile layer. This is the most zoomed-in level.
     min_zoom : int
       A minimum zoom level for the tile layer. This is the most zoomed-out level.
-    x_origin_offset : int
+    x_origin_offset : float
       An x-offset in plot coordinates.
-    y_origin_offset : int
+    y_origin_offset : float
       An y-offset in plot coordinates.
-    initial_resolution : int
+    initial_resolution : float
       Resolution (plot_units / pixels) of minimum zoom level of tileset
       projection. None to auto-compute.
     format : int
