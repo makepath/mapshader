@@ -26,24 +26,30 @@ def test_to_ogc_tile_metadata():
 def test_to_esri_tile_metadata():
     pass
 
-@pytest.mark.parametrize("x, y, z, expected", [(0 ,0 ,0 ,True), (-1, -1, -1, False)])
-def test_is_valid_tile(x, y, z, expected):
+tile_params = {
+    'q1_tile': ((0, 0, 1), (True, 2)),
+    'q2_tile': ((-1, 1, 1), (False, 2)),
+    'q3_tile': ((-1, -1, 1), (False, 2)),
+    'q4_tile': ((1, -1, 1), (False, 2)),
+    'neg_z_val': ((1, 1, -1), (False, 0.5))
+}
+
+@pytest.mark.parametrize('args, expected', list(tile_params.values()), ids = list(tile_params.keys()))
+def test_is_valid_tile(args, expected):
     # Test Inputs
-    assert isinstance(x, int)
-    assert isinstance(y, int)
-    assert isinstance(z, int)
-    assert isinstance(expected, bool)
+    for arg in args:
+        assert isinstance(arg, int)
+    assert isinstance(expected[0], bool)
 
-    if expected == True:
-        assert x > 0 or x <= math.pow(2, z)
-        assert y > 0 or y <= math.pow(2, z)
+    if expected[0] == True:
+        assert (args[0] > 0 or args[0] <= expected[1]) or (args[1] > 0 or args[1] <= expected[1])
     else:
-        assert x < 0 or x >= math.pow(2, z)
-        assert y < 0 or y >= math.pow(2, z)
+        assert (args[0] < 0 or args[0] >= expected[1]) or (args[1] < 0 or args[1] >= expected[1])
 
-    # Test Outputs
-    test_tile = test_obj.is_valid_tile(x, y, z)
-    assert test_tile == expected
+    #Test Outputs
+    test_tile = test_obj.is_valid_tile(args[0], args[1], args[2])
+    assert test_tile == expected[0]
+
 
 @pytest.mark.parametrize("z, expected", [(10, 1024)])
 def test__get_resolution(z, expected):
@@ -56,25 +62,44 @@ def test__get_resolution(z, expected):
     # Test Outputs
     assert new_res == test_obj.initial_resolution / expected
 
-@pytest.mark.parametrize("extent, height, width, x_rs, y_rs", [((100, 500,200, 850), 20, 30)])
-def test_get_resolution_by_extent(extent, height, width):
+@pytest.mark.parametrize("extent, height, width, expected_x_rs, expected_y_rs", [((100, 500,200, 850), 20, 30, (100 / 30), (350/20))])
+def test_get_resolution_by_extent(extent, height, width, expected_x_rs, expected_y_rs):
     new_res = test_obj.get_resolution_by_extent(extent, height, width)
     
     # Test Inputs
     assert isinstance(extent, tuple)
     assert isinstance(height, int)
     assert isinstance(width, int)
+    assert isinstance(expected_x_rs, float)
+    assert isinstance(expected_y_rs, float)
 
 
     # Test Output
     assert isinstance(new_res, list)
-    assert new_res[0] == ((extent[2] - extent[0]) / width)
-    assert new_res[1] == ((extent[3] - extent[1]) / height)
+    assert new_res[0] == expected_x_rs
+    assert new_res[1] == expected_y_rs
 
-@pytest.mark.parametrize("extent, height, width", [((0,1024,0, 1024), 20, 30)])
-    new_level = test.obj.get_level_by_extent(extent, height, width)
+
+#@pytest.mark.parametrize("extent, height, width", [((0,1024,0, 1024), 20, 30)])
+#def test_get_level_by_extent(extent, height, width):
+#    new_level = test_obj.get_level_by_extent(extent, height, width)
 
     # Test Inputs 
-    assert isinstance(extent, tuple)
-    assert isinstance(height, int)
-    assert isinstance(width, int)
+#    assert isinstance(extent, tuple)
+#   assert isinstance(height, int)
+#    assert isinstance(width, int)
+
+@pytest.mark.parametrize("px, py, level", [(354, 345, 5)])
+def test_pixels_to_meters(px, py, level):
+    meters = test_obj.pixels_to_meters(px, py, level)
+    res = test_obj._get_resolution(level)
+
+    # Test Inputs
+    assert isinstance(px, int)
+    assert isinstance(py, int)
+    assert isinstance(level, int)
+    assert isinstance(res, float)
+
+    # Test Outputs
+    assert meters[0] == (px * res) - test_obj.x_origin_offset
+    assert meters[1] == (py * res) - test_obj.y_origin_offset
