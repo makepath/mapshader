@@ -50,7 +50,6 @@ def test_is_valid_tile(args, expected):
     test_tile = test_obj.is_valid_tile(args[0], args[1], args[2])
     assert test_tile == expected[0]
 
-
 @pytest.mark.parametrize("z, expected", [(10, 1024)])
 def test__get_resolution(z, expected):
     new_res = test_obj._get_resolution(z)
@@ -62,22 +61,29 @@ def test__get_resolution(z, expected):
     # Test Outputs
     assert new_res == test_obj.initial_resolution / expected
 
-@pytest.mark.parametrize("extent, height, width, expected_x_rs, expected_y_rs", [((100, 500,200, 850), 20, 30, (100 / 30), (350/20))])
-def test_get_resolution_by_extent(extent, height, width, expected_x_rs, expected_y_rs):
-    new_res = test_obj.get_resolution_by_extent(extent, height, width)
-    
+res_extent_params = {
+    'small': (((0, 0, 150, 220), 20, 30), (50, 11)),
+    'medium': (((0, 0, 1800, 1200), 20, 30), (60, 60)),
+    'large': (((0, 0, 3900, 2600), 20, 30), (130, 130))
+}
+@pytest.mark.parametrize('args, expected', list(res_extent_params.values()), ids = list(res_extent_params.keys()))
+def test_resolution_by_extent(args, expected):
+    new_res = test_obj.get_resolution_by_extent(args[0], args[1], args[2])
+
     # Test Inputs
-    assert isinstance(extent, tuple)
-    assert isinstance(height, int)
-    assert isinstance(width, int)
-    assert isinstance(expected_x_rs, float)
-    assert isinstance(expected_y_rs, float)
+    assert isinstance(args[0], tuple)
+    for arg in args[0]:
+        assert isinstance(arg, int)
+    assert isinstance(args[1], int)
+    assert isinstance(args[2], int)
 
+    for exp in expected:
+        assert isinstance(exp, int)
 
-    # Test Output
+    # Test Outputs
     assert isinstance(new_res, list)
-    assert new_res[0] == expected_x_rs
-    assert new_res[1] == expected_y_rs
+    for res in new_res:
+        assert isinstance(res, float)
 
 
 #@pytest.mark.parametrize("extent, height, width", [((0,1024,0, 1024), 20, 30)])
