@@ -235,13 +235,30 @@ def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
             print('Shade without Span')
             return tf.shade(agg, cmap=cmap, how=how)
 
+def to_raster(source: MapSource,
+              xmin: float = None, ymin: float = None,
+              xmax: float = None, ymax: float = None,
+              height: int = 256, width: int = 256):
+
+    sxmin, symin, sxmax, symax = source.full_extent
+
+    # handle out of bounds
+    if xmin < sxmin and ymin < symin and xmax > symax and ymax > symax:
+        agg = tf.Image(np.zeros(shape=(height, width), dtype=np.uint32),
+                       coords={'x': np.linspace(xmin, xmax, width),
+                               'y': np.linspace(ymin, ymax, height)},
+                       dims=['x', 'y'])
+        return agg
+
+    return create_agg(source, xmin, ymin, xmax, ymax, None, None, None, height, width)
+
 
 def render_map(source: MapSource,
                xmin: float = None, ymin: float = None,
                xmax: float = None, ymax: float = None,
                x: float = None, y: float = None,
                z: float = None,
-               height: int = 256, width: int = 256):
+               height: int = 256, width: int = 256, ):
 
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)

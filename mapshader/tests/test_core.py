@@ -13,6 +13,7 @@ from datashader.transfer_functions import Image
 from mapshader.sources import MapSource
 from mapshader.core import render_map
 from mapshader.core import render_geojson
+from mapshader.core import to_raster
 from mapshader.core import create_agg
 from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
 from mapshader.sources import elevation_source
@@ -45,6 +46,15 @@ def test_default_to_tile(source_func):
     source = MapSource.from_obj(source_func()).load()
     img = render_map(source, x=0, y=0, z=0)
     assert isinstance(img, Image)
+
+
+@pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
+def test_to_raster(source_func):
+    source = MapSource.from_obj(source_func()).load()
+    result = to_raster(source, xmin=-20e6, ymin=-20e6,
+                     xmax=20e6, ymax=20e6, width=500, height=500)
+    assert isinstance(result, xr.DataArray)
+    assert result.data.shape == (500, 500)
 
 
 def test_tile_render_edge_effects():
