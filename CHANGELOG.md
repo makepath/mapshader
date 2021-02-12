@@ -1,6 +1,10 @@
 ## Mapshader Changelog
 -----------
 
+## Version 0.0.6 - 2/12/2021
+- added support for `mapshader.core.to_raster` function for all sources
+- added support for instaniating MapSource directly with `gpd.GeoDataFrame`
+
 ## Version 0.0.5 - 2/2/2021
 - added support for grouped / non-grouped discrete colormaps via legend
 - added legend endpoints
