@@ -13,10 +13,21 @@ wb_proj_str = ('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0
 
 wgs84_proj_str = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
 
+us_national_equal_area_str = '+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs'
+
+projections = {
+    3857: wb_proj_str,
+    4326: wgs84_proj_str,
+    2163: us_national_equal_area_str
+}
+
 def reproject_raster(arr: xr.DataArray, epsg=3857):
-    if epsg == 3857:
-        return arr.rio.reproject(wb_proj_str)
-    else:
+    global projections
+
+    try:
+        proj_str = projections[epsg]
+        return arr.rio.reproject(proj_str)
+    except KeyError:
         raise ValueError(f'Raster Projection Error: Invalid EPSG {epsg}')
 
 

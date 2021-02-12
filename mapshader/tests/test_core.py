@@ -44,7 +44,7 @@ def test_default_to_image(source_func):
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_to_tile(source_func):
     source = MapSource.from_obj(source_func()).load()
-    img = render_map(source, x=0, y=0, z=0)
+    img = render_map(source, x=0, y=0, z=0, height=256, width=256)
     assert isinstance(img, Image)
 
 

@@ -15,6 +15,7 @@ import xarray as xr
 
 from xrspatial import hillshade
 from xrspatial.classify import quantile
+from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
@@ -238,9 +239,33 @@ def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
 def to_raster(source: MapSource,
               xmin: float = None, ymin: float = None,
               xmax: float = None, ymax: float = None,
-              height: int = 256, width: int = 256):
+              height: int = None, width: int = None):
+
+    if height is None and width is None:
+        width = 1000
 
     sxmin, symin, sxmax, symax = source.full_extent
+
+    if xmin is None:
+        xmin = sxmin
+
+    if ymin is None:
+        ymin = symin
+
+    if xmax is None:
+        xmax = sxmax
+
+    if ymax is None:
+        ymax = symax
+
+    # handle null h/w
+    if height is None:
+        x_range, y_range = ((xmin, xmax), (ymin, ymax))
+        height = height_implied_by_aspect_ratio(width, x_range, y_range)
+
+    if width is None:
+        x_range, y_range = ((xmin, xmax), (ymin, ymax))
+        width = height_implied_by_aspect_ratio(height, y_range, x_range)
 
     # handle out of bounds
     if xmin < sxmin and ymin < symin and xmax > symax and ymax > symax:
@@ -258,12 +283,37 @@ def render_map(source: MapSource,
                xmax: float = None, ymax: float = None,
                x: float = None, y: float = None,
                z: float = None,
-               height: int = 256, width: int = 256, ):
+               height: int = None, width: int = None, ):
 
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
 
     sxmin, symin, sxmax, symax = source.full_extent
+
+    # handle null extent
+    if xmin is None:
+        xmin = sxmin
+
+    if ymin is None:
+        ymin = symin
+
+    if xmax is None:
+        xmax = sxmax
+
+    if ymax is None:
+        ymax = symax
+
+    # handle null h/w
+    if height is None and width is None:
+        width = 1000
+
+    if height is None:
+        x_range, y_range = ((xmin, xmax), (ymin, ymax))
+        height = height_implied_by_aspect_ratio(width, x_range, y_range)
+
+    if width is None:
+        x_range, y_range = ((xmin, xmax), (ymin, ymax))
+        width = height_implied_by_aspect_ratio(height, y_range, x_range)
 
     # handle out of bounds
     if xmin < sxmin and ymin < symin and xmax > symax and ymax > symax:

@@ -35,7 +35,7 @@ def flask_to_tile(source: MapSource, z=0, x=0, y=0):
         print(f'Dynamically Loading Data {source.name}', file=sys.stdout)
         source.load()
 
-    img = render_map(source, x=int(x), y=int(y), z=int(z))
+    img = render_map(source, x=int(x), y=int(y), z=int(z), height=256, width=256)
     return send_file(img.to_bytesio(), mimetype='image/png')
 
 

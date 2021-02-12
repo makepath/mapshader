@@ -1,3 +1,5 @@
+from functools import lru_cache as memoized
+
 import os
 from os import path
 import sys
@@ -71,9 +73,9 @@ class MapSource(object):
 
         if legend is not None and geometry_type == 'raster':
             cmap = {}
-            for l in legend:
-                val = l['value']
-                cor = l['color']
+            for leg in legend:
+                val = leg['value']
+                cor = leg['color']
                 if isinstance(val, (list, tuple)):
                     val = tuple(val)
                 cmap[val] = cor
@@ -107,7 +109,6 @@ class MapSource(object):
         self.extras = extras
         self.service_types = service_types
         self.transforms = transforms
-        self.full_extent = full_extent
         self.default_extent = default_extent
         self.default_width = default_width
         self.default_height = default_height
@@ -135,28 +136,32 @@ class MapSource(object):
         if self.is_loaded:
             return self
 
-        if self.config_path:
-            ogcwd = os.getcwd()
-            config_dir = path.abspath(path.dirname(self.config_path))
-            os.chdir(config_dir)
-            try:
+        if self.data is None:
+
+            if self.config_path:
+                ogcwd = os.getcwd()
+                config_dir = path.abspath(path.dirname(self.config_path))
+                os.chdir(config_dir)
+                try:
+                    data_path = path.abspath(path.expanduser(self.filepath))
+                finally:
+                    os.chdir(ogcwd)
+
+            elif self.filepath.startswith('zip'):
+                print('Zipfile Path', file=sys.stdout)
+                data_path = self.filepath
+
+            elif not path.isabs(self.filepath):
+                print('Not Absolute', file=sys.stdout)
                 data_path = path.abspath(path.expanduser(self.filepath))
-            finally:
-                os.chdir(ogcwd)
 
-        elif self.filepath.startswith('zip'):
-            print('Zipfile Path', file=sys.stdout)
-            data_path = self.filepath
+            else:
+                print('Using Given Filepath unmodified: config{self.config_file}', file=sys.stdout)
+                data_path = self.filepath
 
-        elif not path.isabs(self.filepath):
-            print('Not Absolute', file=sys.stdout)
-            data_path = path.abspath(path.expanduser(self.filepath))
-
+            data = self.load_func(data_path)
         else:
-            print('Using Given Filepath unmodified: config{self.config_file}', file=sys.stdout)
-            data_path = self.filepath
-
-        data = self.load_func(data_path)
+            data = self.data
 
         if self.fields:
             data = data[self.fields]
@@ -171,9 +176,6 @@ class MapSource(object):
             return self
 
         self._apply_transforms()
-
-        if self.full_extent is None:
-            self.full_extent = self.get_full_extent()
 
         self.is_loaded = True
 
@@ -204,7 +206,8 @@ class MapSource(object):
     def from_obj(obj: dict):
         transforms = obj.get('transforms')
         if transforms and isinstance(transforms, (list, tuple)):
-            has_to_vector = len([t for t in transforms if t['name'] == 'raster_to_categorical_points'])
+            n = 'raster_to_categorical_points'
+            has_to_vector = len([t for t in transforms if t['name'] == n])
         else:
             has_to_vector = False
 
@@ -220,7 +223,9 @@ class RasterSource(MapSource):
     def load_func(self):
         return load_raster
 
-    def get_full_extent(self):
+    @property
+    @memoized()
+    def full_extent(self):
         return (self.data.coords['x'].min().compute().item(),
                 self.data.coords['y'].min().compute().item(),
                 self.data.coords['x'].max().compute().item(),
@@ -233,7 +238,9 @@ class VectorSource(MapSource):
     def load_func(self):
         return load_vector
 
-    def get_full_extent(self):
+    @property
+    @memoized()
+    def full_extent(self):
         if isinstance(self.data, spatialpandas.GeoDataFrame):
             return self.data.to_geopandas()[self.geometry_field].total_bounds
         else:
