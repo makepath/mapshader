@@ -73,12 +73,11 @@ class MapSource(object):
 
         if legend is not None and geometry_type == 'raster':
 
-            cmap = {}
-            for leg in legend:
-                cor = leg['color']
-                val = leg.get('value')
-
-                if val is not None:
+            if legend[0].get('value') is not None:
+                cmap = {}
+                for leg in legend:
+                    cor = leg['color']
+                    val = leg['value']
                     if isinstance(val, (list, tuple)):
                         val = tuple(val)
                     cmap[val] = cor
