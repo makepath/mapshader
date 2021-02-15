@@ -72,13 +72,16 @@ class MapSource(object):
             raise ValueError('You must include a zfield for min/max scan calculation')
 
         if legend is not None and geometry_type == 'raster':
+
             cmap = {}
             for leg in legend:
-                val = leg['value']
                 cor = leg['color']
-                if isinstance(val, (list, tuple)):
-                    val = tuple(val)
-                cmap[val] = cor
+                val = leg.get('value')
+
+                if val is not None:
+                    if isinstance(val, (list, tuple)):
+                        val = tuple(val)
+                    cmap[val] = cor
 
         val = 20037508.3427892
         if default_extent is None:
