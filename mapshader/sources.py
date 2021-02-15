@@ -52,7 +52,7 @@ class MapSource(object):
                  preload=False):
 
         if fields is None and isinstance(data, (gpd.GeoDataFrame)):
-            fields = ['geometry']
+            fields = [geometry_field]
             if zfield:
                 fields.append(zfield)
 
