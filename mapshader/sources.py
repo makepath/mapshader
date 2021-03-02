@@ -383,6 +383,61 @@ class WMSService(MapService):
     def service_type(self):
         return 'wms'
 
+    @property
+    def format(self, output='Image', filetype='png'):
+        return f'?FORMAT={output}%2F{filetype}'
+
+    @property
+    def time(self, target=None, start=None, end=None):
+        if target is not None and start is None and end is None:
+            return f'&TIME={target}'
+        else:
+            return f'&TIME={start}/{end}'
+
+    @property
+    def elevation(self, target, start, end):
+        if target is not None and start is None and end is None:
+            return f'&ELEVATION={target}'
+        else:
+            return f'&ELEVATION={start}/{end}'
+
+    @property
+    def style(self, stylename='default', palettename='None'):
+        if palettename is None:
+            return f'&STYLES={stylename}'
+        else:
+            return f'&STYLES={stylename}-{palettename}'
+
+    @property
+    def color_scale_range(self, min, max):
+        return f'&COLORSCALERANGE={min}%{max}'
+
+    @property
+    def num_color_bands(self, num=2):
+        if num < 2 or num > 250:
+            raise ValueError('Must have between 2 and 250 color bands.')
+        return f'&NUMCOLORBANDS={num}'
+
+    @property
+    def above_max_color(self, color='0x000000'):
+        return f'&ABOVEMAXCOLOR={color}'
+
+    @property
+    def below_min_color(self, color='0x000000'):
+        return f'&BELOWMINCOLOR={color}'
+
+    @property
+    def log_scale(self, log=False):
+        return f'&LOGSCALE={log}'
+
+    @property
+    def opacity(self, percentage):
+        raise NotImplementedError()
+
+    @property
+    def animation(self, animate=False):
+        raise NotImplementedError()
+
 
 class GeoJSONService(MapService):
 
