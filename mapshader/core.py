@@ -339,7 +339,7 @@ def render_map(source: MapSource,
     return img
 
 
-def render_geojson(source: MapSource, simplify=None):
+def get_geojson(source: MapSource, simplify=None):
 
     if isinstance(source.data, spatialpandas.GeoDataFrame):
         gdf = source.data.to_geopandas()
@@ -350,17 +350,30 @@ def render_geojson(source: MapSource, simplify=None):
     else:
         # TODO: add proper line geojson (core.render_geojson)
         if source.geometry_type in ('line', 'raster'):
-            return json.dumps(source.data.to_dict())
-        return source.data.to_json()
+            return source.data.to_dict()
+        return source.data
 
     if simplify:
         gdf = gdf.copy()
         gdf[source.geometry_field] = gdf[source.geometry_field].simplify(simplify)
 
-    return gdf.to_json()
+    return gdf
+
+
+def get_legend(source: MapSource):
+    if source.legend is not None:
+        return source.legend
+    return []
+
+
+def render_geojson(source: MapSource, simplify=None):
+    geojson = get_geojson(source, simplify)
+
+    if isinstance(geojson, dict):
+        return json.dumps(geojson)
+
+    return geojson.to_json()
+
 
 def render_legend(source: MapSource):
-    if source.legend is not None:
-        return json.dumps(source.legend)
-    else:
-        return json.dumps([])
+    return json.dumps(render_legend(source))
