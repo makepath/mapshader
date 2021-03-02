@@ -1,7 +1,7 @@
 
 package:
   name: mapshader
-  version: 0.0.2
+  version: 0.0.6
 
 requirements:
   build:
@@ -12,7 +12,11 @@ requirements:
     - python
     - xarray-spatial
     - datashader
+    - click
+    - tbb
     - geopandas
+    - rasterio
+    - rioxarray
     - flask
     - descartes
     - matplotlib
