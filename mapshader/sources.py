@@ -17,39 +17,39 @@ import spatialpandas
 class MapSource(object):
 
     def __init__(self,
-                 name=None,
-                 description=None,
-                 filepath=None,
-                 legend=None,
-                 config_path=None,
-                 data=None,
-                 geometry_type=None,
-                 key=None,
-                 text=None,
-                 fields=None,
-                 span=None,
-                 route=None,
-                 geometry_field='geometry',
-                 xfield='geometry',
-                 yfield='geometry',
-                 zfield=None,
-                 agg_func=None,
-                 raster_interpolate='linear',
-                 shade_how='linear',
-                 cmap=colors['viridis'],
-                 color_key=None,
-                 dynspread=None,
-                 extras=None,
-                 raster_padding=0,
-                 service_types=None,
-                 full_extent=None,
-                 default_extent=None,
-                 default_height=256,
-                 default_width=256,
-                 overviews=None,
-                 transforms=None,
-                 attrs=None,
-                 preload=False):
+                 name: str = None,
+                 description: str = None,
+                 filepath: str = None,
+                 legend = None,
+                 config_path: str = None,
+                 data = None,
+                 geometry_type: str = None,
+                 key: str = None,
+                 text: str = None,
+                 fields = None,
+                 span = None,
+                 route = None,
+                 geometry_field: str = 'geometry',
+                 xfield: str = 'geometry',
+                 yfield: str = 'geometry',
+                 zfield: str = None,
+                 agg_func: str = None,
+                 raster_interpolate: str = 'linear',
+                 shade_how: str = 'linear',
+                 cmap: dict = colors['viridis'],
+                 color_key = None,
+                 dynspread: int = None,
+                 extras: list = None,
+                 raster_padding: int = 0,
+                 service_types: list = None,
+                 full_extent: tuple = None,
+                 default_extent: list = None,
+                 default_height: int = 256,
+                 default_width: int = 256,
+                 overviews: dict = None,
+                 transforms: list = None,
+                 attrs = None,
+                 preload: bool = False):
 
         if fields is None and isinstance(data, (gpd.GeoDataFrame)):
             fields = [geometry_field]
@@ -363,7 +363,7 @@ class WMSService(MapService):
         return url
 
     @property
-    def client_url(self, width=256, height=256):
+    def client_url(self, width: int = 256, height: int = 256):
         url = f'/{self.key}'
         url += '?bbox={XMIN},{YMIN},{XMAX},{YMAX}'
         url += f'&width={width}&height={height}'
@@ -384,60 +384,71 @@ class WMSService(MapService):
         return 'wms'
 
     @property
-    def format(self, output='Image', filetype='png'):
+    def format(self, output: str = 'Image', filetype: str = 'png'):
         return f'?FORMAT={output}%2F{filetype}'
 
     @property
-    def time(self, target=None, start=None, end=None):
+    def time(self, target: str = None, start:str = None, end: str = None):
         if target is not None and start is None and end is None:
             return f'&TIME={target}'
         else:
             return f'&TIME={start}/{end}'
 
     @property
-    def elevation(self, target, start, end):
+    def elevation(self, target: str = None, start: str = None, end: str = None):
         if target is not None and start is None and end is None:
             return f'&ELEVATION={target}'
         else:
             return f'&ELEVATION={start}/{end}'
 
     @property
-    def style(self, stylename='default', palettename='None'):
+    def style(self, stylename: str = 'default-scalar', palettename: str = 'default'):
         if palettename is None:
             return f'&STYLES={stylename}'
         else:
-            return f'&STYLES={stylename}-{palettename}'
+            return f'&STYLES={stylename}%2F{palettename}'
 
     @property
-    def color_scale_range(self, min, max):
+    def color_scale_range(self, min: int = 0 , max: int = 8):
         return f'&COLORSCALERANGE={min}%{max}'
 
     @property
-    def num_color_bands(self, num=2):
+    def num_color_bands(self, num: int = 250):
         if num < 2 or num > 250:
             raise ValueError('Must have between 2 and 250 color bands.')
         return f'&NUMCOLORBANDS={num}'
 
     @property
-    def above_max_color(self, color='0x000000'):
+    def above_max_color(self, color: str = 'transparent'):
         return f'&ABOVEMAXCOLOR={color}'
 
     @property
-    def below_min_color(self, color='0x000000'):
+    def below_min_color(self, color: str = 'transparent'):
         return f'&BELOWMINCOLOR={color}'
 
     @property
-    def log_scale(self, log=False):
+    def log_scale(self, log: bool = False):
         return f'&LOGSCALE={log}'
 
     @property
-    def opacity(self, percentage):
+    def opacity(self, percentage: float):
         raise NotImplementedError()
 
     @property
-    def animation(self, animate=False):
+    def animation(self, animate: bool = False):
         raise NotImplementedError()
 
+    @property
+    def version(self, version: str = '2.5.0'):
+        return f'&VERSION={version}'
+
+    @property
+    def layers(self, category: str = 'cci', layer: str = 'sea_ice_fraction'):
+        return f'&LAYERS={category}%2F{layer}'
+
+    @property
+    def coord_system(self, code: str = 'EPSG', number: str = '4326'):
+        return f'&SRS={code}%3A{number}'
 
 class GeoJSONService(MapService):
 
