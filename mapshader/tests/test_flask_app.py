@@ -56,3 +56,7 @@ def test_default_wms(service):
 def test_site_index():
     resp = CLIENT.get('/')
     assert resp.status_code == 200
+
+
+def test_geoprocessing_service():
+    pass
