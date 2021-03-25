@@ -16,6 +16,7 @@ from mapshader.core import render_geojson
 from mapshader.core import render_map
 from mapshader.core import to_raster
 from mapshader.core import create_agg
+from mapshader.core import functions_map
 from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
 from mapshader.sources import elevation_source
 
@@ -86,3 +87,14 @@ def test_render_graph():
                        xmin=-20e6, ymin=-20e6,
                        xmax=20e6, ymax=20e6)
     assert msg == 'hello world'
+
+
+@pytest.mark.parametrize('graph_key', [
+    'geojson_to_df',
+    'proximity',
+    'slope',
+    'output',
+    'debug',
+])
+def test_valid_graph_keys(graph_key):
+    assert graph_key in functions_map

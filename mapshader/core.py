@@ -340,11 +340,42 @@ def render_map(source: MapSource,
     return img
 
 
+def load_geojson(graph, point_geojson_string):
+    # df = geopandas.GeoDataFrame(json.loads(point_geojson_string))
+    # return df
+    pass
+
+
+def points_to_raster(points_feature_df):
+    # make datashader canvas
+    # rasterize points
+    # return xr.DataArray
+    # return xr.DataArray(...)
+    pass
+
+
+def calculate_proximity(point_raster_arr):
+    pass
+
+
+def slope(point_raster_arr):
+    pass
+
+
+def output(point_raster_arr):
+    pass
+
+
 def debug(value):
     return value
 
 
 functions_map = {
+    'geojson_to_df': load_geojson,
+    'point_raster_arr': points_to_raster,
+    'proximity': calculate_proximity,
+    'slope': slope,
+    'output': output,
     'debug': debug,
 }
 

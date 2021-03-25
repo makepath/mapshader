@@ -249,7 +249,60 @@ class VectorSource(MapSource):
             return self.data[self.geometry_field].total_bounds
 
 
-class MapService():
+# class 
+class BaseService():
+
+    @property
+    def service_url(self):
+        raise NotImplementedError()
+
+    @property
+    def client_url(self):
+        raise NotImplementedError()
+
+    @property
+    def default_url(self):
+        raise NotImplementedError()
+
+    @property
+    def service_type(self):
+        raise NotImplementedError()
+
+
+class BaseGeoprocessingService(BaseService):
+    
+    def __init__(self, graph: dict):
+        self.graph = graph
+
+
+class GeoprocessingService(BaseGeoprocessingService):
+    
+    def __init__(self):
+        pass
+
+    @property
+    def service_url(self):
+        return '/dag/<xmin>/<ymin>/<xmax>/<ymax>'
+
+    @property
+    def client_url(self):
+        query_params = '?graph={graph}&process={process}'
+        return '/dag/{xmin}/{ymin}/{xmax}/{ymax}' + query_params
+
+    @property
+    def default_url(self):
+        return '/dag/0/0/0/0?graph={}&process=output'
+
+    @property
+    def service_type(self):
+        return 'dag'
+
+
+class AreaService(GeoprocessingService):
+    pass
+
+
+class MapService(BaseService):
 
     def __init__(self, source: MapSource, renderers=[]):
         self.source = source
@@ -290,22 +343,6 @@ class MapService():
     @property
     def service_page_name(self):
         return f'/{self.key}-{self.service_type}'
-
-    @property
-    def service_url(self):
-        raise NotImplementedError()
-
-    @property
-    def client_url(self):
-        raise NotImplementedError()
-
-    @property
-    def default_url(self):
-        raise NotImplementedError()
-
-    @property
-    def service_type(self):
-        raise NotImplementedError()
 
 
 class TileService(MapService):
