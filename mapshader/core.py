@@ -13,6 +13,7 @@ from datashader.colors import rgb
 
 import xarray as xr
 
+from dask import multiprocessing
 from xrspatial import hillshade
 from xrspatial.classify import quantile
 from xrspatial.utils import height_implied_by_aspect_ratio
@@ -337,6 +338,25 @@ def render_map(source: MapSource,
         img = tf.dynspread(img, threshold=1, max_px=int(source.dynspread))
 
     return img
+
+
+def debug(value):
+    return value
+
+
+functions_map = {
+    'debug': debug,
+}
+
+
+def render_graph(graph: dict, process: str,
+                 xmin: float = None, ymin: float = None,
+                 xmax: float = None, ymax: float = None):
+
+    for key, value in graph.items():
+        graph[key] = (functions_map[value[0]], value[1])
+
+    return multiprocessing.get(graph, process)
 
 
 def get_geojson(source: MapSource, simplify=None):

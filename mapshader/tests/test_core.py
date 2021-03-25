@@ -11,8 +11,9 @@ import xarray as xr
 from datashader.transfer_functions import Image
 
 from mapshader.sources import MapSource
-from mapshader.core import render_map
+from mapshader.core import render_graph
 from mapshader.core import render_geojson
+from mapshader.core import render_map
 from mapshader.core import to_raster
 from mapshader.core import create_agg
 from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
@@ -75,3 +76,13 @@ def test_tile_render_edge_effects():
 
     img = render_map(source, x=10, y=11, z=5)
     assert isinstance(img, Image)
+
+
+def test_render_graph():
+    graph = {
+        'echo': ('debug', 'hello world'),
+    }
+    msg = render_graph(graph, 'echo',
+                       xmin=-20e6, ymin=-20e6,
+                       xmax=20e6, ymax=20e6)
+    assert msg == 'hello world'
