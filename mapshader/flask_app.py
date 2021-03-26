@@ -1,4 +1,5 @@
 from functools import partial
+from typing import List
 import sys
 
 from bokeh.plotting import figure
@@ -23,6 +24,8 @@ from mapshader import hello
 from mapshader.core import render_map
 from mapshader.core import render_geojson
 from mapshader.core import render_legend
+from mapshader.core import functions_map
+from mapshader.core import render_graph
 
 from mapshader.sources import get_services
 from mapshader.sources import MapSource
@@ -86,6 +89,24 @@ def flask_to_geojson(source: MapSource):
 
 def flask_to_legend(source: MapSource):
     resp = render_legend(source)
+    return resp
+
+
+def flask_to_dag(source: List[MapSource]):
+    xmin = request.args['xmin']
+    ymin = request.args['ymin']
+    xmax = request.args['xmax']
+    ymax = request.args['ymax']
+    graph = request.args['graph']
+    process = request.args.get('process', 'output')
+
+    for key, value in graph.items():
+        graph[key] = (functions_map[value[0]], value[1])
+
+    resp = render_graph(
+        graph, process,
+        xmin, ymin, xmax, ymax
+    )
     return resp
 
 
@@ -217,6 +238,7 @@ def configure_app(app, user_source_filepath=None, contains=None):
         'wms': flask_to_wms,
         'geojson': flask_to_geojson,
         'legend': flask_to_legend,
+        'dag': flask_to_dag,
     }
 
     services = []
@@ -230,6 +252,9 @@ def configure_app(app, user_source_filepath=None, contains=None):
         app.add_url_rule(service.service_url,
                          service.name,
                          partial(view_func, source=service.source))
+
+        if service.service_type == 'dag':
+            continue
 
         # add legend endpoint
         app.add_url_rule(service.legend_url,

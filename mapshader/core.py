@@ -340,6 +340,11 @@ def render_map(source: MapSource,
     return img
 
 
+def load_sources(sources):
+    for src in sources:
+        pass
+
+
 def load_geojson(graph, point_geojson_string):
     # df = geopandas.GeoDataFrame(json.loads(point_geojson_string))
     # return df
@@ -371,6 +376,7 @@ def debug(value):
 
 
 functions_map = {
+    'load_sources': load_sources,
     'geojson_to_df': load_geojson,
     'point_raster_arr': points_to_raster,
     'proximity': calculate_proximity,
@@ -383,9 +389,6 @@ functions_map = {
 def render_graph(graph: dict, process: str,
                  xmin: float = None, ymin: float = None,
                  xmax: float = None, ymax: float = None):
-
-    for key, value in graph.items():
-        graph[key] = (functions_map[value[0]], value[1])
 
     return multiprocessing.get(graph, process)
 

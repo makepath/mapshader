@@ -1,4 +1,5 @@
 from functools import lru_cache as memoized
+from typing import List
 
 import os
 from os import path
@@ -253,6 +254,10 @@ class VectorSource(MapSource):
 class BaseService():
 
     @property
+    def message(self):
+        raise NotImplementedError()
+
+    @property
     def service_url(self):
         raise NotImplementedError()
 
@@ -270,15 +275,24 @@ class BaseService():
 
 
 class BaseGeoprocessingService(BaseService):
-    
-    def __init__(self, graph: dict):
-        self.graph = graph
+
+    def __init__(self, source: List[MapSource]):
+        self.source = source
 
 
 class GeoprocessingService(BaseGeoprocessingService):
-    
-    def __init__(self):
-        pass
+
+    @property
+    def key(self):
+        return self.service_type
+
+    @property
+    def name(self):
+        return f'Geoprocessing Service'
+
+    @property
+    def message(self):
+        return f'{self.name} - {self.service_type}'
 
     @property
     def service_url(self):
@@ -315,6 +329,10 @@ class MapService(BaseService):
     @property
     def name(self):
         return f'{self.source.name} {self.service_type}'
+
+    @property
+    def message(self):
+        return f'{self.name} - {self.service_type} - {self.source.geometry_type} - {self.source.description}'
 
     @property
     def legend_name(self):
@@ -667,6 +685,8 @@ def parse_sources(source_objs, config_path=None, contains=None):
         'geojson': GeoJSONService,
     }
 
+    available_sources = []
+
     for source in source_objs:
         for service_type in source['service_types']:
             source['config_path'] = config_path
@@ -677,11 +697,16 @@ def parse_sources(source_objs, config_path=None, contains=None):
             # create sources
             source_obj = MapSource.from_obj(source)
 
+            # add to available sources
+            available_sources.append(source_obj)
+
             # create services
             ServiceKlass = service_classes[service_type]
 
             # TODO: add renderers here...
             yield ServiceKlass(source=source_obj)
+
+    yield GeoprocessingService(source=available_sources)
 
 
 def get_services(config_path=None, include_default=True, contains=None, sources=None):

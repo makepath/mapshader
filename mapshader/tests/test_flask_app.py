@@ -58,5 +58,7 @@ def test_site_index():
     assert resp.status_code == 200
 
 
-def test_geoprocessing_service():
-    pass
+@pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES if s.service_type == 'dag'])
+def test_geoprocessing_service(service):
+    resp = CLIENT.get(service.default_url)
+    assert resp.status_code == 200

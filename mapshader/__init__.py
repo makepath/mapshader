@@ -32,5 +32,5 @@ def hello(services=None):
     print('\tServices', file=sys.stdout)
     print('\t--------\n', file=sys.stdout)
     for s in services:
-        service_msg = f'\t > {s.name} - {s.service_type} - {s.source.geometry_type} - {s.source.description}'
+        service_msg = f'\t > {s.message}'
         print(service_msg, file=sys.stdout)

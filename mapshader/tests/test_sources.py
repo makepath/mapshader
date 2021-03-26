@@ -10,6 +10,7 @@ import pytest
 from PIL import Image
 import geopandas as gpd
 
+from mapshader.sources import GeoprocessingService
 from mapshader.sources import MapSource
 from mapshader.sources import VectorSource
 
