@@ -7,10 +7,12 @@ import pytest
 
 import numpy as np
 import xarray as xr
+import geopandas as gpd
 
 from datashader.transfer_functions import Image
 
 from mapshader.sources import MapSource
+from mapshader.core import load_geojson
 from mapshader.core import render_graph
 from mapshader.core import render_geojson
 from mapshader.core import render_map
@@ -90,6 +92,7 @@ def test_render_graph():
 
 
 @pytest.mark.parametrize('graph_key', [
+    'load_sources',
     'geojson_to_df',
     'proximity',
     'slope',
@@ -98,3 +101,11 @@ def test_render_graph():
 ])
 def test_valid_graph_keys(graph_key):
     assert graph_key in functions_map
+
+
+def test_load_geojson():
+    geojson = """
+    {"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[102.0,0.5]},"properties":{"prop0":"value0"}},{"type":"Feature","geometry":{"type":"LineString","coordinates":[[102.0,0.0],[103.0,1.0],[104.0,0.0],[105.0,1.0]]},"properties":{"prop0":"value0","prop1":0.0}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[100.0,0.0],[101.0,0.0],[101.0,1.0],[100.0,1.0],[100.0,0.0]]]},"properties":{"prop0":"value0","prop1":{"this":"that"}}}]}
+    """
+    result = load_geojson(geojson)
+    assert isinstance(result, gpd.GeoDataFrame)

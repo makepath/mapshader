@@ -101,6 +101,10 @@ def flask_to_dag(source: List[MapSource]):
     process = request.args.get('process', 'output')
 
     for key, value in graph.items():
+        if value[0] == 'load_sources':
+            graph[key] = (functions_map[value[0]], [
+                src for src in source if source.key in value[1]
+            ])
         graph[key] = (functions_map[value[0]], value[1])
 
     resp = render_graph(

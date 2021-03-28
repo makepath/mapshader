@@ -62,3 +62,21 @@ def test_site_index():
 def test_geoprocessing_service(service):
     resp = CLIENT.get(service.default_url)
     assert resp.status_code == 200
+
+
+@pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES if s.service_type == 'dag'])
+def test_geoprocessing_service_load_sources(service):
+    first_two = service.sources[:2]
+    sources_key = [source.key for source in first_two]
+
+    data = {
+        'graph': {
+            'load_srcs': ('load_sources', sources_key),
+        }
+    }
+    assert not first_two[0].is_loaded
+    assert not first_two[1].is_loaded
+    resp = CLIENT.get(service.default_url, data)
+    assert resp.status_code == 200
+    assert first_two[0].is_loaded
+    assert first_two[1].is_loaded

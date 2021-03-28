@@ -342,20 +342,16 @@ def render_map(source: MapSource,
 
 def load_sources(sources):
     for src in sources:
-        pass
+        if not src.is_loaded:
+            src.load()
 
 
-def load_geojson(graph, point_geojson_string):
-    # df = geopandas.GeoDataFrame(json.loads(point_geojson_string))
-    # return df
-    pass
+def load_geojson(geojson_string):
+    df = gpd.GeoDataFrame(json.loads(geojson_string))
+    return df
 
 
 def points_to_raster(points_feature_df):
-    # make datashader canvas
-    # rasterize points
-    # return xr.DataArray
-    # return xr.DataArray(...)
     pass
 
 
@@ -375,6 +371,7 @@ def debug(value):
     return value
 
 
+# Map from keys to functions available on graph
 functions_map = {
     'load_sources': load_sources,
     'geojson_to_df': load_geojson,
@@ -386,9 +383,22 @@ functions_map = {
 }
 
 
-def render_graph(graph: dict, process: str,
+def render_graph(graph: dict, process: str = 'output',
                  xmin: float = None, ymin: float = None,
                  xmax: float = None, ymax: float = None):
+    """Return process result for given graph
+
+    Parameters
+    ----------
+    graph : dict
+        The graph to be processed
+    process : str
+        The process output (default is output)
+    xmin : float
+    ymin : float
+    xmax : float
+    ymax : float
+    """
 
     return multiprocessing.get(graph, process)
 
