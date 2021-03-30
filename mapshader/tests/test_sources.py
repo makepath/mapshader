@@ -2,6 +2,7 @@ import json
 from os import path
 
 from io import BytesIO
+from geopandas.geodataframe import GeoDataFrame
 
 import xarray as xr
 
@@ -9,6 +10,8 @@ import pytest
 
 from PIL import Image
 import geopandas as gpd
+
+from mapshader.core import render_geojson
 
 from mapshader.sources import GeoprocessingService
 from mapshader.sources import MapSource
@@ -18,6 +21,7 @@ from mapshader.sources import world_countries_source
 from mapshader.sources import world_cities_source
 from mapshader.sources import nybb_source
 from mapshader.sources import elevation_source
+from mapshader.sources import parse_sources
 
 from mapshader.core import to_raster
 
@@ -66,3 +70,27 @@ def test_create_map_source_with_existing_geodataframe():
 
     arr = to_raster(source, width=100)
     assert isinstance(arr, xr.DataArray)
+
+
+def test_dag_parse_sources_return_dag():
+    services = list(parse_sources([
+        source() for source in DEFAULT_SOURCES_FUNCS
+    ]))
+    dag = services[-1]
+    assert dag.service_type == 'dag'
+
+
+def test_dag_service_has_all_sources():
+    services = list(parse_sources([
+        source() for source in DEFAULT_SOURCES_FUNCS
+    ]))
+    dag = services[-1]
+    assert len(dag.source) == 16
+
+
+def test_create_mapsource_from_geojson():
+    source = MapSource.from_obj(world_cities_source()).load()
+    input_data = render_geojson(source)
+    assert isinstance(input_data, str)
+    output_mapsource = MapSource.from_geojson(input_data)
+    assert isinstance(output_mapsource, VectorSource)

@@ -1,26 +1,32 @@
 import json
-from os import path
-
-from io import BytesIO
 
 import pytest
 
-import numpy as np
-import xarray as xr
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+import xarray as xr
 
 from datashader.transfer_functions import Image
 
-from mapshader.sources import MapSource
-from mapshader.core import load_geojson
-from mapshader.core import render_graph
-from mapshader.core import render_geojson
-from mapshader.core import render_map
-from mapshader.core import to_raster
-from mapshader.core import create_agg
-from mapshader.core import functions_map
+from mapshader.sources import (
+    MapSource,
+    elevation_source,
+    world_boundaries_source,
+    world_cities_source,
+)
+from mapshader.core import (
+    create_agg,
+    FUNCTIONS_MAP,
+    load_geojson,
+    load_sources,
+    point_aggregation,
+    render_geojson,
+    render_graph,
+    render_map,
+    to_raster,
+)
 from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
-from mapshader.sources import elevation_source
 
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
@@ -56,7 +62,7 @@ def test_default_to_tile(source_func):
 def test_to_raster(source_func):
     source = MapSource.from_obj(source_func()).load()
     result = to_raster(source, xmin=-20e6, ymin=-20e6,
-                     xmax=20e6, ymax=20e6, width=500, height=500)
+                       xmax=20e6, ymax=20e6, width=500, height=500)
     assert isinstance(result, xr.DataArray)
     assert result.data.shape == (500, 500)
 
@@ -69,7 +75,7 @@ def test_tile_render_edge_effects():
 
     first_col = agg.data[:, 0]
     last_col = agg.data[:, -1]
-    top_row = agg.data[0, :] # TODO: do i have these flipped?
+    top_row = agg.data[0, :]  # TODO: do i have these flipped?
     bottom_row = agg.data[-1, :]
 
     assert np.all(~np.isnan(first_col))
@@ -100,7 +106,7 @@ def test_render_graph():
     'debug',
 ])
 def test_valid_graph_keys(graph_key):
-    assert graph_key in functions_map
+    assert graph_key in FUNCTIONS_MAP
 
 
 def test_load_geojson():
@@ -109,3 +115,78 @@ def test_load_geojson():
     """
     result = load_geojson(geojson)
     assert isinstance(result, gpd.GeoDataFrame)
+
+
+def test_graph_load_sources():
+    sources = [
+        MapSource.from_obj(elevation_source()),
+        MapSource.from_obj(world_boundaries_source()),
+    ]
+    sources_key = [source.key for source in sources]
+
+    assert not sources[0].is_loaded
+    assert not sources[1].is_loaded
+
+    graph = {
+        'load_sources': ('load_sources', sources_key),
+    }
+
+    sources = render_graph(graph, 'load_sources', sources)
+
+    assert len(sources) == 2
+    for src in sources:
+        assert src.is_loaded
+
+
+def test_render_graph_returning_image():
+    pass
+
+
+def test_render_graph_returning_geojson():
+    pass
+
+
+def test_create_agg():
+    source = MapSource.from_obj(world_cities_source())
+    source.load()
+    geojson_string = render_geojson(source)
+
+    graph = {
+        'geojson_to_source_result': (
+            'geojson_to_source',
+            geojson_string,
+            {'geometry_type': 'point', 'xfield': 'X', 'yfield': 'Y'},
+        ),
+        'create_agg_result': (
+            'create_agg',
+            'geojson_to_source_result', -124.848974, 24.396308, -66.885444, 49.384358
+        ),
+    }
+    data = render_graph(graph, 'create_agg_result')
+    assert data is not None
+    assert isinstance(data, xr.DataArray)
+
+
+def test_shade_agg():
+    source = MapSource.from_obj(world_cities_source())
+    source.load()
+    geojson_string = render_geojson(source)
+
+    graph = {
+        'geojson_to_source_result': (
+            'geojson_to_source',
+            geojson_string,
+            {'geometry_type': 'point', 'xfield': 'X', 'yfield': 'Y'},
+        ),
+        'create_agg_result': (
+            'create_agg',
+            'geojson_to_source_result', -20e6, -20e6, 20e6, 20e6,
+        ),
+        'shade_agg_result': (
+            'shade_agg',
+            'geojson_to_source_result', 'create_agg_result', -20e6, -20e6, 20e6, 20e6
+        ),
+    }
+    data = render_graph(graph, 'shade_agg_result')
+    assert data is not None
+    assert isinstance(data, Image)

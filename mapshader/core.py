@@ -1,3 +1,6 @@
+from typing import List
+from collections.abc import Iterable
+
 import json
 import sys
 
@@ -9,13 +12,16 @@ import dask.array as da
 
 import datashader.transfer_functions as tf
 import datashader.reductions as rd
+from datashader.transfer_functions import set_background
 from datashader.colors import rgb
 
 import xarray as xr
 
 from dask import multiprocessing
 from xrspatial import hillshade
+from xrspatial import proximity
 from xrspatial.classify import quantile
+from xrspatial.classify import natural_breaks
 from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
@@ -33,7 +39,7 @@ def create_agg(source: MapSource,
                xmin: float = None, ymin: float = None,
                xmax: float = None, ymax: float = None,
                x: float = None, y: float = None,
-               z: float = None,
+               z: float = None, data: dict = None,
                height: int = 256, width: int = 256):
 
     if x is not None and y is not None and z is not None:
@@ -344,27 +350,42 @@ def load_sources(sources):
     for src in sources:
         if not src.is_loaded:
             src.load()
+    return sources
 
 
 def load_geojson(geojson_string):
-    df = gpd.GeoDataFrame(json.loads(geojson_string))
+    geojson = json.loads(geojson_string)
+    df = gpd.GeoDataFrame.from_features(geojson['features'])
     return df
 
 
-def points_to_raster(points_feature_df):
-    pass
+def split_geometry(source):
+    coords = source.data['geometry']
+    source.data['x'] = np.array(coords.x, dtype='float64')
+    source.data['y'] = np.array(coords.y, dtype='float64')
+    return source
 
 
-def calculate_proximity(point_raster_arr):
-    pass
+def create_canvas(xmin: float = None, ymin: float = None,
+                  xmax: float = None, ymax: float = None,
+                  width: int = None, height: int = None):
+    return ds.Canvas(plot_width=width, plot_height=height,
+                     x_range=(xmin, xmax), y_range=(ymin, ymax))
 
 
-def slope(point_raster_arr):
-    pass
+def geojson_to_source(geojson : str, config: dict):
+    source = MapSource.from_geojson(geojson, config)
+    source.load()
+    return source
 
 
-def output(point_raster_arr):
-    pass
+def transform_null_to_zeros(point_raster_arr):
+    point_raster_arr.data[~np.isfinite(point_raster_arr.data)] = 0.0
+    return point_raster_arr
+
+
+def output(value):
+    return str(value)
 
 
 def debug(value):
@@ -372,18 +393,27 @@ def debug(value):
 
 
 # Map from keys to functions available on graph
-functions_map = {
+FUNCTIONS_MAP = {
     'load_sources': load_sources,
     'geojson_to_df': load_geojson,
-    'point_raster_arr': points_to_raster,
-    'proximity': calculate_proximity,
-    'slope': slope,
+    'geojson_to_source': geojson_to_source,
+    'split_geometry': split_geometry,
+    'create_canvas': create_canvas,
+    'create_agg': create_agg,
+    'shade_agg': shade_agg,
+    'point_aggregation': point_aggregation,
+    'transform_null_to_zeros': transform_null_to_zeros,
+    'quantile': quantile,
+    'proximity': proximity,
+    'natural_breaks': natural_breaks,
+    'set_background': set_background,
     'output': output,
     'debug': debug,
 }
 
 
 def render_graph(graph: dict, process: str = 'output',
+                 available_sources: List[MapSource] = [],
                  xmin: float = None, ymin: float = None,
                  xmax: float = None, ymax: float = None):
     """Return process result for given graph
@@ -399,7 +429,16 @@ def render_graph(graph: dict, process: str = 'output',
     xmax : float
     ymax : float
     """
+    for key in graph:
+        if graph[key][0] == 'load_sources':
+            # switch mapsources keys to mapsources if available
+            graph[key] = (graph[key][0] *[
+                src for src in available_sources
+                if src.key in graph[key][1:]
+            ])
+            continue
 
+        graph[key] = (FUNCTIONS_MAP[graph[key][0]], *graph[key][1:])
     return multiprocessing.get(graph, process)
 
 
@@ -440,4 +479,4 @@ def render_geojson(source: MapSource, simplify=None):
 
 
 def render_legend(source: MapSource):
-    return json.dumps(render_legend(source))
+    return json.dumps(get_legend(source))

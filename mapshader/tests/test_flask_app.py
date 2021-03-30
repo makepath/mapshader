@@ -1,16 +1,21 @@
 import json
 import pytest
 
+import mapshader
+
+from mock import patch
+
 from mapshader.flask_app import create_app
 
-from mapshader.sources import world_countries_source
-from mapshader.sources import world_cities_source
-from mapshader.sources import nybb_source
+from mapshader.sources import (
+    MapSource,
+    GeoprocessingService,
+    elevation_source,
+    get_services,
+    world_boundaries_source,
+)
 
-from mapshader.sources import get_services
-
-
-DEFAULT_SERVICES = get_services()
+DEFAULT_SERVICES = list(get_services())
 
 CLIENT = create_app().test_client()
 
@@ -25,7 +30,7 @@ def test_default_geojson(service):
     assert isinstance(data, dict)
 
 
-@pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES])
+@pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES if s.service_type != 'dag'])
 def test_legend(service):
 
     resp = CLIENT.get(service.legend_url)
@@ -58,25 +63,15 @@ def test_site_index():
     assert resp.status_code == 200
 
 
-@pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES if s.service_type == 'dag'])
-def test_geoprocessing_service(service):
-    resp = CLIENT.get(service.default_url)
+def test_geoprocessing_service_load_sources():
+    dag_service = GeoprocessingService(source=[])
+
+    resp = CLIENT.post(
+        dag_service.default_url,
+        json={
+            'output': ('output', 'My text message'),
+        },
+        query_string={'process': 'output'}
+    )
     assert resp.status_code == 200
-
-
-@pytest.mark.parametrize("service", [s for s in DEFAULT_SERVICES if s.service_type == 'dag'])
-def test_geoprocessing_service_load_sources(service):
-    first_two = service.sources[:2]
-    sources_key = [source.key for source in first_two]
-
-    data = {
-        'graph': {
-            'load_srcs': ('load_sources', sources_key),
-        }
-    }
-    assert not first_two[0].is_loaded
-    assert not first_two[1].is_loaded
-    resp = CLIENT.get(service.default_url, data)
-    assert resp.status_code == 200
-    assert first_two[0].is_loaded
-    assert first_two[1].is_loaded
+    assert resp.data == b'My text message'

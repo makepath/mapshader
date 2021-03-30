@@ -5,6 +5,7 @@ import os
 from os import path
 import sys
 import yaml
+import json
 
 import geopandas as gpd
 
@@ -219,6 +220,19 @@ class MapSource(object):
         else:
             return VectorSource(**obj)
 
+    @staticmethod
+    def from_geojson(geojson: str, config: dict = {}):
+        geojson = json.loads(geojson)
+        data = gpd.GeoDataFrame.from_features(geojson['features'])
+        transforms = data.get('transforms')
+        if transforms and isinstance(transforms, (list, tuple)):
+            n = 'raster_to_categorical_points'
+            has_to_vector = len([t for t in transforms if t['name'] == n])
+        else:
+            has_to_vector = False
+
+        return VectorSource(data=data, **config)
+
 
 class RasterSource(MapSource):
 
@@ -305,7 +319,7 @@ class GeoprocessingService(BaseGeoprocessingService):
 
     @property
     def default_url(self):
-        return '/dag/0/0/0/0?graph={}&process=output'
+        return '/dag/0/0/0/0'
 
     @property
     def service_type(self):

@@ -1,5 +1,7 @@
 from functools import partial
 from typing import List
+
+import json
 import sys
 
 from bokeh.plotting import figure
@@ -24,7 +26,6 @@ from mapshader import hello
 from mapshader.core import render_map
 from mapshader.core import render_geojson
 from mapshader.core import render_legend
-from mapshader.core import functions_map
 from mapshader.core import render_graph
 
 from mapshader.sources import get_services
@@ -92,23 +93,14 @@ def flask_to_legend(source: MapSource):
     return resp
 
 
-def flask_to_dag(source: List[MapSource]):
-    xmin = request.args['xmin']
-    ymin = request.args['ymin']
-    xmax = request.args['xmax']
-    ymax = request.args['ymax']
-    graph = request.args['graph']
+def flask_to_dag(source: List[MapSource],
+                 xmin=-20e6, ymin=-20e6,
+                 xmax=20e6, ymax=20e6):
+    graph = request.json
     process = request.args.get('process', 'output')
 
-    for key, value in graph.items():
-        if value[0] == 'load_sources':
-            graph[key] = (functions_map[value[0]], [
-                src for src in source if source.key in value[1]
-            ])
-        graph[key] = (functions_map[value[0]], value[1])
-
     resp = render_graph(
-        graph, process,
+        graph, process, source,
         xmin, ymin, xmax, ymax
     )
     return resp
@@ -247,18 +239,21 @@ def configure_app(app, user_source_filepath=None, contains=None):
 
     services = []
     for service in get_services(config_path=user_source_filepath, contains=contains):
-
-        services.append(service)
-
         view_func = view_func_creators[service.service_type]
+
+        if service.service_type == 'dag':
+            app.add_url_rule(service.service_url,
+                             service.name,
+                             partial(view_func, source=service.source),
+                             methods=['POST', ])
+            continue
 
         # add operational endpoint
         app.add_url_rule(service.service_url,
                          service.name,
                          partial(view_func, source=service.source))
 
-        if service.service_type == 'dag':
-            continue
+        services.append(service)
 
         # add legend endpoint
         app.add_url_rule(service.legend_url,
