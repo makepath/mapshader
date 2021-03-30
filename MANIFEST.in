@@ -21,3 +21,5 @@ exclude *.dot
 exclude *.gif
 exclude *.svg
 exclude tox.ini
+include versioneer.py
+include mapshader/_version.py
