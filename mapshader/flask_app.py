@@ -120,6 +120,11 @@ def build_previewer(service: MapService):
 
         p.add_tile(tile_source, render_parents=False)
 
+    elif service.service_type == 'geojson':
+        # Bokeh has a geojson layer instead of tiles
+    elif service.service_type == 'image':
+        # Bokeh ImageRGBA...?
+
     p.axis.visible = False
     return p
 
