@@ -3,11 +3,14 @@ package:
   name: mapshader
   version: 0.0.6
 
+source:
+  path: ..
+
 requirements:
-  build:
+  host:
     - python
     - setuptools
-
+    - pyct
   run:
     - python
     - xarray-spatial
@@ -21,6 +24,7 @@ requirements:
     - descartes
     - matplotlib
     - spatialpandas
+    - pyct
 
 test:
   requires:
