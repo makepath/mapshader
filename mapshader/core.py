@@ -3,6 +3,7 @@ from collections.abc import Iterable
 
 import json
 import sys
+import io
 
 import datashader as ds
 import numpy as np
@@ -354,8 +355,7 @@ def load_sources(sources):
 
 
 def load_geojson(geojson_string):
-    geojson = json.loads(geojson_string)
-    df = gpd.GeoDataFrame.from_features(geojson['features'])
+    df = gpd.read_file(io.StringIO(geojson_string))
     return df
 
 
@@ -415,7 +415,8 @@ FUNCTIONS_MAP = {
 def render_graph(graph: dict, process: str = 'output',
                  available_sources: List[MapSource] = [],
                  xmin: float = None, ymin: float = None,
-                 xmax: float = None, ymax: float = None):
+                 xmax: float = None, ymax: float = None,
+                 width: int = None, height: int = None):
     """Return process result for given graph
 
     Parameters
@@ -429,17 +430,57 @@ def render_graph(graph: dict, process: str = 'output',
     xmax : float
     ymax : float
     """
-    for key in graph:
-        if graph[key][0] == 'load_sources':
-            # switch mapsources keys to mapsources if available
-            graph[key] = (graph[key][0] *[
-                src for src in available_sources
-                if src.key in graph[key][1:]
-            ])
-            continue
+    import datashader as ds
+    import numpy as np
+    import pandas as pd
+    import geopandas as gpd
 
-        graph[key] = (FUNCTIONS_MAP[graph[key][0]], *graph[key][1:])
-    return multiprocessing.get(graph, process)
+    from datashader.transfer_functions import stack
+    from datashader.transfer_functions import shade
+    from datashader.transfer_functions import set_background
+    from datashader.colors import inferno
+
+    from xrspatial.classify import natural_breaks
+    from xrspatial.classify import binary
+    from xrspatial import proximity
+
+    from spatialpandas import GeoDataFrame
+
+    pharmacy_df = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+    pharmacy_df = pharmacy_df.to_crs(epsg=3857)
+    pharmacy_df['X'] = pharmacy_df['geometry'].apply(lambda p: p.x)
+    pharmacy_df['Y'] = pharmacy_df['geometry'].apply(lambda p: p.y)
+
+    x_range = (-20e6, 20e6)
+    y_range = (-20e6, 20e6)
+
+    W = width
+    H = height
+
+    cvs = ds.Canvas(plot_width=W, plot_height=H,
+                    x_range=x_range, y_range=y_range)
+
+    pharmacy_raster = cvs.points(pharmacy_df, 'Y', 'X')
+    image_pharmacy = shade(pharmacy_raster, cmap=inferno, alpha=255)
+    image_pharmacy = set_background(image_pharmacy, 'black')
+    return image_pharmacy
+
+
+
+
+
+
+    # for key in graph:
+    #     if graph[key][0] == 'load_sources':
+    #         # switch mapsources keys to mapsources if available
+    #         graph[key] = (graph[key][0] *[
+    #             src for src in available_sources
+    #             if src.key in graph[key][1:]
+    #         ])
+    #         continue
+
+    #     graph[key] = (FUNCTIONS_MAP[graph[key][0]], *graph[key][1:])
+    # return multiprocessing.get(graph, process)
 
 
 def get_geojson(source: MapSource, simplify=None):

@@ -28,7 +28,7 @@ from mapshader.core import render_geojson
 from mapshader.core import render_legend
 from mapshader.core import render_graph
 
-from mapshader.sources import get_services
+from mapshader.sources import get_services, world_cities_source
 from mapshader.sources import MapSource
 from mapshader.sources import MapService
 
@@ -93,17 +93,31 @@ def flask_to_legend(source: MapSource):
     return resp
 
 
-def flask_to_dag(source: List[MapSource],
-                 xmin=-20e6, ymin=-20e6,
-                 xmax=20e6, ymax=20e6):
-    graph = request.json
-    process = request.args.get('process', 'output')
+def flask_to_dag(source: List[MapSource]):
+    source = MapSource.from_obj(world_cities_source())
+    source.load()
 
-    resp = render_graph(
-        graph, process, source,
-        xmin, ymin, xmax, ymax
-    )
-    return resp
+    height = request.args.get('height')
+    width = request.args.get('width')
+    bbox = request.args.get('bbox')
+    xmin, ymin, xmax, ymax = bbox.split(',')
+
+    # Testing
+    img = render_graph(source, xmin=float(xmin), ymin=float(ymin),
+                       xmax=float(xmax), ymax=float(ymax),
+                       height=int(height), width=int(width))
+    return send_file(img.to_bytesio(), mimetype='image/png')
+
+    # graph = request.json
+    # process = request.args.get('process', 'output')
+
+    # resp = render_graph(
+    #     graph, process, source,
+    #     xmin=float(xmin), ymin=float(ymin),
+    #     xmax=float(xmax), ymax=float(ymax),
+    #     height=int(height), width=int(width),
+    # )
+    # return resp
 
 
 def build_previewer(service: MapService):
@@ -245,7 +259,7 @@ def configure_app(app, user_source_filepath=None, contains=None):
             app.add_url_rule(service.service_url,
                              service.name,
                              partial(view_func, source=service.source),
-                             methods=['POST', ])
+                             methods=['POST', 'GET'])
             continue
 
         # add operational endpoint

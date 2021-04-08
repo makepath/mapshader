@@ -2,6 +2,7 @@ from functools import lru_cache as memoized
 from typing import List
 
 import os
+import io
 from os import path
 import sys
 import yaml
@@ -222,9 +223,8 @@ class MapSource(object):
 
     @staticmethod
     def from_geojson(geojson: str, config: dict = {}):
-        geojson = json.loads(geojson)
-        data = gpd.GeoDataFrame.from_features(geojson['features'])
-        transforms = data.get('transforms')
+        data = gpd.read_file(io.StringIO(geojson))
+        transforms = config.get('transforms')
         if transforms and isinstance(transforms, (list, tuple)):
             n = 'raster_to_categorical_points'
             has_to_vector = len([t for t in transforms if t['name'] == n])
@@ -310,7 +310,7 @@ class GeoprocessingService(BaseGeoprocessingService):
 
     @property
     def service_url(self):
-        return '/dag/<xmin>/<ymin>/<xmax>/<ymax>'
+        return '/dag'
 
     @property
     def client_url(self):
