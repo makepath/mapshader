@@ -1,0 +1,31 @@
+---
+
+metadata:
+  version: 1
+
+sources:
+  - name: Elevation
+    key: elevation-user
+    text: Elevation
+    description: Global elevation
+    geometry_type: raster
+    shade_how: linear
+    span: min/max
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: ~/mapshader/mapshader/tests/fixtures/elevation.tif
+    transforms:
+      - name: squeeze
+        args:
+          dim: band
+      - name: cast
+        args:
+          dtype: float64
+      - name: orient_array
+      - name: flip_coords
+        args:
+          dim: y
+      - name: reproject_raster
+        args:
+          epsg: 3857
