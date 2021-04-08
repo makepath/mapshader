@@ -1,3 +1,4 @@
+{% set sdata = load_setup_py_data() %}
 
 package:
   name: mapshader
@@ -13,18 +14,10 @@ requirements:
     - pyct
   run:
     - python
-    - xarray-spatial
-    - datashader
-    - click
-    - tbb
-    - geopandas
-    - rasterio
-    - rioxarray
-    - flask
-    - descartes
-    - matplotlib
-    - spatialpandas
     - pyct
+    {% for dep in sdata.get('install_requires', {}) %}
+    - {{ dep }}
+    {% endfor %}
 
 test:
   requires:
