@@ -445,14 +445,20 @@ def render_graph(graph: dict, process: str = 'output',
     from xrspatial import proximity
 
     from spatialpandas import GeoDataFrame
+    from pyproj import Transformer
+
+    transformer = Transformer.from_crs(4326, 3857)
+
+    points = list(transformer.itransform([[xmin, ymax], [xmax, ymin]]))
 
     pharmacy_df = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
     pharmacy_df = pharmacy_df.to_crs(epsg=3857)
     pharmacy_df['X'] = pharmacy_df['geometry'].apply(lambda p: p.x)
     pharmacy_df['Y'] = pharmacy_df['geometry'].apply(lambda p: p.y)
 
-    x_range = (-20e6, 20e6)
-    y_range = (-20e6, 20e6)
+
+    x_range = (points[1][0], points[0][0])
+    y_range = (points[0][1], points[1][1])
 
     W = width
     H = height
@@ -460,7 +466,7 @@ def render_graph(graph: dict, process: str = 'output',
     cvs = ds.Canvas(plot_width=W, plot_height=H,
                     x_range=x_range, y_range=y_range)
 
-    pharmacy_raster = cvs.points(pharmacy_df, 'Y', 'X')
+    pharmacy_raster = cvs.points(pharmacy_df, 'X', 'Y')
     image_pharmacy = shade(pharmacy_raster, cmap=inferno, alpha=255)
     image_pharmacy = set_background(image_pharmacy, 'black')
     return image_pharmacy

@@ -78,7 +78,8 @@ def test_geoprocessing_service_load_sources():
 
 
 def test_default_dag():
-    url = '/dag?bbox=-96.51077270507812,28.497660832963472,-94.35745239257814,29.627190028270117&width=1568&height=941'
+    url = '/dag?bbox=29.045378736117815,17.510266945254312,60.938877275946666,48.86473124550697&width=1568&height=941'
+    # This url represent the bbox of part of Europe
     resp = CLIENT.get(
         url,
         json={
