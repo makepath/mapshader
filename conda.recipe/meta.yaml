@@ -13,7 +13,6 @@ requirements:
     - pyct
   run:
     - python
-    - pyct
     {% for dep in sdata.get('install_requires',{}) %}
     - {{ dep }}
     {% endfor %}
