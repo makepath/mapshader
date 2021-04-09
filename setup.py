@@ -47,6 +47,7 @@ setup_args = dict(
         # 'rasterio',
         'spatialpandas',
         ],
+    dependency_links=['https://pypi.org/project/spatialpandas/']
     extras_require=extras_require,
     zip_safe=False,
     classifiers=["Programming Language :: Python :: 3",
