@@ -11,6 +11,8 @@ prune conda.recipe
 prune img
 
 exclude mapshader/_version.py
+exclude mapshader/examples/*
+exclude mapshader/__pycache__/*
 exclude tile_idea.py
 exclude *.yml
 exclude *.enc
@@ -19,4 +21,9 @@ exclude .isort.cfg
 exclude *.dot
 exclude *.gif
 exclude *.svg
+exclude .flake8
 exclude tox.ini
+
+recursive-include examples *.yaml
+recursive-include scripts *.py
+include LICENSE

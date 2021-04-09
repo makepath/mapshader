@@ -10,12 +10,11 @@ source:
 requirements:
   host:
     - python
-    - setuptools
     - pyct
   run:
     - python
     - pyct
-    {% for dep in sdata.get('install_requires', {}) %}
+    {% for dep in sdata.get('install_requires',{}) %}
     - {{ dep }}
     {% endfor %}
 
@@ -24,6 +23,7 @@ test:
     - pytest >=2.8.5
   imports:
     - mapshader
+    - mapshader.tests
 
 about:
   home: https://github.com/makepath/mapshader
