@@ -10,6 +10,7 @@ source:
 requirements:
   host:
     - python
+    - setuptools
     - pyct
   run:
     - python
@@ -19,10 +20,9 @@ requirements:
 
 test:
   requires:
-    - pytest >=2.8.5
+    - pytest
   imports:
     - mapshader
-    - mapshader.tests
 
 about:
   home: https://github.com/makepath/mapshader
