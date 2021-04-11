@@ -1,6 +1,7 @@
 from functools import partial
 import sys
 
+from bokeh.models.sources import GeoJSONDataSource
 from bokeh.plotting import figure
 from bokeh.models.tiles import WMTSTileSource
 from bokeh.embed import components
@@ -79,7 +80,6 @@ def flask_to_geojson(source: MapSource):
     simplify = request.args.get('simplify')
     bbox = request.args.get('bbox')
 
-
     resp = render_geojson(source)
     return resp
 
@@ -113,7 +113,6 @@ def build_previewer(service: MapService):
     p.axis.visible = True
 
     if service.service_type == 'tile':
-
         tile_source = WMTSTileSource(url=service.client_url,
                                      min_zoom=0,
                                      max_zoom=15)
@@ -121,9 +120,17 @@ def build_previewer(service: MapService):
         p.add_tile(tile_source, render_parents=False)
 
     elif service.service_type == 'geojson':
-        # Bokeh has a geojson layer instead of tiles
+        geo_source = GeoJSONDataSource(geojson=render_geojson(service.source))
+
+        p.patches('xs', 'ys', line_color='white', line_width=0.5, source=geo_source)
+
     elif service.service_type == 'image':
         # Bokeh ImageRGBA...?
+        tile_source = WMTSTileSource(url=service.client_url,
+                                     min_zoom=0,
+                                     max_zoom=15)
+
+        p.add_tile(tile_source, render_parents=False)
 
     p.axis.visible = False
     return p
@@ -156,7 +163,7 @@ def service_page(service: MapService):
                                          padding: 10px;
                                        }
                                    </style>
-                                   
+
                                </head>
                                <body>
                                    <div class="header">
