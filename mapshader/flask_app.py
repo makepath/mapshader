@@ -151,7 +151,6 @@ def service_page(service: MapService):
                                          padding: 10px;
                                        }
                                    </style>
-                                   
                                </head>
                                <body>
                                    <div class="header">
@@ -221,7 +220,6 @@ def configure_app(app, user_source_filepath=None, contains=None):
 
     services = []
     for service in get_services(config_path=user_source_filepath, contains=contains):
-
         services.append(service)
 
         view_func = view_func_creators[service.service_type]
@@ -230,7 +228,6 @@ def configure_app(app, user_source_filepath=None, contains=None):
         app.add_url_rule(service.service_url,
                          service.name,
                          partial(view_func, source=service.source))
-
         # add legend endpoint
         app.add_url_rule(service.legend_url,
                          service.legend_name,
@@ -243,6 +240,7 @@ def configure_app(app, user_source_filepath=None, contains=None):
 
     app.add_url_rule('/', 'home', partial(index_page, services=services))
     hello(services)
+
     return app
 
 
@@ -263,5 +261,5 @@ if __name__ == '__main__':
     service_grep = parsed.k
     if user_file:
         user_file = path.abspath(path.expanduser(user_file))
+
     app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=True)
-    app.run()
