@@ -1,4 +1,5 @@
 from functools import partial
+from mapshader.utils import psutil_fetching, psutils_html
 import sys
 
 from bokeh.plotting import figure
@@ -79,7 +80,6 @@ def flask_to_geojson(source: MapSource):
     simplify = request.args.get('simplify')
     bbox = request.args.get('bbox')
 
-
     resp = render_geojson(source)
     return resp
 
@@ -151,9 +151,10 @@ def service_page(service: MapService):
                                          padding: 10px;
                                        }
                                    </style>
-                                   
+
                                </head>
                                <body>
+                                   {{ psutils_html }}
                                    <div class="header">
                                        <h3>{{service.name}}</h3>
                                        <hr />
@@ -186,7 +187,8 @@ def service_page(service: MapService):
                            script=script,
                            service=service,
                            len=len,
-                           div=div)
+                           div=div,
+                           psutils_html=psutils_html())
 
     return html
 
@@ -207,7 +209,7 @@ def index_page(services):
     return html
 
 
-def configure_app(app, user_source_filepath=None, contains=None):
+def configure_app(app: Flask, user_source_filepath=None, contains=None):
 
     CORS(app)
 
@@ -242,6 +244,8 @@ def configure_app(app, user_source_filepath=None, contains=None):
                          partial(service_page, service=service))
 
     app.add_url_rule('/', 'home', partial(index_page, services=services))
+    app.add_url_rule('/psutil', 'psutil', psutil_fetching)
+
     hello(services)
     return app
 
