@@ -21,6 +21,7 @@ requirements:
     - descartes
     - matplotlib
     - spatialpandas
+    - psutil
 
 test:
   requires:
