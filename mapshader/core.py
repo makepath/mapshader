@@ -94,6 +94,20 @@ def create_agg(source: MapSource,
 
 
 def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
+    """
+    Compute a reduction by pixel, mapping data to pixels as points.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+        The input datasource.
+    xfield, yfield, zfield : str
+        Column names for the x, y, and z coordinates of each point.
+    agg_func : Reduction, optional
+        Reduction to compute. Default is ``count()``.
+    """
     if zfield:
         return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
     else:
