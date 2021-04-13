@@ -34,6 +34,28 @@ def create_agg(source: MapSource,
                x: float = None, y: float = None,
                z: float = None,
                height: int = 256, width: int = 256):
+    """
+    Instantiate an abstract canvas representing the space and compute
+    a reduction by pixel according to the geometry type applying the
+    inputted aggregation function.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax :float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+    x, y, z : float
+        The coordinates to be used to get the bounds inclusive space along the axis.
+    width, height : int, optional
+        Width and height of the output aggregate in pixels.
+    """
 
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
