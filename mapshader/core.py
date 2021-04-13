@@ -115,6 +115,20 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
 
 
 def line_aggregation(cvs, data, zfield, agg_func):
+    """
+    Compute a reduction by pixel, mapping data to pixels as one or more lines.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+        The input datasource.
+    zfield : str
+        Column names for z coordinate of each point.
+    agg_func : Reduction, optional
+        Reduction to compute. Default is ``any()``.
+    """
     if zfield:
         return cvs.line(data,
                         geometry='geometry',
