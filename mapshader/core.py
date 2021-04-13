@@ -138,6 +138,21 @@ def line_aggregation(cvs, data, zfield, agg_func):
 
 
 def polygon_aggregation(cvs, data, zfield, agg_func):
+    """
+    Compute a reduction by pixel, mapping data to pixels as one or
+    more filled polygons.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+        The input datasource.
+    zfield : str
+        Column names for z coordinate of each point.
+    agg_func : Reduction, optional
+        Reduction to compute. Default is ``any()``.
+    """
     if zfield:
         return cvs.polygons(data,
                             'geometry',
