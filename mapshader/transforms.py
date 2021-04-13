@@ -59,6 +59,20 @@ def orient_array(arr):
     return arr
 
 def get_data_array_extent(dataarray):
+    """
+    Get the coordinate of the lower left corner and the coordinate of
+    the upper right corner in map units.
+
+    Parameters
+    ----------
+    dataarray : xarray.DataArray
+        The input datasource.
+
+    Returns
+    -------
+    extent : tuple of integers
+        A tuple of ``(xmin, ymin, xmax, ymax)`` values.
+    """
     return (dataarray.coords['x'].min().item(),
             dataarray.coords['y'].min().item(),
             dataarray.coords['x'].max().item(),
