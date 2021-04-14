@@ -42,7 +42,7 @@ def create_agg(source: MapSource,
     Parameters
     ----------
     source : mapshader.sources.MapSource
-        The input datasource.
+        The map source object.
     xmin : float
         X-axis minimum range.
     ymin : float
@@ -265,14 +265,14 @@ def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
     Parameters
     ----------
     source : mapshader.sources.MapSource
-        The input datasource.
+        The map source object.
     agg : xarray.DataArray
         The transformed datasource.
 
     Returns
     -------
     source : mapshader.sources.MapSource
-        The input datasource.
+        The map source object.
     agg : xarray.DataArray
         The newly transformed datasource.
     """
@@ -314,7 +314,6 @@ def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
     img : xarray.DataArray
         A DataArray representing an image.
     """
-
     if not agg.ndim == 2:
         raise ValueError("agg must be 2D")
 
