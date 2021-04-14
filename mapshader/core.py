@@ -114,6 +114,11 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
         Column names for the x, y, and z coordinates of each point.
     agg_func : Reduction, optional
         Reduction to compute. Default is ``count()``.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
     """
     if zfield:
         return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
@@ -135,6 +140,11 @@ def line_aggregation(cvs, data, zfield, agg_func):
         Column names for z coordinate of each point.
     agg_func : Reduction, optional
         Reduction to compute. Default is ``any()``.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
     """
     if zfield:
         return cvs.line(data,
@@ -159,6 +169,11 @@ def polygon_aggregation(cvs, data, zfield, agg_func):
         Column names for z coordinate of each point.
     agg_func : Reduction, optional
         Reduction to compute. Default is ``any()``.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
     """
     if zfield:
         return cvs.polygons(data,
@@ -199,6 +214,11 @@ def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd
         the optional column name; the hardcoded raster code
         supports only a fixed set of reductions and ignores the
         actual code of the provided agg.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
     """
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
