@@ -57,6 +57,11 @@ def create_agg(source: MapSource,
         Height of the output aggregate in pixels.
     width : int, default=256
         Width of the output aggregate in pixels.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
     """
 
     if x is not None and y is not None and z is not None:
