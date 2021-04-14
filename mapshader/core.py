@@ -185,7 +185,15 @@ def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd
         Options include: nearest, linear.
     padding : int, default=0
         The padding to be added over the coordinates bounds range.
-
+    agg : Reduction, default=datashader.reductions.max()
+        Resampling mode when downsampling raster. The supported
+        options include: first, last, mean, mode, var, std, min,
+        The agg can be specified as either a string name or as a
+        reduction function, but note that the function object will
+        be used only to extract the agg type (mean, max, etc.) and
+        the optional column name; the hardcoded raster code
+        supports only a fixed set of reductions and ignores the
+        actual code of the provided agg.
     """
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
