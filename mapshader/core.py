@@ -290,6 +290,30 @@ def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
 
 
 def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
+    """
+    Convert a DataArray to an image by choosing an RGBA pixel color
+    for each value.
+
+    Parameters
+    ----------
+    agg : xarray.DataArray
+        The input datasource.
+    color_key : dict
+        Categories colors.
+    name : str, default=shaded
+        Name of the datasource array.
+    alpha : int, default=255
+        Value between 0 - 255 representing the alpha value to use for
+        colormapped pixels that contain data.
+    nodata : int, default=0
+        The maximum data value, all the values less than this will be
+        replaced with 0.
+
+    Returns
+    -------
+    img : xarray.DataArray
+        A DataArray representing an image.
+    """
 
     if not agg.ndim == 2:
         raise ValueError("agg must be 2D")
