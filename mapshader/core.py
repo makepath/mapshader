@@ -169,6 +169,22 @@ def get_data_array_extent(dataarray):
 
 
 def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd.max()):
+    """
+    Sample a raster dataset by canvas size and bounds.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+        The input datasource.
+    interpolate : str, default=linear
+        Resampling mode when upsampling raster.
+        Options include: nearest, linear.
+    padding : int, default=0
+        The padding to be added over the coordinates bounds range.
+
+    """
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
     xdrange = (xmax - xmin) * (1 + 2 * padding)
