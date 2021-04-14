@@ -53,8 +53,10 @@ def create_agg(source: MapSource,
         Y-axis maximum range.
     x, y, z : float
         The coordinates to be used to get the bounds inclusive space along the axis.
-    width, height : int, optional
-        Width and height of the output aggregate in pixels.
+    height : int, default=256
+        Height of the output aggregate in pixels.
+    width : int, default=256
+        Width of the output aggregate in pixels.
     """
 
     if x is not None and y is not None and z is not None:
