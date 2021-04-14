@@ -258,6 +258,24 @@ additional_transforms = {'hillshade': hillshade,
                          'quantile': quantile}
 
 def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
+    """
+    Apply additional transforms over the data, which options could be
+    `hillshade` or `quantile`.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    agg : xarray.DataArray
+        The transformed datasource.
+
+    Returns
+    -------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    agg : xarray.DataArray
+        The newly transformed datasource.
+    """
     agg = agg.astype('float64')
     agg.data[agg.data == 0] = np.nan
     for e in source.extras:
