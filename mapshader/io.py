@@ -12,6 +12,24 @@ from os.path import expanduser
 def load_raster(file_path, xmin=None, ymin=None,
                 xmax=None, ymax=None, chunks=None,
                 layername='data'):
+    """
+    Load raster data.
+
+    Parameters
+    ----------
+    file_path : str
+        Relative path to the file.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+    layername : str, default=data
+        Data layer name.
+    """
 
     if file_path.endswith('.tif'):
 
