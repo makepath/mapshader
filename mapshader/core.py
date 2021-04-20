@@ -292,7 +292,7 @@ def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
 def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
     """
     Convert a DataArray to an image by choosing an RGBA pixel color
-    for each value.
+    for each value by discrete approach.
 
     Parameters
     ----------
@@ -358,6 +358,30 @@ def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
 
 
 def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
+    """
+    Convert a DataArray to an image by choosing an RGBA pixel color
+    for each value.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    agg : xarray.DataArray
+        The input datasource.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+
+    Returns
+    -------
+    img : xarray.DataArray
+        A DataArray representing an image.
+    """
     df = source.data
     zfield = source.zfield
     geometry_type = source.geometry_type
