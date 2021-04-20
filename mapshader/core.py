@@ -592,6 +592,14 @@ def get_geojson(source: MapSource, simplify=None):
 
 
 def get_legend(source: MapSource):
+    """
+    Get the MapSource legend.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    """
     if source.legend is not None:
         return source.legend
     return []
