@@ -561,7 +561,17 @@ def render_map(source: MapSource,
 
 
 def get_geojson(source: MapSource, simplify=None):
+    """
+    Export a MapSource object to a geojson object.
 
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    simplify : int, default=None
+        Get the simplified representation of each geometry according
+        to the toleranced distance.
+    """
     if isinstance(source.data, spatialpandas.GeoDataFrame):
         gdf = source.data.to_geopandas()
 
