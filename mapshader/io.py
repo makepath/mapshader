@@ -63,4 +63,17 @@ def load_raster(file_path, xmin=None, ymin=None,
 
 
 def load_vector(filepath: str):
+    """
+    Load vector data.
+
+    Parameters
+    ----------
+    filepath : str
+        Relative path to the file.
+
+    Returns
+    -------
+    gpd : geopandas.DataFrame
+        The loaded data.
+    """
     return gpd.read_file(filepath)
