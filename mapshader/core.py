@@ -421,7 +421,26 @@ def to_raster(source: MapSource,
               xmin: float = None, ymin: float = None,
               xmax: float = None, ymax: float = None,
               height: int = None, width: int = None):
+    """
+    Export a MapSource object to a raster object.
 
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+    height : int
+        Height of the output aggregate in pixels.
+    width : int
+        Width of the output aggregate in pixels.
+    """
     if height is None and width is None:
         width = 1000
 
