@@ -626,4 +626,12 @@ def render_geojson(source: MapSource, simplify=None):
 
 
 def render_legend(source: MapSource):
+    """
+    Get the MapSource legend.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    """
     return json.dumps(render_legend(source))
