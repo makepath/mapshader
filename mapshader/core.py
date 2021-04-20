@@ -606,6 +606,17 @@ def get_legend(source: MapSource):
 
 
 def render_geojson(source: MapSource, simplify=None):
+    """
+    Export a MapSource object to a geojson object.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    simplify : int, default=None
+        Get the simplified representation of each geometry according
+        to the toleranced distance.
+    """
     geojson = get_geojson(source, simplify)
 
     if isinstance(geojson, dict):
