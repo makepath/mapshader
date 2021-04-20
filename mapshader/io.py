@@ -29,6 +29,11 @@ def load_raster(file_path, xmin=None, ymin=None,
         Y-axis maximum range.
     layername : str, default=data
         Data layer name.
+
+    Returns
+    -------
+    arr : xarray.DataArray
+        The loaded data.
     """
 
     if file_path.endswith('.tif'):
