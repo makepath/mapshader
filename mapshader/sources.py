@@ -344,6 +344,14 @@ class VectorSource(MapSource):
 
 
 class MapService():
+    """
+    This class represents a map service object.
+
+    Parameters
+    ----------
+    MapSource : mapshader.sources.MapSource
+        The map source object.
+    """
 
     def __init__(self, source: MapSource, renderers=[]):
         self.source = source
@@ -351,38 +359,65 @@ class MapService():
 
     @property
     def key(self):
+    """
+    Get the route before the coordinates.
+    """
         return f'{self.source.key}-{self.service_type}'
 
     @property
     def name(self):
+    """
+    Get the service name and type.
+    """
         return f'{self.source.name} {self.service_type}'
 
     @property
     def legend_name(self):
+    """
+    Get the legend name.
+    """
         return f'{self.name}-legend'
 
     @property
     def default_extent(self):
+    """
+    Get the default extent.
+    """
         return self.source.default_extent
 
     @property
     def default_width(self):
+    """
+    Get the default width.
+    """
         return self.source.default_width
 
     @property
     def default_height(self):
+    """
+    Get the default height.
+    """
         return self.source.default_height
 
     @property
     def service_page_url(self):
+    """
+    Get the service page url.
+    """
         return f'/{self.key}'
 
     @property
     def legend_url(self):
+    """
+    Get the legend url.
+    """
         return f'/{self.key}/legend'
 
     @property
     def service_page_name(self):
+    """
+    Get the service page name.
+    """
         return f'/{self.key}-{self.service_type}'
 
     @property
@@ -403,6 +438,9 @@ class MapService():
 
 
 class TileService(MapService):
+    """
+    This class represents a tile service object.
+    """
 
     @property
     def service_url(self):
@@ -422,6 +460,9 @@ class TileService(MapService):
 
 
 class ImageService(MapService):
+    """
+    This class represents a image service object.
+    """
 
     @property
     def service_url(self):
@@ -450,6 +491,9 @@ class ImageService(MapService):
         return 'image'
 
 class WMSService(MapService):
+    """
+    This class represents a WMS service object.
+    """
 
     @property
     def service_url(self):
@@ -479,6 +523,9 @@ class WMSService(MapService):
 
 
 class GeoJSONService(MapService):
+    """
+    This class represents a GeoJSON service object.
+    """
 
     @property
     def service_url(self):
