@@ -360,6 +360,23 @@ def polygon_to_line(gdf, geometry_field='geometry'):
 
 
 def raster_to_categorical_points(arr, cats: dict, dim: str = 'data'):
+    """
+    Convert raster data to categorical points.
+
+    Parameters
+    ----------
+    arr : xarray.DataArray
+        The raster data.
+    cats : dict
+        Categories colors.
+    dim : str, default=data
+        The categorical column name.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        The converted data.
+    """
     df = None
     if isinstance(arr, da.Array):
         df = arr.compute().to_dataframe()
