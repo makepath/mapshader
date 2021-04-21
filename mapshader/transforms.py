@@ -200,6 +200,24 @@ def canvas_like(dataarray):
 
 
 def build_vector_overviews(gdf, levels, geometry_field='geometry'):
+    """
+    Reduce the vector data resolution.
+
+    Parameters
+    ----------
+    gdf : geopandas.GeoDataFrame
+        The vector data.
+    levels : dict
+        The factors and values to be used when reducing the data
+        resolution.
+    geometry_field : str, default=geometry
+        The geometry field name.
+
+    Returns
+    -------
+    overviews : geopandas.GeoDataFrame
+        The reduced resolution vector data.
+    """
     values = {}
     overviews = {}
     for level, simplify_tol in levels.items():
