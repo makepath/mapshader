@@ -113,6 +113,21 @@ def squeeze(arr, dim):
 
 
 def cast(arr, dtype):
+    """
+    Cast the data to a specific data type.
+
+    Parameters
+    ----------
+    arr : xarray.DataArray
+        The data source.
+    dtype : str
+        Data type.
+
+    Returns
+    -------
+    casted_data : xarray.DataArray
+        The casted data.
+    """
     arr.data = arr.data.astype(dtype)
     return arr
 
