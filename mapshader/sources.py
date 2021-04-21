@@ -15,6 +15,82 @@ import spatialpandas
 
 
 class MapSource(object):
+    """
+    This class represents a map source object.
+
+    Parameters
+    ----------
+    name : str
+        Service name.
+    description : str
+        Service description.
+    filepath : str
+        Relative path to the data file.
+    legend : list of dict
+        Service legend, which could be defined the name, color, value,
+        and category.
+    config_path : str
+        Relative path to the config file.
+    data : geopandas.GeoDataFrame
+        Service source data.
+    geometry_type : str
+        Geometry type.
+    key : str
+        Service route root.
+    text : str
+        The service introduction text.
+    fields : list of str
+        The geometry fields.
+    span : str or tuple of int;
+        Min and max data values to use for colormap/alpha interpolation
+        when wishing to override autoranging.
+    geometry_field : str, default=geometry
+        The geometry field name.
+    xfield : str, default=geometry
+        The x field name.
+    yfield : str, default=geometry
+        The y field name.
+    zfield : str
+        The z field name.
+    agg_func : str
+        Reduction to compute.
+    raster_interpolate : str, default=linear
+        Resampling mode when upsampling raster.
+        Options include: nearest, linear.
+    shade_how : str, default=linear
+        The interpolation method to use. Valid strings are 'eq_hist',
+        'cbrt', 'log', and 'linear'.
+    cmap : list of colors or matplotlib.colors.Colormap, default=viridis
+        The colormap to use for 2D agg arrays.
+    color_key : dict or iterable
+        The colors to use for a 3D (categorical) agg array.
+    dynspread : int
+        The maximum number of pixels to spread on all shape sides.
+    extras : list of str
+        The additional transforms over the data, which options could be
+        'hillshade' or 'quantile'.
+    raster_padding : int, default=0
+        The padding to be added over the coordinates bounds range.
+    service_types : list of str
+        The service types, which options could be 'tile', 'image',
+        'wms', and 'geojson'.
+    full_extent : tuple of int
+        The coordinate of the lower left corner and the coordinate of
+        the upper right corner in map units.
+    default_extent : list of int
+        The service starting extent.
+    default_height : int, default=256
+        Height of the output aggregate in pixels.
+    default_width : int, default=256
+        Width of the output aggregate in pixels.
+    overviews : dict
+        The factors and values to be used when reducing the data
+        resolution.
+    transforms : list of dict
+        The transforms to be applied over the data.
+    preload : bool, default=False
+        Preload the data after the service started.
+    """
 
     def __init__(self,
                  name=None,
@@ -134,7 +210,9 @@ class MapSource(object):
         raise NotImplementedError()
 
     def load(self):
-
+        """
+        Load the service data.
+        """
         if self.is_loaded:
             return self
 
