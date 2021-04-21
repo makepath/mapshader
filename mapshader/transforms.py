@@ -237,6 +237,25 @@ def build_vector_overviews(gdf, levels, geometry_field='geometry'):
 
 
 def build_raster_overviews(arr, levels, interpolate='linear'):
+    """
+    Reduce the raster data resolution.
+
+    Parameters
+    ----------
+    arr : xarray.DataArray
+        The raster data.
+    levels : dict
+        The factors and values to be used when reducing the data
+        resolution.
+    interpolate : str, default=linear
+        Resampling mode when upsampling raster.
+        Options include: nearest, linear.
+
+    Returns
+    -------
+    overviews : xarray.DataArray
+        The reduced resolution raster data.
+    """
     values = {}
     overviews = {}
     for level, resolution in levels.items():
