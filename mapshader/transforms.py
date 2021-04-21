@@ -66,6 +66,21 @@ def reproject_vector(gdf: gpd.GeoDataFrame, epsg=3857):
 
 
 def flip_coords(arr, dim):
+    """
+    Flip the geometry coordinates.
+
+    Parameters
+    ----------
+    arr : xarray.DataArray
+        The data source.
+    dim : str
+        The coordinate field name.
+
+    Returns
+    -------
+    flipped_data : xarray.DataArray
+        The flipped coordinates data.
+    """
     args = {dim: list(reversed(arr.coords[dim]))}
     arr = arr.assign_coords(**args)
     return arr
