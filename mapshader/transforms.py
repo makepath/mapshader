@@ -283,6 +283,9 @@ def build_raster_overviews(arr, levels, interpolate='linear'):
 
 
 def add_xy_fields(gdf, geometry_field='geometry'):
+    """
+    Extract x and y fields from geometry and create new columns with them.
+    """
     gdf['X'] = gdf[geometry_field].apply(lambda p: p.x)
     gdf['Y'] = gdf[geometry_field].apply(lambda p: p.y)
     return gdf
