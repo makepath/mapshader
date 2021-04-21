@@ -56,16 +56,16 @@ class MercatorTileDefinition(object):
         self._resolutions = [self._get_resolution(z) for z in range(self.min_zoom, self.max_zoom+1)]
 
     def to_ogc_tile_metadata(self, output_file_path):
-        """"
+        """
         Create OGC tile metadata XML
-        """"
+        """
         pass
 
 
     def to_esri_tile_metadata(self, output_file_path):
-        """"
+        """
         Create ESRI tile metadata JSON
-        """"
+        """
         pass
 
 
