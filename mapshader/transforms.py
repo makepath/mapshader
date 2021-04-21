@@ -29,7 +29,7 @@ def reproject_raster(arr: xr.DataArray, epsg=3857):
     ----------
     arr : xarray.DataArray
         The raster data.
-    epsg : str
+    epsg : int
         The coordinate systems code.
 
     Returns
@@ -47,6 +47,21 @@ def reproject_raster(arr: xr.DataArray, epsg=3857):
 
 
 def reproject_vector(gdf: gpd.GeoDataFrame, epsg=3857):
+    """
+    Reproject vector data.
+
+    Parameters
+    ----------
+    gdf : geopandas.GeoDataFrame
+        The vector data.
+    epsg : int
+        The coordinate systems code.
+
+    Returns
+    -------
+    reproj_data : geopandas.GeoDataFrame
+        The reprojected data.
+    """
     return gdf.to_crs(epsg=epsg)
 
 
