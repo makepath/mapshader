@@ -298,6 +298,14 @@ class MapSource(object):
 
 
 class RasterSource(MapSource):
+    """
+    This class represents a raster source object.
+
+    Parameters
+    ----------
+    MapSource : mapshader.sources.MapSource
+        The map source object.
+    """
 
     @property
     def load_func(self):
@@ -313,6 +321,14 @@ class RasterSource(MapSource):
 
 
 class VectorSource(MapSource):
+    """
+    This class represents a vector source object.
+
+    Parameters
+    ----------
+    MapSource : mapshader.sources.MapSource
+        The map source object.
+    """
 
     @property
     def load_func(self):
