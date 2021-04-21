@@ -94,6 +94,21 @@ def to_spatialpandas(gdf: gpd.GeoDataFrame, geometry_field='geometry'):
 
 
 def squeeze(arr, dim):
+    """
+    Return a new ``xarray.DataArray`` with squeezed data.
+
+    Parameters
+    ----------
+    arr : xarray.DataArray
+        The data source.
+    dim : str
+        Drop a specific field name.
+
+    Returns
+    -------
+    squeezed_data : xarray.DataArray
+        The squeezed data.
+    """
     return arr.squeeze().drop(dim)
 
 
