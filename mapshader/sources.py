@@ -763,7 +763,19 @@ def elevation_source_netcdf():
 
 
 def parse_sources(source_objs, config_path=None, contains=None):
+    """
+    Parse ``mapshader.sources.MapSource`` and instantiate a
+    ``mapshader.sources.MapService``.
 
+    Parameters
+    ----------
+    source_objs : list of ``mapshader.sources.MapSource``
+        The map source objects.
+    config_path : str
+        Relative path to the config file.
+    contains : str
+        Skip the service type creation that contains this route.
+    """
     service_classes = {
         'tile': TileService,
         'wms': WMSService,
