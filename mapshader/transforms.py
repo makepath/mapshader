@@ -409,4 +409,7 @@ _transforms = {
 
 
 def get_transform_by_name(name: str):
+    """
+    Get transform function by their name.
+    """
     return _transforms[name]
