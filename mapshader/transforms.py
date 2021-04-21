@@ -292,6 +292,27 @@ def add_xy_fields(gdf, geometry_field='geometry'):
 
 
 def select_by_attributes(gdf, field, value, operator='IN'):
+    """
+    Filter a ``geopandas.GeoDataFrame`` data.
+
+    Parameters
+    ----------
+    gdf : geopandas.GeoDataFrame
+        The vector data.
+    field : str
+        Column to be filtered.
+    value : int or float
+        Value to compare when filtering.
+    operator : str, default=IN
+        Arithmetic operator to be used when filtering.
+        Options include: IN, NOT IN, EQUALS, NOT EQUALS, LT, GT, LTE,
+        and GTE.
+
+    Returns
+    -------
+    filtered_data : geopandas.GeoDataFrame
+        The filtered data.
+    """
 
     if operator == 'IN':
         return gdf[gdf[field].isin(value)]
