@@ -171,6 +171,19 @@ def get_data_array_extent(dataarray):
             dataarray.coords['y'].max().item())
 
 def canvas_like(dataarray):
+    """
+    Get a ``datashader.Canvas`` according to a ``xarray.DataArray`` features.
+
+    Parameters
+    ----------
+    dataarray : xarray.DataArray
+        The input datasource.
+
+    Returns
+    -------
+    canvas : datashader.Canvas
+        An abstract canvas representing the space in which to bin.
+    """
 
     if isinstance(dataarray, xr.DataArray):
         extent = get_data_array_extent(dataarray)
