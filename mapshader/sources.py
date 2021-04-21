@@ -801,6 +801,20 @@ def parse_sources(source_objs, config_path=None, contains=None):
 
 
 def get_services(config_path=None, include_default=True, contains=None, sources=None):
+    """
+    Get the map services.
+
+    Parameters
+    ----------
+    config_path : str
+        Relative path to the config file.
+    include_default : bool, default=True
+        Include demo services.
+    contains : str
+        Skip the service type creation that contains this route.
+    sources : list of ``mapshader.sources.MapSource``
+        The map source objects.
+    """
 
     source_objs = None
 
