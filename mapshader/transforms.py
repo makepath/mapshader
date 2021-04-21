@@ -340,6 +340,21 @@ def select_by_attributes(gdf, field, value, operator='IN'):
 
 
 def polygon_to_line(gdf, geometry_field='geometry'):
+    """
+    Convert geometry type from polygon to line.
+
+    Parameters
+    ----------
+    gdf : geopandas.GeoDataFrame
+        The vector data.
+    geometry_field : str, default=geometry
+        The geometry field name.
+
+    Returns
+    -------
+    gdf : geopandas.GeoDataFrame
+        The converted data.
+    """
     gdf[geometry_field] = gdf[geometry_field].boundary
     return gdf
 
