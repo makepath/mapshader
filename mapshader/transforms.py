@@ -22,6 +22,21 @@ projections = {
 }
 
 def reproject_raster(arr: xr.DataArray, epsg=3857):
+    """
+    Reproject raster data.
+
+    Parameters
+    ----------
+    arr : xarray.DataArray
+        The raster data.
+    epsg : str
+        The coordinate systems code.
+
+    Returns
+    -------
+    reproj_data : xarray.DataArray
+        The reprojected data.
+    """
     global projections
 
     try:
