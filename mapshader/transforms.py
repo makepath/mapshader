@@ -133,6 +133,20 @@ def cast(arr, dtype):
 
 
 def orient_array(arr):
+    """
+    Reorients the array to a canonical orientation depending on
+    whether the x and y-resolution values are positive or negative.
+
+    Parameters
+    ----------
+    arr : xarray.DataArray
+        Data to be reoriented
+
+    Returns
+    -------
+    reoriented_data : numpy.ndarray
+        Reoriented 2d NumPy ndarray
+    """
     arr.data = ds.utils.orient_array(arr)
     return arr
 
