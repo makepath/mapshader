@@ -260,7 +260,7 @@ additional_transforms = {'hillshade': hillshade,
 def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
     """
     Apply additional transforms over the data, which options could be
-    `hillshade` or `quantile`.
+    ``hillshade`` or ``quantile``.
 
     Parameters
     ----------
