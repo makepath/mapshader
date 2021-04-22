@@ -38,8 +38,8 @@ class MercatorTileDefinition(object):
     format : int
         An y-offset in plot coordinates.
 
-    Output
-    ------
+    Returns
+    -------
     tileScheme: MercatorTileDefinition
     """
     def __init__(self, x_range, y_range, tile_size=256, min_zoom=0, max_zoom=30,
