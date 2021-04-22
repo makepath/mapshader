@@ -256,10 +256,12 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-f')
     parser.add_argument('-k')
+    parser.add_argument('--debug', action='store_true')
     parsed = parser.parse_args()
     user_file = parsed.f
     service_grep = parsed.k
+    debug = parsed.debug
     if user_file:
         user_file = path.abspath(path.expanduser(user_file))
 
-    app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=True)
+    app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=debug)
