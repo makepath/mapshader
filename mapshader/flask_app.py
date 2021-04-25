@@ -124,13 +124,13 @@ def build_previewer(service: MapService):
 
         p.patches('xs', 'ys', line_color='white', line_width=0.5, source=geo_source)
 
-    elif service.service_type == 'image':
-        # Bokeh ImageRGBA...?
-        tile_source = WMTSTileSource(url=service.client_url,
-                                     min_zoom=0,
-                                     max_zoom=15)
+    # elif service.service_type == 'image':
+    #     # Bokeh ImageRGBA...?
+    #     tile_source = WMTSTileSource(url=service.client_url,
+    #                                  min_zoom=0,
+    #                                  max_zoom=15)
 
-        p.add_tile(tile_source, render_parents=False)
+    #     p.add_tile(tile_source, render_parents=False)
 
     p.axis.visible = False
     return p

@@ -22,9 +22,8 @@ def test_build_previewer_with_bad_data():
     source_dict = world_countries_source()
     map_source = MapSource.from_obj(source_dict)
 
-    map_source.data = None
     map_service = TileService(map_source)
+    map_service.source = None
 
-    with pytest.raises(ValueError) as e:
-        # does not raise any error with bad_data
-        result = build_previewer(map_service)
+    with pytest.raises(AttributeError):
+        build_previewer(map_service)
