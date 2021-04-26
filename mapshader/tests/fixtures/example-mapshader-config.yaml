@@ -1,0 +1,21 @@
+----
+metadata:
+  version: 1
+
+sources:
+  world_geojson:
+    name: Tiny World Countries (GeoJSON)
+    key: countries-geojson-source
+    url: file:///countries_wgs84.geojson
+    value: countries-geojson-source/tile/geometry/geometry
+    description: World Countries
+    driver: geojson
+    fields: 
+      - key: None
+        text: None
+        value: None
+        type: None
+      - key: POP_EST
+        text: Race / Ethnicity
+        value: POP_EST
+        type: uint32
