@@ -46,6 +46,7 @@ setup_args = dict(
         'rioxarray',
         'pyct',
         'rasterio',
+        'psutil'
         ],
     extras_require=extras_require,
     tests_require=extras_require['tests'],
@@ -74,3 +75,4 @@ if __name__ == '__main__':
   
     if os.path.isdir(example_path):
         shutil.rmtree(example_path)
+
