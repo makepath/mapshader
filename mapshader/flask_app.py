@@ -151,7 +151,6 @@ def service_page(service: MapService):
                                          padding: 10px;
                                        }
                                    </style>
-
                                </head>
                                <body>
                                    {{ psutils_html }}
@@ -223,7 +222,6 @@ def configure_app(app: Flask, user_source_filepath=None, contains=None):
 
     services = []
     for service in get_services(config_path=user_source_filepath, contains=contains):
-
         services.append(service)
 
         view_func = view_func_creators[service.service_type]
@@ -232,7 +230,6 @@ def configure_app(app: Flask, user_source_filepath=None, contains=None):
         app.add_url_rule(service.service_url,
                          service.name,
                          partial(view_func, source=service.source))
-
         # add legend endpoint
         app.add_url_rule(service.legend_url,
                          service.legend_name,
@@ -247,6 +244,7 @@ def configure_app(app: Flask, user_source_filepath=None, contains=None):
     app.add_url_rule('/psutil', 'psutil', psutil_fetching)
 
     hello(services)
+
     return app
 
 
@@ -262,10 +260,12 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-f')
     parser.add_argument('-k')
+    parser.add_argument('--debug', action='store_true')
     parsed = parser.parse_args()
     user_file = parsed.f
     service_grep = parsed.k
+    debug = parsed.debug
     if user_file:
         user_file = path.abspath(path.expanduser(user_file))
-    app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=True)
-    app.run()
+
+    app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=debug)

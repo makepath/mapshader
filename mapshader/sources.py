@@ -631,14 +631,14 @@ def parse_sources(source_objs, config_path=None, contains=None):
     }
 
     for source in source_objs:
+        # create sources
+        source_obj = MapSource.from_obj(source)
+
         for service_type in source['service_types']:
             source['config_path'] = config_path
 
             if contains and contains not in source.get('key'):
                 continue
-
-            # create sources
-            source_obj = MapSource.from_obj(source)
 
             # create services
             ServiceKlass = service_classes[service_type]
