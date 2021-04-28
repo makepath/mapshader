@@ -1,12 +1,8 @@
-import rioxarray
-import xarray as xr
-import datashader as ds
-import geopandas as gpd
-import numpy as np
-from affine import Affine
-
 from os.path import expanduser
 
+import geopandas as gpd
+import numpy as np
+import xarray as xr
 
 
 def load_raster(file_path, xmin=None, ymin=None,
