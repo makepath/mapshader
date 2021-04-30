@@ -119,6 +119,14 @@ def tif_to_netcdf(
     )
 
     arr = xr.open_rasterio(input_file)
+
+    # Check if the given dimensions exist
+    for dimension in (x, y):
+        if dimension not in arr.dims:
+            raise click.BadParameter(
+                "The dimension name {} doesn't exist.".format(dimension)
+            )
+
     arr = squeeze(arr, [d for d in arr.dims if d != x and d != y])
     arr = cast(arr, dtype=dtype)
     arr = orient_array(arr)
@@ -127,7 +135,7 @@ def tif_to_netcdf(
 
     dataset = xr.Dataset(
         data_vars={data_variable: (['y', 'x'], arr.chunk(chunks))},
-        coords={'x': arr.coords[x], 'y': arr.coords[y]}
+        coords={'x': arr.coords[x], 'y': arr.coords[y]},
     )
     dataset.attrs = dict(name=data_variable)
     dataset.to_netcdf(
