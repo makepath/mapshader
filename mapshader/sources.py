@@ -16,7 +16,7 @@ import spatialpandas
 
 class MapSource(object):
 
-    def __init__(self,
+    def __init__(self,  # noqa: C901
                  name=None,
                  description=None,
                  filepath=None,

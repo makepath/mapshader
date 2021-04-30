@@ -278,7 +278,7 @@ def to_raster(source: MapSource,
     return create_agg(source, xmin, ymin, xmax, ymax, None, None, None, height, width)
 
 
-def render_map(source: MapSource,
+def render_map(source: MapSource,  # noqa: C901
                xmin: float = None, ymin: float = None,
                xmax: float = None, ymax: float = None,
                x: float = None, y: float = None,

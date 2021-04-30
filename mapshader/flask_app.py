@@ -74,12 +74,6 @@ def flask_to_geojson(source: MapSource):
     if not source.is_loaded:
         source.load()
 
-    q = request.args.get('q')
-    limit = request.args.get('limit')
-    offset = request.args.get('offset')
-    simplify = request.args.get('simplify')
-    bbox = request.args.get('bbox')
-
     resp = render_geojson(source)
     return resp
 
@@ -128,58 +122,89 @@ def service_page(service: MapService):
     plot = build_previewer(service)
     script, div = components(dict(preview=plot))
 
-    template = Template('''<!DOCTYPE html>
-                           <html lang="en">
-                               <head>
-                                   <meta charset="utf-8">
-                                   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
-                                   <title>{{service.name}}</title>
-                                   {{ resources }}
-                                   {{ script }}
-                                   <style>
-
-                                       .embed-wrapper {
-                                           display: flex;
-                                           justify-content: space-evenly;
-                                       }
-
-                                       body {
-                                         font-family: "Roboto", sans-serif;
-                                       }
-
-                                       .header {
-                                         padding: 10px;
-                                       }
-                                   </style>
-                               </head>
-                               <body>
-                                   {{ psutils_html }}
-                                   <div class="header">
-                                       <h3>{{service.name}}</h3>
-                                       <hr />
-                                       <h5><strong>Client URL:</strong> {{service.client_url}}</h5>
-                                       <h5><strong>Description:</strong> {{service.source.description}}</h5>
-                                       <h5><strong>Geometry Type:</strong> {{service.source.geometry_type.capitalize()}}</h5>
-                                   </div>
-                                       <hr />
-                                   <div class="embed-wrapper">
-                                       {% for key in div.keys() %}
-                                           {{ div[key] }}
-                                       {% endfor %}
-                                   </div>
-                                       <hr />
-                                   <div class="header">
-                                       <h4>Details</h4>
-                                       <hr />
-                                       <h5><strong>Data Path:</strong> {{service.source.filepath}}</h5>
-                                       <h5><strong>Span:</strong> {{service.source.span}}</h5>
-                                       <h5><strong>Overviews:</strong> {{service.source.overviews.keys()}}</h5>
-                                       <h5><strong>Aggregation Method:</strong> {{service.source.agg_func}}</h5>
-                                       <h5><strong>Colormap Interpolation Method:</strong> {{service.source.shade_how}}</h5>
-                                   </div>
-                               </body>
-                           </html>
-                           ''')
+    template = Template(
+        '''
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+            <title>{{service.name}}</title>
+            {{ resources }}
+            {{ script }}
+            <style>
+                .embed-wrapper {
+                display: flex;
+                justify-content: space-evenly;
+                }
+                body {
+                font-family: "Roboto", sans-serif;
+                }
+                .header {
+                padding: 10px;
+                }
+            </style>
+        </head>
+        <body>
+            {{ psutils_html }}
+            <div class="header">
+                <h3>{{service.name}}</h3>
+                <hr />
+                <h5><strong>Client URL:</strong>
+                    {{service.client_url}}
+                </h5>
+                <h5><strong>Description:</strong>
+                    {{service.source.description}}
+                </h5>
+                <h5><strong>Geometry Type:</strong>
+                    {{service.source.geometry_type.capitalize()}}
+                </h5>
+            </div>
+            <hr />
+            <div class="embed-wrapper">
+                {% for key in div.keys() %}
+                {{ div[key] }}
+                {% endfor %}
+            </div>
+            <hr />
+            <div class="header">
+                <h4>Details</h4>
+                <hr />
+                <h5>
+                    <strong>
+                    Data Path:
+                    </strong>
+                    {{service.source.filepath}}
+                </h5>
+                <h5>
+                    <strong>
+                    Span:
+                    </strong>
+                    {{service.source.span}}
+                </h5>
+                <h5>
+                    <strong>
+                    Overviews:
+                    </strong>
+                    {{service.source.overviews.keys()}}
+                </h5>
+                <h5>
+                    <strong>
+                    Aggregation Method:
+                    </strong>
+                    {{service.source.agg_func}}
+                </h5>
+                <h5>
+                    <strong>
+                    Colormap Interpolation Method:
+                    </strong>
+                    {{service.source.shade_how}}
+                </h5>
+            </div>
+        </body>
+        </html>
+        '''
+    )
 
     resources = INLINE.render()
     html = template.render(resources=resources,

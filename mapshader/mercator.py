@@ -54,13 +54,11 @@ class MercatorTileDefinition(object):
         '''
         pass
 
-
     def to_esri_tile_metadata(self, output_file_path):
         '''
         Create ESRI tile metadata JSON
         '''
         pass
-
 
     def is_valid_tile(self, x, y, z):
 
@@ -72,17 +70,14 @@ class MercatorTileDefinition(object):
 
         return True
 
-
     # TODO ngjit?
     def _get_resolution(self, z):
         return self.initial_resolution / (2 ** z)
-
 
     def get_resolution_by_extent(self, extent, height, width):
         x_rs = (extent[2] - extent[0]) / width
         y_rs = (extent[3] - extent[1]) / height
         return [x_rs, y_rs]
-
 
     def get_level_by_extent(self, extent, height, width):
         x_rs = (extent[2] - extent[0]) / width
@@ -100,20 +95,17 @@ class MercatorTileDefinition(object):
             i += 1
         return (i-1)
 
-
     def pixels_to_meters(self, px, py, level):
         res = self._get_resolution(level)
         mx = (px * res) - self.x_origin_offset
         my = (py * res) - self.y_origin_offset
         return (mx, my)
 
-
     def meters_to_pixels(self, mx, my, level):
         res = self._get_resolution(level)
         px = (mx + self.x_origin_offset) / res
         py = (my + self.y_origin_offset) / res
         return (px, py)
-
 
     def pixels_to_tile(self, px, py, level):
         tx = math.ceil(px / self.tile_size)
@@ -122,19 +114,15 @@ class MercatorTileDefinition(object):
         # convert from TMS y coordinate
         return (int(tx), invert_y_tile(int(ty), level))
 
-
     def pixels_to_raster(self, px, py, level):
         map_size = self.tile_size << level
         return (px, map_size - py)
-
 
     def meters_to_tile(self, mx, my, level):
         px, py = self.meters_to_pixels(mx, my, level)
         return self.pixels_to_tile(px, py, level)
 
-
     def get_tiles_by_extent(self, extent, level):
-
         # unpack extent and convert to tile coordinates
         xmin, ymin, xmax, ymax = extent
         # note y coordinates are reversed since they are in opposite direction to meters
@@ -151,10 +139,12 @@ class MercatorTileDefinition(object):
 
         return tiles
 
-
     def get_tile_meters(self, tx, ty, level):
-        ty = invert_y_tile(ty, level) # convert to TMS for conversion to meters
+        ty = invert_y_tile(ty, level)  # convert to TMS for conversion to meters
         xmin, ymin = self.pixels_to_meters(tx * self.tile_size, ty * self.tile_size, level)
-        xmax, ymax = self.pixels_to_meters((tx + 1) * self.tile_size, (ty + 1) * self.tile_size, level)
+        xmax, ymax = self.pixels_to_meters(
+            (tx + 1) * self.tile_size,
+            (ty + 1) * self.tile_size,
+            level,
+        )
         return (xmin, ymin, xmax, ymax)
-
