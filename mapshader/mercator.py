@@ -1,40 +1,47 @@
 import math
 
 def invert_y_tile(y, z):
-    # Convert from TMS to Google tile y coordinate, and vice versa
+    """
+    Convert from TMS to Google tile y coordinate, and vice versa
+    """
     return (2 ** z) - 1 - y
 
 
 # TODO: change name from source to definition
 class MercatorTileDefinition(object):
-    ''' Implementation of mercator tile source
-    In general, tile sources are used as a required input for ``TileRenderer``.
+    """
+    Implementation of mercator tile source. In general, tile sources
+    are used as a required input for ``TileRenderer``.
+
     Parameters
     ----------
     x_range : tuple
-      full extent of x dimension in data units
+        Full extent of x dimension in data units.
     y_range : tuple
-      full extent of y dimension in data units
+        Full extent of y dimension in data units.
     max_zoom : int
-      A maximum zoom level for the tile layer. This is the most zoomed-in level.
+        A maximum zoom level for the tile layer. This is the most
+        zoomed-in level.
     min_zoom : int
-      A minimum zoom level for the tile layer. This is the most zoomed-out level.
+        A minimum zoom level for the tile layer. This is the most
+        zoomed-out level.
     max_zoom : int
-      A maximum zoom level for the tile layer. This is the most zoomed-in level.
+        A maximum zoom level for the tile layer. This is the most
+        zoomed-in level.
     x_origin_offset : int
-      An x-offset in plot coordinates.
+        An x-offset in plot coordinates.
     y_origin_offset : int
-      An y-offset in plot coordinates.
+        An y-offset in plot coordinates.
     initial_resolution : int
-      Resolution (plot_units / pixels) of minimum zoom level of tileset
-      projection. None to auto-compute.
+        Resolution (plot_units / pixels) of minimum zoom level of
+        tileset projection. None to auto-compute.
     format : int
-      An y-offset in plot coordinates.
-    Output
-    ------
-    tileScheme: MercatorTileSource
-    '''
+        An y-offset in plot coordinates.
 
+    Returns
+    -------
+    tileScheme: MercatorTileDefinition
+    """
     def __init__(self, x_range, y_range, tile_size=256, min_zoom=0, max_zoom=30,
                  x_origin_offset=20037508.34, y_origin_offset=20037508.34,
                  initial_resolution=156543.03392804097):
@@ -49,15 +56,15 @@ class MercatorTileDefinition(object):
         self._resolutions = [self._get_resolution(z) for z in range(self.min_zoom, self.max_zoom+1)]
 
     def to_ogc_tile_metadata(self, output_file_path):
-        '''
+        """
         Create OGC tile metadata XML
-        '''
+        """
         pass
 
     def to_esri_tile_metadata(self, output_file_path):
-        '''
+        """
         Create ESRI tile metadata JSON
-        '''
+        """
         pass
 
     def is_valid_tile(self, x, y, z):
