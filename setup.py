@@ -54,6 +54,7 @@ setup_args = dict(
 
         [mapshader.commands]
         examples=mapshader.commands.examples:examples
+        tif_to_netcdf=mapshader.commands.tif_to_netcdf:tif_to_netcdf
     ''',
 )
 
