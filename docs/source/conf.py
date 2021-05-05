@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx_multiversion',
+    'docs.sphinxext.autodoc_process_signature',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
