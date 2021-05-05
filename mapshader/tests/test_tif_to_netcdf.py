@@ -6,7 +6,7 @@ from click import BadParameter
 from click.testing import CliRunner
 from rasterio.errors import RasterioIOError
 
-from mapshader.commands import tif_to_netcdf
+from mapshader.commands.tif_to_netcdf import tif_to_netcdf
 from mapshader.tests.data import FIXTURES_DIR
 
 
