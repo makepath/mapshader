@@ -34,7 +34,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx_multiversion',
-    'docs.sphinxext.autodoc_process_signature',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -88,3 +87,6 @@ exclude_patterns = ['_build', '_templates']
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# autodoc config
+autodoc_mock_imports = ['mapshader.colors']
