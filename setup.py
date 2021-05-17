@@ -28,7 +28,6 @@ setup_args = dict(
         'jinja2',
         'spatialpandas',
         'pytest',
-        'tbb',
         'rtree',
         'rioxarray',
         'matplotlib',
