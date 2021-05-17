@@ -1,6 +1,9 @@
 ## Mapshader Changelog
 -----------
 
+### Version 0.0.8 - 5/17/2021
+- Add mapshader on conda-forge
+
 ### Version 0.0.7 - 5/17/2021
 - Respecting geometry_field when setting default fields
 - Separated render functions into get and renderers
