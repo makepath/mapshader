@@ -3,16 +3,17 @@ from setuptools import setup
 import shutil
 import sys
 
+import param
 import pyct.build
 
 
 setup_args = dict(
     name='mapshader',
-    use_scm_version={
-        'write_to': 'mapshader/_version.py',
-        'write_to_template': '__version__ = "{version}"',
-        'tag_regex': r'^(?P<prefix>v)?(?P<version>[^\+]+)(?P<suffix>.*)?$',
-    },
+    version=param.version.get_setup_version(
+        __file__,
+        'mapshader',
+        archive_commit='$Format:%h$',
+    ),
     description='Simple Python GIS Web Services',
     url='https://github.com/makepath/mapshader',
     packages=[
@@ -34,6 +35,7 @@ setup_args = dict(
         'descartes',
         'flask',
         'flask-cors>=3.0.10',
+        'param >=1.6.1',
         'rasterio',
         'jupyter',
         'pyarrow',

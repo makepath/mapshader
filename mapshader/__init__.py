@@ -1,9 +1,13 @@
 import sys
 
-try:
-    from ._version import __version__
-except ImportError:
-    __version__ = "Unknown"
+import param
+__version__ = str(
+    param.version.Version(
+        fpath=__file__,
+        archive_commit='$Format:%h$',
+        reponame='mapshader',
+    )
+)
 
 
 def test():

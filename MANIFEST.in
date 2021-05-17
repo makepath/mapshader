@@ -1,5 +1,6 @@
 include *.txt
 include *.md
+include mapshader/.version
 
 graft mapshader
 
