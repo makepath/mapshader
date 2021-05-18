@@ -34,7 +34,7 @@ setup_args = dict(
         'matplotlib',
         'descartes',
         'flask',
-        'flask-cors>=3.0.10',
+        'flask-cors',
         'param >=1.6.1',
         'rasterio',
         'jupyter',
