@@ -18,6 +18,14 @@ def test_build_previewer_with_geojson_service_type():
 
     assert isinstance(result, Figure)
 
+def test_build_previewer_with_geojson_geometry_collection_service_type():
+    source_dict = world_countries_source()
+    map_source = MapSource.from_obj(source_dict)
+    geojson_service = GeoJSONService(map_source)
+    result = build_previewer(geojson_service)
+
+    assert isinstance(result, Figure)
+
 def test_build_previewer_with_bad_data():
     source_dict = world_countries_source()
     map_source = MapSource.from_obj(source_dict)
