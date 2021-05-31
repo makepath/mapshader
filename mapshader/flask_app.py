@@ -1,12 +1,8 @@
 from functools import partial
-from mapshader.utils import psutil_fetching, psutils_html
+from typing import List
 import sys
 
-from bokeh.plotting import figure
-from bokeh.models.tiles import WMTSTileSource
 from bokeh.embed import components
-from bokeh.tile_providers import STAMEN_TONER_BACKGROUND
-from bokeh.tile_providers import get_provider
 
 from jinja2 import Template
 
@@ -28,6 +24,10 @@ from mapshader.core import render_legend
 from mapshader.sources import get_services
 from mapshader.sources import MapSource
 from mapshader.sources import MapService
+
+from mapshader.utils import build_previewer
+from mapshader.utils import psutil_fetching
+from mapshader.utils import psutils_html
 
 
 def flask_to_tile(source: MapSource, z=0, x=0, y=0):
@@ -83,39 +83,13 @@ def flask_to_legend(source: MapSource):
     return resp
 
 
-def build_previewer(service: MapService):
-    '''Helper function for creating a simple Bokeh figure with
-    a WMTS Tile Source.
-    Notes
-    -----
-    - if you don't supply height / width, stretch_both sizing_mode is used.
-    - supply an output_dir to write figure to disk.
-    '''
-
-    xmin, ymin, xmax, ymax = service.default_extent
-
-    p = figure(sizing_mode='stretch_both',
-               x_range=(xmin, xmax),
-               y_range=(ymin, ymax),
-               toolbar_location='above',
-               tools="pan,wheel_zoom,reset")
-    tile_provider = get_provider(STAMEN_TONER_BACKGROUND)
-    p.add_tile(tile_provider, alpha=.1)
-
-    p.background_fill_color = 'black'
-    p.grid.grid_line_alpha = 0
-    p.axis.visible = True
-
-    if service.service_type == 'tile':
-
-        tile_source = WMTSTileSource(url=service.client_url,
-                                     min_zoom=0,
-                                     max_zoom=15)
-
-        p.add_tile(tile_source, render_parents=False)
-
-    p.axis.visible = False
-    return p
+VIEW_FUNC_CREATORS = {
+    'tile': flask_to_tile,
+    'image': flask_to_image,
+    'wms': flask_to_wms,
+    'geojson': flask_to_geojson,
+    'legend': flask_to_legend,
+}
 
 
 def service_page(service: MapService):
@@ -233,37 +207,32 @@ def index_page(services):
     return html
 
 
+def add_service_urls(app, service):
+    view_func = VIEW_FUNC_CREATORS[service.service_type]
+
+    # add operational endpoint
+    app.add_url_rule(service.service_url,
+                     service.name,
+                     partial(view_func, source=service.source))
+
+    # add legend endpoint
+    app.add_url_rule(service.legend_url,
+                     service.legend_name,
+                     partial(VIEW_FUNC_CREATORS['legend'], source=service.source))
+
+    # add service page endpoint
+    app.add_url_rule(service.service_page_url,
+                     service.service_page_name,
+                     partial(service_page, service=service))
+
+
 def configure_app(app: Flask, user_source_filepath=None, contains=None):
-
     CORS(app)
-
-    view_func_creators = {
-        'tile': flask_to_tile,
-        'image': flask_to_image,
-        'wms': flask_to_wms,
-        'geojson': flask_to_geojson,
-        'legend': flask_to_legend,
-    }
 
     services = []
     for service in get_services(config_path=user_source_filepath, contains=contains):
         services.append(service)
-
-        view_func = view_func_creators[service.service_type]
-
-        # add operational endpoint
-        app.add_url_rule(service.service_url,
-                         service.name,
-                         partial(view_func, source=service.source))
-        # add legend endpoint
-        app.add_url_rule(service.legend_url,
-                         service.legend_name,
-                         partial(view_func_creators['legend'], source=service.source))
-
-        # add service page endpoint
-        app.add_url_rule(service.service_page_url,
-                         service.service_page_name,
-                         partial(service_page, service=service))
+        add_service_urls(app, service)
 
     app.add_url_rule('/', 'home', partial(index_page, services=services))
     app.add_url_rule('/psutil', 'psutil', psutil_fetching)
@@ -271,6 +240,23 @@ def configure_app(app: Flask, user_source_filepath=None, contains=None):
     hello(services)
 
     return app
+
+
+def start_flask_app_jupyter(services: List[MapService]):
+    import threading
+
+    def handler():
+        app = Flask(__name__)
+        CORS(app)
+
+        for service in services:
+            add_service_urls(app, service)
+
+        app.add_url_rule('/', 'home', partial(index_page, services=services))
+        app.add_url_rule('/psutil', 'psutil', psutil_fetching)
+        app.run()
+
+    threading.Thread(target=handler).start()
 
 
 def create_app(user_source_filepath=None, contains=None):
