@@ -89,6 +89,17 @@ def flip_coords(arr, dim):
 def to_spatialpandas(gdf: gpd.GeoDataFrame, geometry_field='geometry'):
     """
     Convert a ``geopandas.GeoDataFrame`` to ``spatialpandas.GeoDataFrame``.
+
+    Parameters
+    ----------
+    gdf : geopandas.GeoDataFrame
+        The data source.
+    geometry_field : str
+        Geometry field on GeoDataFrame
+
+    Returns
+    -------
+    spatial_gdf : spatialpandas.GeoDataFrame
     """
     return spatialpandas.GeoDataFrame(gdf, geometry=geometry_field)
 

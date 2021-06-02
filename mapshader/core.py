@@ -198,7 +198,7 @@ def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd
     ----------
     cvs : datashader.Canvas
         The input canvas.
-    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+    data : xarray.DataArray, xr.Dataset or dask.Array
         The input datasource.
     interpolate : str, default=linear
         Resampling mode when upsampling raster.
@@ -560,9 +560,9 @@ def render_map(source: MapSource,
     return img
 
 
-def get_geojson(source: MapSource, simplify=None):
+def get_source_data(source: MapSource, simplify=None):
     """
-    Export a MapSource object to a geojson object.
+    Get MapSource data and return as dict or GeoDataFrame depending on the geometry type.
 
     Parameters
     ----------
@@ -571,6 +571,11 @@ def get_geojson(source: MapSource, simplify=None):
     simplify : int, default=None
         Get the simplified representation of each geometry according
         to the toleranced distance.
+
+    Returns
+    -------
+    gdf : GeoDataFrame or dict
+        The Mapsource data
     """
     if isinstance(source.data, spatialpandas.GeoDataFrame):
         gdf = source.data.to_geopandas()
@@ -599,6 +604,10 @@ def get_legend(source: MapSource):
     ----------
     source : mapshader.sources.MapSource
         The input datasource.
+
+    Returns
+    -------
+    legend : list
     """
     if source.legend is not None:
         return source.legend
@@ -616,22 +625,30 @@ def render_geojson(source: MapSource, simplify=None):
     simplify : int, default=None
         Get the simplified representation of each geometry according
         to the toleranced distance.
+
+    Returns
+    -------
+    geojson : string
     """
-    geojson = get_geojson(source, simplify)
+    data = get_source_data(source, simplify)
 
-    if isinstance(geojson, dict):
-        return json.dumps(geojson)
+    if isinstance(data, dict):
+        return json.dumps(data)
 
-    return geojson.to_json()
+    return data.to_json()
 
 
 def render_legend(source: MapSource):
     """
-    Get the MapSource legend.
+    Get the MapSource legend and return as a JSON string.
 
     Parameters
     ----------
     source : mapshader.sources.MapSource
         The input datasource.
+
+    Returns
+    -------
+    geojson : string
     """
-    return json.dumps(render_legend(source))
+    return json.dumps(get_legend(source))
