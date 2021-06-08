@@ -31,7 +31,6 @@ from mapshader.sources import MapSource
 from mapshader.utils import psutil_fetching, psutils_html
 
 
-
 def flask_to_tile(source: MapSource, z=0, x=0, y=0):
 
     if not source.is_loaded:
