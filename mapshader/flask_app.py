@@ -1,5 +1,4 @@
 from functools import partial
-from mapshader.utils import psutil_fetching, psutils_html
 import sys
 
 from bokeh.plotting import figure
@@ -25,9 +24,11 @@ from mapshader.core import render_map
 from mapshader.core import render_geojson
 from mapshader.core import render_legend
 
-from mapshader.sources import get_services
+from mapshader.services import get_services, MapService
+
 from mapshader.sources import MapSource
-from mapshader.sources import MapService
+
+from mapshader.utils import psutil_fetching, psutils_html
 
 
 def flask_to_tile(source: MapSource, z=0, x=0, y=0):
