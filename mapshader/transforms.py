@@ -221,8 +221,6 @@ def build_vector_overviews(gdf, levels, geometry_field='geometry'):
     levels : dict
         The factors and values to be used when reducing the data
         resolution.
-
-        E.g: {'0': 10000, '1': 2500, '2': 1250,...}
     geometry_field : str, default=geometry
         The geometry field name.
 
@@ -260,8 +258,6 @@ def build_raster_overviews(arr, levels, interpolate='linear'):
     levels : dict
         The factors and values to be used when reducing the data
         resolution.
-
-        E.g: {'0': 10000, '1': 2500, '2': 1250,...}
     interpolate : str, default=linear
         Resampling mode when upsampling raster.
         Options include: nearest, linear.
@@ -429,18 +425,7 @@ def get_transform_by_name(name: str):
 
     Parameters
     ----------
-    name :  'reproject_raster' |
-            'reproject_vector' |
-            'orient_array' |
-            'cast' |
-            'flip_coords' |
-            'build_raster_overviews' |
-            'build_vector_overviews' |
-            'squeeze' |
-            'to_spatialpandas' |
-            'add_xy_fields' |
-            'select_by_attributes' |
-            'polygon_to_line' |
-            'raster_to_categorical_points'
+    name : string
+        The transform function name.
     """
     return _transforms[name]
