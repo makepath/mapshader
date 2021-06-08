@@ -87,7 +87,11 @@ class MapSource(object):
         The factors and values to be used when reducing the data
         resolution.
     transforms : list of dict
-        The transforms to be applied over the data.
+        The transforms to be applied over the data, which options could include:
+        'reproject_raster', 'reproject_vector', 'orient_array', 'cast',
+        'flip_coords', 'build_raster_overviews', 'build_vector_overviews',
+        'squeeze', 'to_spatialpandas', 'add_xy_fields', 'select_by_attributes',
+        'polygon_to_line', 'raster_to_categorical_points'
     preload : bool, default=False
         Preload the data after the service started.
     """
@@ -367,7 +371,7 @@ class MapService():
     @property
     def name(self):
         """
-        Get the service name and type.
+        Get the source name and service type.
         """
         return f'{self.source.name} {self.service_type}'
 

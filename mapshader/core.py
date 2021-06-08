@@ -37,7 +37,7 @@ def create_agg(source: MapSource,
     """
     Instantiate an abstract canvas representing the space and compute
     a reduction by pixel according to the geometry type applying the
-    inputted aggregation function.
+    aggregation function defined in source.
 
     Parameters
     ----------
@@ -607,7 +607,7 @@ def get_legend(source: MapSource):
 
     Returns
     -------
-    legend : list
+    legend : list of dict
     """
     if source.legend is not None:
         return source.legend
