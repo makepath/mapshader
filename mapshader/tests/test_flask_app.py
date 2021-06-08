@@ -3,11 +3,7 @@ import pytest
 
 from mapshader.flask_app import create_app
 
-from mapshader.sources import world_countries_source
-from mapshader.sources import world_cities_source
-from mapshader.sources import nybb_source
-
-from mapshader.sources import get_services
+from mapshader.services import get_services
 
 
 DEFAULT_SERVICES = get_services()
