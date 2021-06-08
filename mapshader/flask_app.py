@@ -8,7 +8,7 @@ from bokeh.embed import components
 from bokeh.tile_providers import STAMEN_TONER_BACKGROUND
 from bokeh.tile_providers import get_provider
 
-from jinja2 import Template, Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 
 from bokeh.resources import INLINE
 
