@@ -1,5 +1,4 @@
 from functools import partial
-from mapshader.utils import psutil_fetching
 import sys
 
 from bokeh.plotting import figure
@@ -29,7 +28,7 @@ from mapshader.services import get_services, MapService
 
 from mapshader.sources import MapSource
 
-from mapshader.utils import psutil_fetching, psutils_html
+from mapshader.utils import psutil_fetching
 
 jinja2_env = Environment(loader=FileSystemLoader("mapshader/templates/"))
 
