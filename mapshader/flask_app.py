@@ -25,9 +25,11 @@ from mapshader.core import render_map
 from mapshader.core import render_geojson
 from mapshader.core import render_legend
 
-from mapshader.sources import get_services
+from mapshader.services import get_services, MapService
+
 from mapshader.sources import MapSource
-from mapshader.sources import MapService
+
+from mapshader.utils import psutil_fetching, psutils_html
 
 jinja2_env = Environment(loader=FileSystemLoader("mapshader/templates/"))
 
