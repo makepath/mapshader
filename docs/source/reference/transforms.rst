@@ -4,8 +4,6 @@
 Transforms
 **********
 
-Transforms
-==========
 .. autosummary::
     :toctree: _autosummary
 

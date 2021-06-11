@@ -4,8 +4,6 @@
 Core
 ****
 
-Canvas
-======
 .. autosummary::
     :toctree: _autosummary
 
@@ -19,7 +17,7 @@ Canvas
     mapshader.core.shade_agg
     mapshader.core.to_raster
     mapshader.core.render_map
-    mapshader.core.get_geojson
+    mapshader.core.get_source_data
     mapshader.core.get_legend
     mapshader.core.render_geojson
     mapshader.core.render_legend

@@ -17,7 +17,7 @@ clean:
 	-rm -rf $(BUILDDIR)/*
 
 html: clean
-	#sphinx-multiversion $(SOURCEDIR) $(BUILDDIR)/html
+	sphinx-multiversion $(SOURCEDIR) $(BUILDDIR)/html
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

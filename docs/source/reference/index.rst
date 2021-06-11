@@ -10,6 +10,7 @@ Reference
    core
    io
    mercator
+   services
    sources
    transforms
    

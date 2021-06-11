@@ -4,8 +4,6 @@
 Mercator
 ********
 
-Mercator
-========
 .. autosummary::
     :toctree: _autosummary
 

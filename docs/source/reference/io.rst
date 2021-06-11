@@ -4,8 +4,6 @@
 IO
 **
 
-IO
-==
 .. autosummary::
     :toctree: _autosummary
 
