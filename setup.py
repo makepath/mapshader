@@ -21,6 +21,7 @@ setup_args = dict(
         'mapshader.tests',
     ],
     install_requires=[
+        'bokeh',
         'xarray-spatial',
         'datashader',
         'geopandas',
