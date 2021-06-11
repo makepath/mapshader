@@ -34,6 +34,35 @@ def create_agg(source: MapSource,
                x: float = None, y: float = None,
                z: float = None,
                height: int = 256, width: int = 256):
+    """
+    Instantiate an abstract canvas representing the space and compute
+    a reduction by pixel according to the geometry type applying the
+    aggregation function defined in source.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The map source object.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax :float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+    x, y, z : float
+        The coordinates to be used to get the bounds inclusive space along the axis.
+    height : int, default=256
+        Height of the output aggregate in pixels.
+    width : int, default=256
+        Width of the output aggregate in pixels.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
+    """
 
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
@@ -72,6 +101,25 @@ def create_agg(source: MapSource,
 
 
 def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
+    """
+    Compute a reduction by pixel, mapping data to pixels as points.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+        The input datasource.
+    xfield, yfield, zfield : str
+        Column names for the x, y, and z coordinates of each point.
+    agg_func : Reduction, optional
+        Reduction to compute. Default is ``count()``.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
+    """
     if zfield:
         return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
     else:
@@ -79,6 +127,25 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
 
 
 def line_aggregation(cvs, data, zfield, agg_func):
+    """
+    Compute a reduction by pixel, mapping data to pixels as one or more lines.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+        The input datasource.
+    zfield : str
+        Column names for z coordinate of each point.
+    agg_func : Reduction, optional
+        Reduction to compute. Default is ``any()``.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
+    """
     if zfield:
         return cvs.line(data,
                         geometry='geometry',
@@ -88,6 +155,26 @@ def line_aggregation(cvs, data, zfield, agg_func):
 
 
 def polygon_aggregation(cvs, data, zfield, agg_func):
+    """
+    Compute a reduction by pixel, mapping data to pixels as one or
+    more filled polygons.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : pandas.DataFrame, dask.DataFrame, or xarray.DataArray/Dataset
+        The input datasource.
+    zfield : str
+        Column names for z coordinate of each point.
+    agg_func : Reduction, optional
+        Reduction to compute. Default is ``any()``.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
+    """
     if zfield:
         return cvs.polygons(data,
                             'geometry',
@@ -104,6 +191,35 @@ def get_data_array_extent(dataarray):
 
 
 def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd.max()):
+    """
+    Sample a raster dataset by canvas size and bounds.
+
+    Parameters
+    ----------
+    cvs : datashader.Canvas
+        The input canvas.
+    data : xarray.DataArray, xr.Dataset or dask.Array
+        The input datasource.
+    interpolate : str, default=linear
+        Resampling mode when upsampling raster.
+        Options include: nearest, linear.
+    padding : int, default=0
+        The padding to be added over the coordinates bounds range.
+    agg_method : Reduction, default=datashader.reductions.max()
+        Resampling mode when downsampling raster. The supported
+        options include: first, last, mean, mode, var, std, min,
+        The agg can be specified as either a string name or as a
+        reduction function, but note that the function object will
+        be used only to extract the agg type (mean, max, etc.) and
+        the optional column name; the hardcoded raster code
+        supports only a fixed set of reductions and ignores the
+        actual code of the provided agg.
+
+    Returns
+    -------
+    agg : xarray.DataArray
+        The transformed datasource.
+    """
     xmin, xmax = cvs.x_range
     ymin, ymax = cvs.y_range
     xdrange = (xmax - xmin) * (1 + 2 * padding)
@@ -142,6 +258,24 @@ additional_transforms = {'hillshade': hillshade,
                          'quantile': quantile}
 
 def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
+    """
+    Apply additional transforms over the data, which options could be
+    ``hillshade`` or ``quantile``.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The map source object.
+    agg : xarray.DataArray
+        The transformed datasource.
+
+    Returns
+    -------
+    source : mapshader.sources.MapSource
+        The map source object.
+    agg : xarray.DataArray
+        The newly transformed datasource.
+    """
     agg = agg.astype('float64')
     agg.data[agg.data == 0] = np.nan
     for e in source.extras:
@@ -156,7 +290,30 @@ def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
 
 
 def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
+    """
+    Convert a DataArray to an image by choosing an RGBA pixel color
+    for each value by discrete approach.
 
+    Parameters
+    ----------
+    agg : xarray.DataArray
+        The input datasource.
+    color_key : dict
+        Categories colors.
+    name : str, default=shaded
+        Name of the datasource array.
+    alpha : int, default=255
+        Value between 0 - 255 representing the alpha value to use for
+        colormapped pixels that contain data.
+    nodata : int, default=0
+        The maximum data value, all the values less than this will be
+        replaced with 0.
+
+    Returns
+    -------
+    img : xarray.DataArray
+        A DataArray representing an image.
+    """
     if not agg.ndim == 2:
         raise ValueError("agg must be 2D")
 
@@ -201,6 +358,30 @@ def shade_discrete(agg, color_key, name='shaded', alpha=255, nodata=0):
 
 
 def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
+    """
+    Convert a DataArray to an image by choosing an RGBA pixel color
+    for each value.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    agg : xarray.DataArray
+        The input datasource.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+
+    Returns
+    -------
+    img : xarray.DataArray
+        A DataArray representing an image.
+    """
     df = source.data
     zfield = source.zfield
     geometry_type = source.geometry_type
@@ -240,7 +421,26 @@ def to_raster(source: MapSource,
               xmin: float = None, ymin: float = None,
               xmax: float = None, ymax: float = None,
               height: int = None, width: int = None):
+    """
+    Export a MapSource object to a raster object.
 
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+    height : int
+        Height of the output aggregate in pixels.
+    width : int
+        Width of the output aggregate in pixels.
+    """
     if height is None and width is None:
         width = 1000
 
@@ -278,13 +478,34 @@ def to_raster(source: MapSource,
     return create_agg(source, xmin, ymin, xmax, ymax, None, None, None, height, width)
 
 
-def render_map(source: MapSource,
+def render_map(source: MapSource,  # noqa: C901
                xmin: float = None, ymin: float = None,
                xmax: float = None, ymax: float = None,
                x: float = None, y: float = None,
                z: float = None,
                height: int = None, width: int = None, ):
+    """
+    Export a MapSource object to a map object.
 
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    xmin : float
+        X-axis minimum range.
+    ymin : float
+        Y-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymax : float
+        Y-axis maximum range.
+    x, y, z : float
+        The coordinates to be used to get the bounds inclusive space along the axis.
+    height : int
+        Height of the output aggregate in pixels.
+    width : int
+        Width of the output aggregate in pixels.
+    """
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
 
@@ -339,8 +560,23 @@ def render_map(source: MapSource,
     return img
 
 
-def get_geojson(source: MapSource, simplify=None):
+def get_source_data(source: MapSource, simplify=None):
+    """
+    Get MapSource data and return as dict or GeoDataFrame depending on the geometry type.
 
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    simplify : int, default=None
+        Get the simplified representation of each geometry according
+        to the toleranced distance.
+
+    Returns
+    -------
+    gdf : GeoDataFrame or dict
+        The Mapsource data
+    """
     if isinstance(source.data, spatialpandas.GeoDataFrame):
         gdf = source.data.to_geopandas()
 
@@ -361,19 +597,58 @@ def get_geojson(source: MapSource, simplify=None):
 
 
 def get_legend(source: MapSource):
+    """
+    Get the MapSource legend.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+
+    Returns
+    -------
+    legend : list of dict
+    """
     if source.legend is not None:
         return source.legend
     return []
 
 
 def render_geojson(source: MapSource, simplify=None):
-    geojson = get_geojson(source, simplify)
+    """
+    Export a MapSource object to a geojson object.
 
-    if isinstance(geojson, dict):
-        return json.dumps(geojson)
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+    simplify : int, default=None
+        Get the simplified representation of each geometry according
+        to the toleranced distance.
 
-    return geojson.to_json()
+    Returns
+    -------
+    geojson : string
+    """
+    data = get_source_data(source, simplify)
+
+    if isinstance(data, dict):
+        return json.dumps(data)
+
+    return data.to_json()
 
 
 def render_legend(source: MapSource):
-    return json.dumps(render_legend(source))
+    """
+    Get the MapSource legend and return as a JSON string.
+
+    Parameters
+    ----------
+    source : mapshader.sources.MapSource
+        The input datasource.
+
+    Returns
+    -------
+    geojson : string
+    """
+    return json.dumps(get_legend(source))
