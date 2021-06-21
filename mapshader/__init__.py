@@ -1,9 +1,13 @@
 import sys
 
-try:
-    from ._version import __version__
-except ImportError:
-    __version__ = "Unknown"
+import param
+__version__ = str(
+    param.version.Version(
+        fpath=__file__,
+        archive_commit='$Format:%h$',
+        reponame='mapshader',
+    )
+)
 
 
 def test():
@@ -32,5 +36,10 @@ def hello(services=None):
     print('\tServices', file=sys.stdout)
     print('\t--------\n', file=sys.stdout)
     for s in services:
-        service_msg = f'\t > {s.name} - {s.service_type} - {s.source.geometry_type} - {s.source.description}'
+        service_msg = '\t > {0} - {1} - {2} - {3}'.format(
+            s.name,
+            s.service_type,
+            s.source.geometry_type,
+            s.source.description
+        )
         print(service_msg, file=sys.stdout)

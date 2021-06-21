@@ -1,4 +1,5 @@
 import numpy as np
+import psutil
 
 def find_and_set_categoricals(df):
     '''
@@ -36,3 +37,31 @@ def find_and_set_categoricals(df):
                 categorical_fields.append(c)
 
     return categorical_fields, non_categorical_object_fields
+
+def psutil_fetching():
+    # CPU logs
+    cpu_usage_percentage = psutil.cpu_percent(interval=1)
+    cpu_number_logical = psutil.cpu_count()
+    cpu_number_physical = psutil.cpu_count(logical=False)
+
+    cpu_times = psutil.cpu_times()
+
+    cpu_per_cpu_percentage = psutil.cpu_percent(interval=1, percpu=True)
+
+    # Disks
+    disk_usage = psutil.disk_usage("/")  # Root disk usage
+
+    log = {
+        'cpu':
+            {
+                'cpu_usage_percentage': cpu_usage_percentage,
+                'cpu_number_logical': cpu_number_logical,
+                'cpu_number_physical': cpu_number_physical,
+                'cpu_per_cpu_percentage': cpu_per_cpu_percentage,
+                'cpu_times': cpu_times._asdict(),
+            },
+        'memory': psutil.virtual_memory()._asdict(),
+        'disk': disk_usage._asdict(),
+    }
+
+    return log

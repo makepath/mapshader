@@ -3,7 +3,6 @@ from functools import lru_cache as memoized
 import os
 from os import path
 import sys
-import yaml
 
 import geopandas as gpd
 
@@ -11,12 +10,93 @@ from mapshader.colors import colors
 from mapshader.io import load_raster
 from mapshader.io import load_vector
 from mapshader.transforms import get_transform_by_name
+
 import spatialpandas
 
 
 class MapSource(object):
+    """
+    This class represents a map source object.
 
-    def __init__(self,
+    Parameters
+    ----------
+    name : str
+        Service name.
+    description : str
+        Service description.
+    filepath : str
+        Relative path to the data file.
+    legend : list of dict
+        Service legend, which could be defined the name, color, value,
+        and category.
+    config_path : str
+        Relative path to the config file.
+    data : geopandas.GeoDataFrame
+        Service source data.
+    geometry_type : str
+        Geometry type.
+    key : str
+        Service route root.
+    text : str
+        The service introduction text.
+    fields : list of str
+        The geometry fields.
+    span : str or tuple of int;
+        Min and max data values to use for colormap/alpha interpolation
+        when wishing to override autoranging.
+    geometry_field : str, default=geometry
+        The geometry field name.
+    xfield : str, default=geometry
+        The x field name.
+    yfield : str, default=geometry
+        The y field name.
+    zfield : str
+        The z field name.
+    agg_func : str
+        Reduction to compute.
+    raster_interpolate : str, default=linear
+        Resampling mode when upsampling raster.
+        Options include: nearest, linear.
+    shade_how : str, default=linear
+        The interpolation method to use. Valid strings are 'eq_hist',
+        'cbrt', 'log', and 'linear'.
+    cmap : list of colors or matplotlib.colors.Colormap, default=viridis
+        The colormap to use for 2D agg arrays.
+    color_key : dict or iterable
+        The colors to use for a 3D (categorical) agg array.
+    dynspread : int
+        The maximum number of pixels to spread on all shape sides.
+    extras : list of str
+        The additional transforms over the data, which options could be
+        'hillshade' or 'quantile'.
+    raster_padding : int, default=0
+        The padding to be added over the coordinates bounds range.
+    service_types : list of str
+        The service types, which options could be 'tile', 'image',
+        'wms', and 'geojson'.
+    full_extent : tuple of int
+        The coordinate of the lower left corner and the coordinate of
+        the upper right corner in map units.
+    default_extent : list of int
+        The service starting extent.
+    default_height : int, default=256
+        Height of the output aggregate in pixels.
+    default_width : int, default=256
+        Width of the output aggregate in pixels.
+    overviews : dict
+        The factors and values to be used when reducing the data
+        resolution.
+    transforms : list of dict
+        The transforms to be applied over the data, which options could
+        include: 'reproject_raster', 'reproject_vector', 'orient_array',
+        'cast', 'flip_coords', 'build_raster_overviews', 'build_vector_overviews',
+        'squeeze', 'to_spatialpandas', 'add_xy_fields', 'select_by_attributes',
+        'polygon_to_line', and 'raster_to_categorical_points'.
+    preload : bool, default=False
+        Preload the data after the service started.
+    """
+
+    def __init__(self,  # noqa: C901
                  name=None,
                  description=None,
                  filepath=None,
@@ -134,7 +214,9 @@ class MapSource(object):
         raise NotImplementedError()
 
     def load(self):
-
+        """
+        Load the service data.
+        """
         if self.is_loaded:
             return self
 
@@ -220,6 +302,14 @@ class MapSource(object):
 
 
 class RasterSource(MapSource):
+    """
+    This class represents a raster source object.
+
+    Parameters
+    ----------
+    MapSource : mapshader.sources.MapSource
+        The map source object.
+    """
 
     @property
     def load_func(self):
@@ -235,6 +325,14 @@ class RasterSource(MapSource):
 
 
 class VectorSource(MapSource):
+    """
+    This class represents a vector source object.
+
+    Parameters
+    ----------
+    MapSource : mapshader.sources.MapSource
+        The map source object.
+    """
 
     @property
     def load_func(self):
@@ -247,162 +345,6 @@ class VectorSource(MapSource):
             return self.data.to_geopandas()[self.geometry_field].total_bounds
         else:
             return self.data[self.geometry_field].total_bounds
-
-
-class MapService():
-
-    def __init__(self, source: MapSource, renderers=[]):
-        self.source = source
-        self.renderers = renderers
-
-    @property
-    def key(self):
-        return f'{self.source.key}-{self.service_type}'
-
-    @property
-    def name(self):
-        return f'{self.source.name} {self.service_type}'
-
-    @property
-    def legend_name(self):
-        return f'{self.name}-legend'
-
-    @property
-    def default_extent(self):
-        return self.source.default_extent
-
-    @property
-    def default_width(self):
-        return self.source.default_width
-
-    @property
-    def default_height(self):
-        return self.source.default_height
-
-    @property
-    def service_page_url(self):
-        return f'/{self.key}'
-
-    @property
-    def legend_url(self):
-        return f'/{self.key}/legend'
-
-    @property
-    def service_page_name(self):
-        return f'/{self.key}-{self.service_type}'
-
-    @property
-    def service_url(self):
-        raise NotImplementedError()
-
-    @property
-    def client_url(self):
-        raise NotImplementedError()
-
-    @property
-    def default_url(self):
-        raise NotImplementedError()
-
-    @property
-    def service_type(self):
-        raise NotImplementedError()
-
-
-class TileService(MapService):
-
-    @property
-    def service_url(self):
-        return f'/{self.key}' + '/tile/<z>/<x>/<y>'
-
-    @property
-    def client_url(self):
-        return f'/{self.key}' + '/tile/{z}/{x}/{y}'
-
-    @property
-    def default_url(self):
-        return f'/{self.key}' + '/tile/0/0/0'
-
-    @property
-    def service_type(self):
-        return 'tile'
-
-
-class ImageService(MapService):
-
-    @property
-    def service_url(self):
-        url = (f'/{self.key}'
-               '/image'
-               '/<xmin>/<ymin>/<xmax>/<ymax>'
-               '/<width>/<height>')
-        return url
-
-    @property
-    def client_url(self):
-        return f'/{self.key}' + '/image/{XMIN}/{YMIN}/{XMAX}/{YMAX}/{width}/{height}'
-
-    @property
-    def default_url(self):
-        xmin = self.default_extent[0]
-        ymin = self.default_extent[1]
-        xmax = self.default_extent[2]
-        ymax = self.default_extent[3]
-        width = self.default_width
-        height = self.default_height
-        return f'/{self.key}/image/{xmin}/{ymin}/{xmax}/{ymax}/{width}/{height}'
-
-    @property
-    def service_type(self):
-        return 'image'
-
-class WMSService(MapService):
-
-    @property
-    def service_url(self):
-        url = f'/{self.key}/wms'
-        return url
-
-    @property
-    def client_url(self, width=256, height=256):
-        url = f'/{self.key}'
-        url += '?bbox={XMIN},{YMIN},{XMAX},{YMAX}'
-        url += f'&width={width}&height={height}'
-        return url
-
-    @property
-    def default_url(self):
-        xmin = self.default_extent[0]
-        ymin = self.default_extent[1]
-        xmax = self.default_extent[2]
-        ymax = self.default_extent[3]
-        width = self.default_width
-        height = self.default_height
-        return f'/{self.key}?bbox={xmin},{ymin},{xmax},{ymax}&width={width}&height={height}'
-
-    @property
-    def service_type(self):
-        return 'wms'
-
-
-class GeoJSONService(MapService):
-
-    @property
-    def service_url(self):
-        url = f'/{self.key}/geojson'
-        return url
-
-    @property
-    def client_url(self):
-        url = f'/{self.key}/geojson'
-        return url
-
-    @property
-    def default_url(self):
-        return f'/{self.key}/geojson'
-
-    @property
-    def service_type(self):
-        return 'geojson'
 
 
 # ----------------------------------------------------------------------------
@@ -619,61 +561,3 @@ def elevation_source_netcdf():
     source_obj['service_types'] = ['tile', 'wms', 'image', 'geojson']
 
     return source_obj
-
-
-def parse_sources(source_objs, config_path=None, contains=None):
-
-    service_classes = {
-        'tile': TileService,
-        'wms': WMSService,
-        'image': ImageService,
-        'geojson': GeoJSONService,
-    }
-
-    for source in source_objs:
-        for service_type in source['service_types']:
-            source['config_path'] = config_path
-
-            if contains and contains not in source.get('key'):
-                continue
-
-            # create sources
-            source_obj = MapSource.from_obj(source)
-
-            # create services
-            ServiceKlass = service_classes[service_type]
-
-            # TODO: add renderers here...
-            yield ServiceKlass(source=source_obj)
-
-
-def get_services(config_path=None, include_default=True, contains=None, sources=None):
-
-    source_objs = None
-
-    if sources is not None:
-        source_objs = sources
-
-    elif config_path is None:
-        print('No Config Found...using default services...', file=sys.stdout)
-        source_objs = [world_countries_source(),
-                       world_boundaries_source(),
-                       world_cities_source(),
-                       nybb_source(),
-                       elevation_source(),
-                       elevation_source_netcdf()]
-    else:
-        with open(config_path, 'r') as f:
-            content = f.read()
-            config_obj = yaml.load(content)
-            source_objs = config_obj['sources']
-
-        if include_default:
-            source_objs += [world_countries_source(),
-                            world_boundaries_source(),
-                            world_cities_source(),
-                            nybb_source(),
-                            elevation_source()]
-
-    for service in parse_sources(source_objs, config_path=config_path, contains=contains):
-        yield service
