@@ -1,6 +1,7 @@
 from functools import partial
 import sys
 
+from bokeh.models.sources import GeoJSONDataSource
 from bokeh.plotting import figure
 from bokeh.models.tiles import WMTSTileSource
 from bokeh.embed import components
@@ -109,7 +110,19 @@ def build_previewer(service: MapService):
     p.axis.visible = True
 
     if service.service_type == 'tile':
+        tile_source = WMTSTileSource(url=service.client_url,
+                                     min_zoom=0,
+                                     max_zoom=15)
 
+        p.add_tile(tile_source, render_parents=False)
+
+    elif service.service_type == 'geojson':
+        geo_source = GeoJSONDataSource(geojson=render_geojson(service.source))
+
+        p.patches('xs', 'ys', line_color='white', line_width=0.5, source=geo_source)
+
+    elif service.service_type == 'image':
+        # Bokeh ImageRGBA...?
         tile_source = WMTSTileSource(url=service.client_url,
                                      min_zoom=0,
                                      max_zoom=15)
