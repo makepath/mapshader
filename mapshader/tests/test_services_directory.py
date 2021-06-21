@@ -1,7 +1,10 @@
-import pytest
-from mapshader.flask_app import build_previewer
-from mapshader.sources import GeoJSONService, MapSource, TileService, world_countries_source
 from bokeh.plotting.figure import Figure
+import pytest
+
+from mapshader.flask_app import build_previewer
+from mapshader.services import GeoJSONService, TileService
+from mapshader.sources import MapSource, world_countries_source
+
 
 def test_build_previewer_with_point_data_source():
     source_dict = world_countries_source()
