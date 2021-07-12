@@ -18,6 +18,7 @@ setup_args = dict(
     url='https://github.com/makepath/mapshader',
     packages=[
         'mapshader',
+        'mapshader.commands',
         'mapshader.tests',
     ],
     install_requires=[
