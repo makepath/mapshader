@@ -3,11 +3,10 @@ import numpy as np
 
 from bokeh.plotting import figure
 from bokeh.models.tiles import WMTSTileSource
-from bokeh.embed import components
 from bokeh.tile_providers import STAMEN_TONER_BACKGROUND
 from bokeh.tile_providers import get_provider
 
-from mapshader.sources import MapService
+from mapshader.services import MapService
 
 
 def find_and_set_categoricals(df):
@@ -76,7 +75,7 @@ def psutil_fetching():
     return log
 
 
-def build_previewer(service: MapService, host: str=''):
+def build_previewer(service: MapService, host: str = ''):
     '''Helper function for creating a simple Bokeh figure with
     a WMTS Tile Source.
     Notes

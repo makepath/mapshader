@@ -3,10 +3,6 @@ from typing import List
 import sys
 
 from bokeh.embed import components
-from bokeh.models.sources import GeoJSONDataSource
-from bokeh.plotting import figure
-from bokeh.models.tiles import WMTSTileSource
-
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -29,7 +25,6 @@ from mapshader.services import MapService
 from mapshader.sources import MapSource
 from mapshader.utils import build_previewer
 from mapshader.utils import psutil_fetching
-from mapshader.utils import psutils_html
 
 jinja2_env = Environment(loader=FileSystemLoader("mapshader/templates/"))
 
@@ -85,7 +80,6 @@ def flask_to_geojson(source: MapSource):
 def flask_to_legend(source: MapSource):
     resp = render_legend(source)
     return resp
-
 
 
 VIEW_FUNC_CREATORS = {
