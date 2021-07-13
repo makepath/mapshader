@@ -3,8 +3,12 @@ from typing import List
 import sys
 
 from bokeh.embed import components
+from bokeh.models.sources import GeoJSONDataSource
+from bokeh.plotting import figure
+from bokeh.models.tiles import WMTSTileSource
 
-from jinja2 import Template
+
+from jinja2 import Environment, FileSystemLoader
 
 from bokeh.resources import INLINE
 
@@ -20,14 +24,14 @@ from mapshader import hello
 from mapshader.core import render_map
 from mapshader.core import render_geojson
 from mapshader.core import render_legend
-
-from mapshader.sources import get_services
+from mapshader.services import get_services
+from mapshader.services import MapService
 from mapshader.sources import MapSource
-from mapshader.sources import MapService
-
 from mapshader.utils import build_previewer
 from mapshader.utils import psutil_fetching
 from mapshader.utils import psutils_html
+
+jinja2_env = Environment(loader=FileSystemLoader("mapshader/templates/"))
 
 
 def flask_to_tile(source: MapSource, z=0, x=0, y=0):
@@ -83,6 +87,7 @@ def flask_to_legend(source: MapSource):
     return resp
 
 
+
 VIEW_FUNC_CREATORS = {
     'tile': flask_to_tile,
     'image': flask_to_image,
@@ -95,116 +100,22 @@ VIEW_FUNC_CREATORS = {
 def service_page(service: MapService):
     plot = build_previewer(service)
     script, div = components(dict(preview=plot))
-
-    template = Template(
-        '''
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
-            <title>{{service.name}}</title>
-            {{ resources }}
-            {{ script }}
-            <style>
-                .embed-wrapper {
-                display: flex;
-                justify-content: space-evenly;
-                }
-                body {
-                font-family: "Roboto", sans-serif;
-                }
-                .header {
-                padding: 10px;
-                }
-            </style>
-        </head>
-        <body>
-            {{ psutils_html }}
-            <div class="header">
-                <h3>{{service.name}}</h3>
-                <hr />
-                <h5><strong>Client URL:</strong>
-                    {{service.client_url}}
-                </h5>
-                <h5><strong>Description:</strong>
-                    {{service.source.description}}
-                </h5>
-                <h5><strong>Geometry Type:</strong>
-                    {{service.source.geometry_type.capitalize()}}
-                </h5>
-            </div>
-            <hr />
-            <div class="embed-wrapper">
-                {% for key in div.keys() %}
-                {{ div[key] }}
-                {% endfor %}
-            </div>
-            <hr />
-            <div class="header">
-                <h4>Details</h4>
-                <hr />
-                <h5>
-                    <strong>
-                    Data Path:
-                    </strong>
-                    {{service.source.filepath}}
-                </h5>
-                <h5>
-                    <strong>
-                    Span:
-                    </strong>
-                    {{service.source.span}}
-                </h5>
-                <h5>
-                    <strong>
-                    Overviews:
-                    </strong>
-                    {{service.source.overviews.keys()}}
-                </h5>
-                <h5>
-                    <strong>
-                    Aggregation Method:
-                    </strong>
-                    {{service.source.agg_func}}
-                </h5>
-                <h5>
-                    <strong>
-                    Colormap Interpolation Method:
-                    </strong>
-                    {{service.source.shade_how}}
-                </h5>
-            </div>
-        </body>
-        </html>
-        '''
-    )
+    template = jinja2_env.get_template("service_page.html")
 
     resources = INLINE.render()
     html = template.render(resources=resources,
                            script=script,
                            service=service,
                            len=len,
-                           div=div,
-                           psutils_html=psutils_html())
+                           div=div)
 
     return html
 
 
 def index_page(services):
-    links = []
-    for s in services:
-        links.append(f'<li><a href="{s.service_page_url}">{s.name}</a></li>')
+    template = jinja2_env.get_template('index_page.html')
 
-    html = '<html>'
-    html += '<body>'
-    html += '<ul>'
-    html += ''.join(links)
-    html += '</ul>'
-    html += '</body>'
-    html += '</html>'
-
-    return html
+    return template.render(services=services)
 
 
 def add_service_urls(app, service):

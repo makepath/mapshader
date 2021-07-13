@@ -1,0 +1,10 @@
+<html>
+  <body>
+    {% include 'psutils.html' %}
+    <ul>
+      {%- for s in services %}
+      <li><a href="{{s.service_page_url}}">{{s.name}}</a></li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>

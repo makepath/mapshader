@@ -128,3 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 mapshader/_version.py
+
+# VS code stuff
+.vscode
