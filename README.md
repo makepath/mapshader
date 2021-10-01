@@ -57,17 +57,23 @@ metadata:
   version: 1
 
 sources:
-  - name: Elevation
-    key: elevation-user
+  - name: Global Elevation Example
+    key: elevation-example
     text: Elevation
-    description: Global elevation
+    description: Global elevation example
     geometry_type: raster
     shade_how: linear
-    span: min/max
+    cmap:
+      - white
+      - black
+    span:
+      - 58
+      - 248
+    raster_padding: 0
     raster_interpolate: linear
     xfield: geometry
     yfield: geometry
-    filepath: ~/mapshader/mapshader/tests/fixtures/elevation.tif
+    filepath: mapshader/tests/fixtures/elevation.tif
     transforms:
       - name: squeeze
         args:
@@ -82,6 +88,8 @@ sources:
       - name: reproject_raster
         args:
           epsg: 3857
+    service_types:
+      - tile
 ```
 
 This configuration file can then be passed to the flask server upon startup:
