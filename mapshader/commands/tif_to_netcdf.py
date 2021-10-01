@@ -134,7 +134,7 @@ def tif_to_netcdf(
     arr = reproject_raster(arr, epsg=crs)
 
     dataset = xr.Dataset(
-        data_vars={data_variable: (['y', 'x'], arr.chunk(chunks))},
+        data_vars={data_variable: (['y', 'x'], arr.chunk(chunks).data)},
         coords={'x': arr.coords[x], 'y': arr.coords[y]},
     )
     dataset.attrs = dict(name=data_variable)
