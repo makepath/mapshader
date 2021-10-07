@@ -1,6 +1,16 @@
 ## Mapshader Changelog
 -----------
 
+### Version 0.1.0 - 10/7/2021
+- Fixed mapshader config example (#95)
+- Added Geojson support Bokeh Previewer support (#67)
+- Added docs publishing action (#91)
+- Added sphinx (#76)
+- Moved hardcoded html (#89)
+- Moved services from sources.py to services.py (#90)
+- Updated docstrings (#72)
+- Added GeoTIFF to NetCDF CLI command (#78)
+
 ### Version 0.0.9 - 5/18/2021
 - Fixed package requirements
 
