@@ -59,7 +59,7 @@ html_favicon = '_static/img/favicon.ico'
 # sphinx-multiversion config
 smv_branch_whitelist = 'master'
 
-smv_tag_whitelist = r'^v([0-9]\.[1]\.[0-9])'
+smv_tag_whitelist = r'^v([0]\.[1-9]\.[0-9]|[1-9]\.[0-9]\.[0-9])'
 
 # Load releases
 with open('releases.json') as f:
