@@ -1,7 +1,9 @@
 from os.path import expanduser
 
 import geopandas as gpd
+import glob
 import numpy as np
+import rioxarray  # Import before xarray for xr.open_mfdataset(engine="rasterio")
 import xarray as xr
 
 
@@ -34,8 +36,24 @@ def load_raster(file_path, xmin=None, ymin=None,
 
     if file_path.endswith('.tif'):
 
-        arr = xr.open_rasterio(expanduser(file_path),
-                               chunks={'y': 512, 'x': 512})
+        if '*' in file_path:
+            ds = xr.open_mfdataset(expanduser(file_path), engine="rasterio",
+                                   chunks={'y': 512, 'x': 512})
+            arr = ds["band_data"]  # dataset to dataarray.
+
+            # Attributes are removed when calling open_mfdataset using
+            # rasterio engine, so need to extract them from one file and copy
+            # them across.
+            filenames = glob.glob(expanduser(file_path))
+            single = xr.open_rasterio(filenames[0])
+            attrs = single.attrs
+            del attrs["transform"]
+            single.close()
+
+            arr.attrs = attrs
+        else:
+            arr = xr.open_rasterio(expanduser(file_path),
+                                   chunks={'y': 512, 'x': 512})
 
         if hasattr(arr, 'nodatavals'):
 

@@ -1,0 +1,29 @@
+---
+
+sources:
+  - name: Grand Canyon (Copernicus 30 m)
+    key: grand_canyon
+    text: grand_canyon
+    description: Grand Canyon (Copernicus 30 m)
+    geometry_type: raster
+    shade_how: linear
+    cmap:
+      - white
+      - black
+    span:
+      - 300
+      - 3800
+    raster_padding: 0
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: /home/data/copernicus_dem_30/grand_canyon/Copernicus_DSM_COG_10_*_DEM.tif
+    transforms:
+      - name: squeeze
+        args:
+          dim: band
+      - name: reproject_raster
+        args:
+          epsg: 3857
+    service_types:
+      - tile
