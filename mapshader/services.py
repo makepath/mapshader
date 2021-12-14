@@ -284,7 +284,7 @@ def get_services(config_path=None, include_default=True, contains=None, sources=
     else:
         with open(config_path, 'r') as f:
             content = f.read()
-            config_obj = yaml.load(content)
+            config_obj = yaml.safe_load(content)
             source_objs = config_obj['sources']
 
         if include_default:
