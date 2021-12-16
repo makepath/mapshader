@@ -1,6 +1,12 @@
 name: Python Test Suite
 
-on: [push]
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
 
 jobs:
   build-linux:
@@ -9,17 +15,22 @@ jobs:
       max-parallel: 5
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout source
+      uses: actions/checkout@v2
+
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
+
     - name: Get some info
       run: |
         $CONDA/bin/conda info
+
     - name: Install dependencies
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
+
     - name: Activate environment
       run: |
         $CONDA/bin/pip install pytest
@@ -28,6 +39,7 @@ jobs:
     - name: Install Mapshader code
       run: |
         $CONDA/bin/pip install -e .
+
     - name: Test with pytest
       run: |
         $CONDA/bin/pip install pytest
