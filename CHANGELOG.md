@@ -37,7 +37,7 @@
 - Added discrete colormaps for raster (should be moved into datashader later)
 - Added flask cors rule (#35)
 
-### Version 0.0.4 - 2020-01-27
+### Version 0.0.4 - 2021-01-27
 - Added raster_to_categorical_points transform; added ability to manully instantiate services to support integrations
 - Added hello message
 - Fixed raster overview generation
@@ -52,11 +52,11 @@
 - General fixes
 - Added padding and performance fixes for raster layers
 
-### Version 0.0.3 - 2020-01-20
+### Version 0.0.3 - 2021-01-20
 - Added user configs
 
-### Version 0.0.2 - 2020-01-19
+### Version 0.0.2 - 2021-01-19
 - Many stability fixes
 
-### Version 0.0.1 - 2020-01-18
+### Version 0.0.1 - 2021-01-18
 - First public release available on GitHub and PyPI
