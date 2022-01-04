@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'mapshader'
-copyright = '2021, makepath'
+copyright = '2021-2022, makepath'
 author = 'makepath'
 
 
