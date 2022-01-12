@@ -536,6 +536,10 @@ def render_map(source: MapSource,  # noqa: C901
         x_range, y_range = ((xmin, xmax), (ymin, ymax))
         width = height_implied_by_aspect_ratio(height, y_range, x_range)
 
+    print("==> tile extent", xmin, ymin, xmax, ymax)
+    print("==> data extent", sxmin, symin, sxmax, symax)
+    print("==> out of bounds checks", xmin < sxmin, ymin < symin, xmax > symax, ymax > symax)
+
     # handle out of bounds
     if xmin < sxmin and ymin < symin and xmax > symax and ymax > symax:
         agg = tf.Image(np.zeros(shape=(height, width), dtype=np.uint32),

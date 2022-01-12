@@ -1,0 +1,29 @@
+---
+
+metadata:
+  version: 1
+
+sources:
+  - name: Dummy Multiband Netcdf
+    key: multiband-netcdf
+    text: Elevation
+    description: Dummy multiband netcdf data
+    geometry_type: raster
+    shade_how: linear
+    cmap:
+      - black
+      - green
+    span:
+      - 0
+      - 10
+    raster_padding: 0
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: examples/dummy_*.nc
+    transforms:
+      - name: reproject_raster
+        args:
+          epsg: 3857
+    service_types:
+      - tile

@@ -318,10 +318,21 @@ class RasterSource(MapSource):
     @property
     @memoized()
     def full_extent(self):
-        return (self.data.coords['x'].min().compute().item(),
-                self.data.coords['y'].min().compute().item(),
-                self.data.coords['x'].max().compute().item(),
-                self.data.coords['y'].max().compute().item())
+
+
+        print("AAA", type(self))
+        print("AAA", self)
+
+
+
+
+        if hasattr(self.data, "full_extent"):
+            return self.data.full_extent()
+        else:
+            return (self.data.coords['x'].min().compute().item(),
+                    self.data.coords['y'].min().compute().item(),
+                    self.data.coords['x'].max().compute().item(),
+                    self.data.coords['y'].max().compute().item())
 
 
 class VectorSource(MapSource):
