@@ -11,9 +11,12 @@ lat_limits = (0, 3)  # Integer min and max latitude
 lon_limits = (0, 4)  # Integer min and max longitude
 ny, nx = 4, 5        # Grid points per tile.
 
+scale = 10
+offset = 1
 
-dx = 1.0 / nx
-dy = 1.0 / ny
+
+dx = scale / nx
+dy = scale / ny
 
 rng = np.random.default_rng(92741)
 
@@ -30,8 +33,8 @@ for lat in range(lat_limits[0], lat_limits[1]):
         if rng.random(1)[0] > 0.8:
             continue
 
-        x = np.linspace(lon + dx/2, lon + 1 - dx/2, nx)
-        y = np.linspace(lat + dy/2, lat + 1 - dy/2, ny)
+        x = np.linspace(lon*scale + offset + dx/2, (lon + 1)*scale + offset - dx/2, nx)
+        y = np.linspace(lat*scale + offset + dy/2, (lat + 1)*scale + offset - dy/2, ny)
         filename = f"dummy_{lon}_{lat}.nc"
 
         red = rng.random(size=(ny, nx), dtype=np.float32)

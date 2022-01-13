@@ -11,7 +11,7 @@ sources:
     geometry_type: raster
     shade_how: linear
     cmap:
-      - black
+      - yellow
       - green
     span:
       - 0
