@@ -19,7 +19,7 @@ from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
-
+from .multifile import MultiFileNetCDF
 
 import spatialpandas
 
@@ -79,8 +79,12 @@ def create_agg(source: MapSource,
     if z and z in source.overviews:
         print(f'Using overview: {z}', file=sys.stdout)
         dataset = source.overviews[z]
+    elif isinstance(source.data, MultiFileNetCDF):
+        dataset = source.data.load(xmin, ymin, xmax, ymax)
     else:
         dataset = source.data
+
+    print("==> type passed to datashader agg function", type(dataset))
 
     cvs = ds.Canvas(plot_width=width, plot_height=height,
                     x_range=(xmin, xmax), y_range=(ymin, ymax))
@@ -550,6 +554,8 @@ def render_map(source: MapSource,  # noqa: C901
         return img
 
     agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
+    print("==> agg min, mean, max", agg.min().compute().item(),
+          agg.mean().compute().item(), agg.max().compute().item())
 
     if source.span and isinstance(source.span, (list, tuple)):
         agg = agg.where((agg >= source.span[0]) & (agg <= source.span[1]))

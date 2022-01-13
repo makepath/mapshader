@@ -318,13 +318,8 @@ class RasterSource(MapSource):
     @property
     @memoized()
     def full_extent(self):
-
-
         print("AAA", type(self))
         print("AAA", self)
-
-
-
 
         if hasattr(self.data, "full_extent"):
             return self.data.full_extent()

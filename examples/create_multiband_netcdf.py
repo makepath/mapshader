@@ -3,7 +3,7 @@
 # Each tile is 1x1 degree for simplicity, EPSG 4326.
 
 import numpy as np
-import rioxarray
+import rioxarray  # noqa: F401
 import xarray as xr
 
 
@@ -45,7 +45,7 @@ for lat in range(lat_limits[0], lat_limits[1]):
                 green=(dims, green),
                 blue=(dims, blue),
             ),
-            coords=dict(y=y, x=x),            
+            coords=dict(y=y, x=x),
             attrs=dict(
                 description="dummy data",
                 crs="epsg:4326",
@@ -54,7 +54,7 @@ for lat in range(lat_limits[0], lat_limits[1]):
 
         ds.to_netcdf(filename)
         print(f"Written file {filename}", ds.rio.bounds(), x.min(), y.min(), x.max(), y.max())
-        
+
         red_min = np.nanmin((red_min, red.min()))
         red_max = np.nanmax((red_max, red.max()))
         green_min = np.nanmin((green_min, green.min()))
