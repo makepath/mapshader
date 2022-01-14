@@ -237,7 +237,7 @@ def parse_sources(source_objs, config_path=None, contains=None):
 
     for source in source_objs:
         # create sources
-        source_obj = MapSource.from_obj(source)
+        source_objs = MapSource.from_obj(source)
 
         for service_type in source['service_types']:
             source['config_path'] = config_path
@@ -249,7 +249,8 @@ def parse_sources(source_objs, config_path=None, contains=None):
             ServiceKlass = service_classes[service_type]
 
             # TODO: add renderers here...
-            yield ServiceKlass(source=source_obj)
+            for source_obj in source_objs:
+                yield ServiceKlass(source=source_obj)
 
 
 def get_services(config_path=None, include_default=True, contains=None, sources=None):

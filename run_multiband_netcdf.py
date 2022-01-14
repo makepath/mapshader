@@ -9,10 +9,15 @@ yaml_file = "multiband_netcdf.yaml"
 with open(yaml_file, 'r') as f:
     content = f.read()
     config_obj = yaml.safe_load(content)
-    source_obj = config_obj['sources'][0]
+    source_objs = config_obj['sources']
 
-s = MapSource.from_obj(source_obj)
-source = s.load()
+sources = []
+for source_obj in source_objs:
+    sources += (MapSource.from_obj(source_obj))
+
+print(sources)
+
+source = sources[0].load()
 
 
 # Want tile containing slightly positive lat and lon

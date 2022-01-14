@@ -288,6 +288,8 @@ class MapSource(object):
 
     @staticmethod
     def from_obj(obj: dict):
+        # Returns a list of MapSource objects as a single source in a yaml
+        # file may refer to multiple MapSources.
         transforms = obj.get('transforms')
         if transforms and isinstance(transforms, (list, tuple)):
             n = 'raster_to_categorical_points'
@@ -296,9 +298,9 @@ class MapSource(object):
             has_to_vector = False
 
         if obj['geometry_type'] == 'raster' or has_to_vector:
-            return RasterSource(**obj)
+            return [RasterSource(**obj)]
         else:
-            return VectorSource(**obj)
+            return [VectorSource(**obj)]
 
 
 class RasterSource(MapSource):

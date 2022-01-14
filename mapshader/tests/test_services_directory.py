@@ -8,26 +8,32 @@ from mapshader.sources import MapSource, world_countries_source
 
 def test_build_previewer_with_point_data_source():
     source_dict = world_countries_source()
-    map_source = MapSource.from_obj(source_dict)
-    tile_service = TileService(map_source)
+    map_sources = MapSource.from_obj(source_dict)
+    assert len(map_sources) == 1
+    tile_service = TileService(map_sources[0])
     result = build_previewer(tile_service)
     assert isinstance(result, Figure)
 
+
 def test_build_previewer_with_geojson_service_type():
     source_dict = world_countries_source()
-    map_source = MapSource.from_obj(source_dict)
-    geojson_service = GeoJSONService(map_source)
+    map_sources = MapSource.from_obj(source_dict)
+    assert len(map_sources) == 1
+    geojson_service = GeoJSONService(map_sources[0])
     result = build_previewer(geojson_service)
 
     assert isinstance(result, Figure)
+
 
 def test_build_previewer_with_geojson_geometry_collection_service_type():
     source_dict = world_countries_source()
-    map_source = MapSource.from_obj(source_dict)
-    geojson_service = GeoJSONService(map_source)
+    map_sources = MapSource.from_obj(source_dict)
+    assert len(map_sources) == 1
+    geojson_service = GeoJSONService(map_sources[0])
     result = build_previewer(geojson_service)
 
     assert isinstance(result, Figure)
+
 
 def test_build_previewer_with_bad_data():
     source_dict = world_countries_source()
