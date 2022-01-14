@@ -62,7 +62,6 @@ def load_raster(file_path, xmin=None, ymin=None,
     else:
         raise TypeError(f"Unable to load raster {file_path}")
 
-    print("==> load_raster returning", arr)
     return arr
 
 

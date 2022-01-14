@@ -214,4 +214,5 @@ if __name__ == '__main__':
     if user_file:
         user_file = path.abspath(path.expanduser(user_file))
 
-    app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=debug)
+    app = create_app(user_file, contains=service_grep).run(
+        host='0.0.0.0', debug=False, threaded=False, processes=4)

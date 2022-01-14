@@ -84,8 +84,6 @@ def create_agg(source: MapSource,
     else:
         dataset = source.data
 
-    #print("==> type passed to datashader agg function", type(dataset))
-
     cvs = ds.Canvas(plot_width=width, plot_height=height,
                     x_range=(xmin, xmax), y_range=(ymin, ymax))
 
@@ -540,11 +538,11 @@ def render_map(source: MapSource,  # noqa: C901
         x_range, y_range = ((xmin, xmax), (ymin, ymax))
         width = height_implied_by_aspect_ratio(height, y_range, x_range)
 
-    print("==> tile extent", xmin, ymin, xmax, ymax, "data extent", sxmin, symin, sxmax, symax)
+    # print("==> tile extent", xmin, ymin, xmax, ymax, "data extent", sxmin, symin, sxmax, symax)
 
     # handle out of bounds
     if xmax < sxmin or ymax < symin or xmin > symax or ymin > symax:
-        print("==> OUT OF BOUNDS", flush=True)
+        # print("==> OUT OF BOUNDS", flush=True)
         agg = tf.Image(np.zeros(shape=(height, width), dtype=np.uint32),
                        coords={'x': np.linspace(xmin, xmax, width),
                                'y': np.linspace(ymin, ymax, height)},
@@ -553,8 +551,6 @@ def render_map(source: MapSource,  # noqa: C901
         return img
 
     agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
-    #print("==> agg min, mean, max", agg.min().compute().item(),
-    #      agg.mean().compute().item(), agg.max().compute().item())
 
     if source.span and isinstance(source.span, (list, tuple)):
         agg = agg.where((agg >= source.span[0]) & (agg <= source.span[1]))
