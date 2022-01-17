@@ -17,7 +17,7 @@ for source_obj in source_objs:
 
 print(sources)
 
-source = sources[0].load()
+source = sources[1].load()
 
 
 # Want tile containing slightly positive lat and lon

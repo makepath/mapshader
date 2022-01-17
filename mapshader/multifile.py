@@ -14,8 +14,6 @@ class MultiFileNetCDF:
     load_raster() and load_vector() with a considered class hierarchy.
     """
     def __init__(self, file_path):
-        # print("==> MultiFileNetCDF.__init__ XXX", file_path, flush=True)
-
         filenames = glob(file_path)
         self._crs_file = None
         self._bands = None
@@ -30,7 +28,7 @@ class MultiFileNetCDF:
                 if self._crs_file is None:
                     self._crs_file = ds.attrs["crs"]
                     self._bands = list(ds.data_vars.keys())
-                    print("==> available bands", self._bands)
+                    # print("==> available bands", self._bands)
                 # Should really check CRS is the same across all files.
 
                 # x, y limits determined from coords.
@@ -76,7 +74,7 @@ class MultiFileNetCDF:
     def full_extent(self):
         return self._total_bounds
 
-    def load(self, xmin, ymin, xmax, ymax):
+    def load_bounds(self, xmin, ymin, xmax, ymax, band):
         # Load data for required bounds from disk and return xr.DataArray containing it.
         # Not storing the loaded data in this class, relying on caller freeing the returned object
         # when it has finished with it.  May need to implement a cacheing strategy here?
@@ -84,7 +82,8 @@ class MultiFileNetCDF:
         # print("==>      total_bounds", self._total_bounds, flush=True)
 
         # band_wanted = "green"  # This needs to be selected by user.
-        band_wanted = self._bands[0]
+
+        # print("AAAAAAAAA MultiFileNetCDF load()", flush=True)
 
         # Need to test what happens with data that crosses longitude discontinuity.
 
@@ -109,7 +108,7 @@ class MultiFileNetCDF:
         arrays = []
         for i, filename in enumerate(intersects.filename):
             with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-                arr = ds[band_wanted]
+                arr = ds[band]
                 if i == 0:
                     arr.rio.write_crs(self._crs_file, inplace=True)  # Only the first needs CRS set.
                 arrays.append(arr)
@@ -117,13 +116,13 @@ class MultiFileNetCDF:
         # If nothing intersects region of interest, send back empty DataArray.
         # Should be able to identify this earlier in the pipeline.
         if not arrays:
-            print("EARLY EXIT", flush=True)
+            # print("EARLY EXIT", flush=True)
             return xr.DataArray()
 
         merged = xr.merge(arrays)
         # merged = merge_arrays(arrays)  # This gives mismatch between bounds and transform???
 
-        merged = merged[band_wanted]
+        merged = merged[band]
 
         if self._crs_reproject:
             merged = merged.rio.reproject(self._crs_reproject)

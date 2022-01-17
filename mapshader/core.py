@@ -18,8 +18,7 @@ from xrspatial.classify import quantile
 from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
-from mapshader.sources import MapSource
-from .multifile import MultiFileNetCDF
+from mapshader.sources import MapSource, SingleBandProxySource
 
 import spatialpandas
 
@@ -79,8 +78,8 @@ def create_agg(source: MapSource,
     if z and z in source.overviews:
         print(f'Using overview: {z}', file=sys.stdout)
         dataset = source.overviews[z]
-    elif isinstance(source.data, MultiFileNetCDF):
-        dataset = source.data.load(xmin, ymin, xmax, ymax)
+    elif isinstance(source, SingleBandProxySource):
+        dataset = source.load_bounds(xmin, ymin, xmax, ymax)
     else:
         dataset = source.data
 
@@ -511,7 +510,7 @@ def render_map(source: MapSource,  # noqa: C901
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
 
-    sxmin, symin, sxmax, symax = source.full_extent
+    sxmin, symin, sxmax, symax = source.get_full_extent()
 
     # handle null extent
     if xmin is None:

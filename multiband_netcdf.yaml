@@ -21,6 +21,10 @@ sources:
     xfield: geometry
     yfield: geometry
     filepath: examples/dummy_*.nc
+    bands:
+      - red
+      - blue
+      - green
     transforms:
       - name: reproject_raster
         args:

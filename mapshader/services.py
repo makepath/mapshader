@@ -24,20 +24,27 @@ class MapService():
     def __init__(self, source: MapSource, renderers=[]):
         self.source = source
         self.renderers = renderers
+        self.band = getattr(self.source, "band", None)
 
     @property
     def key(self):
         """
         Get the route before the coordinates.
         """
-        return f'{self.source.key}-{self.service_type}'
+        if self.band:
+            return f'{self.source.key}-{self.service_type}-{self.band}'
+        else:
+            return f'{self.source.key}-{self.service_type}'
 
     @property
     def name(self):
         """
         Get the source name and service type.
         """
-        return f'{self.source.name} {self.service_type}'
+        if self.band:
+            return f'{self.source.name} {self.service_type} {self.band}'
+        else:
+            return f'{self.source.name} {self.service_type}'
 
     @property
     def legend_name(self):

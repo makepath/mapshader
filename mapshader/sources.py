@@ -14,7 +14,19 @@ from mapshader.transforms import get_transform_by_name
 import spatialpandas
 
 
-class MapSource(object):
+class BaseSource:
+    @property
+    def load_func(self):
+        raise NotImplementedError()
+
+    def get_full_extent(self):
+        raise NotImplementedError()
+
+    def load(self):
+        raise NotImplementedError()
+
+
+class MapSource(BaseSource):
     """
     This class represents a map source object.
 
@@ -206,13 +218,6 @@ class MapSource(object):
         if self.preload or contains_overviews:
             self.load()
 
-    @property
-    def load_func(self):
-        raise NotImplementedError()
-
-    def get_full_extent(self):
-        raise NotImplementedError()
-
     def load(self):
         """
         Load the service data.
@@ -297,10 +302,40 @@ class MapSource(object):
         else:
             has_to_vector = False
 
-        if obj['geometry_type'] == 'raster' or has_to_vector:
+        bands = obj.pop("bands", False)
+        if bands:
+            base_source = RasterSource(**obj)
+            return [SingleBandProxySource(base_source, band) for band in bands]
+        elif obj['geometry_type'] == 'raster' or has_to_vector:
             return [RasterSource(**obj)]
         else:
             return [VectorSource(**obj)]
+
+
+class SingleBandProxySource(BaseSource):
+    def __init__(self, multiband_source, band):
+        self.multiband_source = multiband_source
+        self.band = band
+
+    def __getattr__(self, attr):
+        # Return attribute of shared multiband_source.
+        return getattr(self.multiband_source, attr)
+
+    def get_full_extent(self):
+        if not self.multiband_source.is_loaded:
+            raise RuntimeError("Multiband source not yet loaded")
+        return self.multiband_source.full_extent
+
+    def load(self):
+        print("==> SingleBandProxySource.load", flush=True)
+
+        if not self.multiband_source.is_loaded:
+            self.multiband_source.load()
+
+        return self
+
+    def load_bounds(self, xmin, ymin, xmax, ymax):
+        return self.multiband_source.data.load_bounds(xmin, ymin, xmax, ymax, self.band)
 
 
 class RasterSource(MapSource):
