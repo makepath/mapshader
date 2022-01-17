@@ -4,10 +4,35 @@ metadata:
   version: 1
 
 sources:
-  - name: Dummy Multiband Netcdf
-    key: multiband-netcdf
-    text: Elevation
-    description: Dummy multiband netcdf data
+  - name: Dummy Multiband Netcdf Red
+    key: multiband-netcdf-red
+    text: Dummy multiband netcdf red
+    description: Dummy multiband netcdf red
+    geometry_type: raster
+    shade_how: linear
+    cmap:
+      - white
+      - red
+    span:
+      - 0
+      - 1
+    raster_padding: 0
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: examples/dummy_*.nc
+    band: red
+    transforms:
+      - name: reproject_raster
+        args:
+          epsg: 3857
+    service_types:
+      - tile
+
+  - name: Dummy Multiband Netcdf Green
+    key: multiband-netcdf-green
+    text: Dummy multiband netcdf green
+    description: Dummy multiband netcdf green
     geometry_type: raster
     shade_how: linear
     cmap:
@@ -15,16 +40,38 @@ sources:
       - green
     span:
       - 0
-      - 10
+      - 4
     raster_padding: 0
     raster_interpolate: linear
     xfield: geometry
     yfield: geometry
     filepath: examples/dummy_*.nc
-    bands:
-      - red
+    band: green
+    transforms:
+      - name: reproject_raster
+        args:
+          epsg: 3857
+    service_types:
+      - tile
+
+  - name: Dummy Multiband Netcdf Blue
+    key: multiband-netcdf-blue
+    text: Dummy multiband netcdf blue
+    description: Dummy multiband netcdf blue
+    geometry_type: raster
+    shade_how: linear
+    cmap:
+      - yellow
       - blue
-      - green
+    span:
+      - 0
+      - 3
+    raster_padding: 0
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: examples/dummy_*.nc
+    band: blue
     transforms:
       - name: reproject_raster
         args:

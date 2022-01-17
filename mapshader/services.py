@@ -24,27 +24,20 @@ class MapService():
     def __init__(self, source: MapSource, renderers=[]):
         self.source = source
         self.renderers = renderers
-        self.band = getattr(self.source, "band", None)
 
     @property
     def key(self):
         """
         Get the route before the coordinates.
         """
-        if self.band:
-            return f'{self.source.key}-{self.service_type}-{self.band}'
-        else:
-            return f'{self.source.key}-{self.service_type}'
+        return f'{self.source.key}-{self.service_type}'
 
     @property
     def name(self):
         """
         Get the source name and service type.
         """
-        if self.band:
-            return f'{self.source.name} {self.service_type} {self.band}'
-        else:
-            return f'{self.source.name} {self.service_type}'
+        return f'{self.source.name} {self.service_type}'
 
     @property
     def legend_name(self):
@@ -244,7 +237,7 @@ def parse_sources(source_objs, config_path=None, contains=None):
 
     for source in source_objs:
         # create sources
-        source_objs = MapSource.from_obj(source)
+        source_obj = MapSource.from_obj(source)
 
         for service_type in source['service_types']:
             source['config_path'] = config_path
@@ -256,8 +249,7 @@ def parse_sources(source_objs, config_path=None, contains=None):
             ServiceKlass = service_classes[service_type]
 
             # TODO: add renderers here...
-            for source_obj in source_objs:
-                yield ServiceKlass(source=source_obj)
+            yield ServiceKlass(source=source_obj)
 
 
 def get_services(config_path=None, include_default=True, contains=None, sources=None):

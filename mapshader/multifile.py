@@ -5,6 +5,21 @@ import rioxarray  # noqa: F401
 from shapely.geometry import Polygon
 import xarray as xr
 
+
+class SharedMultiFile:
+    """
+    Simple implementation of shared MultiFileNetCDF objects.
+    """
+    _lookup = {}
+
+    @classmethod
+    def get(cls, file_path):
+        shared = cls._lookup.get(file_path, None)
+        if not shared:
+            cls._lookup[file_path] = shared = MultiFileNetCDF(file_path)
+        return shared
+
+
 class MultiFileNetCDF:
     """
     Proxy for multiple netCDF files that provides a similar interface to
@@ -28,7 +43,6 @@ class MultiFileNetCDF:
                 if self._crs_file is None:
                     self._crs_file = ds.attrs["crs"]
                     self._bands = list(ds.data_vars.keys())
-                    # print("==> available bands", self._bands)
                 # Should really check CRS is the same across all files.
 
                 # x, y limits determined from coords.
@@ -37,7 +51,6 @@ class MultiFileNetCDF:
                 xmax = ds.x.max().item()
                 ymin = ds.y.min().item()
                 ymax = ds.y.max().item()
-                # print("==> Bounds on import", filename, ds.rio.bounds(), flush=True)
 
             xmins.append(xmin)
             xmaxs.append(xmax)
@@ -63,7 +76,6 @@ class MultiFileNetCDF:
 
         # Actually it is slightly larger than this by half a pixel in each direction
         self._total_bounds = self._grid.total_bounds  # [xmin, ymin, xmax, ymax]
-        # print("==> Total bounds", self._total_bounds, flush=True)
 
         # Redirect calls like obj.rio.reproject() to obj.reproject().
         # This is an unpleasant temporary solution.
@@ -78,12 +90,6 @@ class MultiFileNetCDF:
         # Load data for required bounds from disk and return xr.DataArray containing it.
         # Not storing the loaded data in this class, relying on caller freeing the returned object
         # when it has finished with it.  May need to implement a cacheing strategy here?
-        # print("==> LOAD", xmin, ymin, xmax, ymax, flush=True)
-        # print("==>      total_bounds", self._total_bounds, flush=True)
-
-        # band_wanted = "green"  # This needs to be selected by user.
-
-        # print("AAAAAAAAA MultiFileNetCDF load()", flush=True)
 
         # Need to test what happens with data that crosses longitude discontinuity.
 
@@ -97,13 +103,8 @@ class MultiFileNetCDF:
                 ymax = 180.0
 
         polygon = Polygon([(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax)])
-        # print("POLYGON", polygon, flush=True)
         intersects = self._grid.intersects(polygon)  # pandas.Series of booleans.
-        # print("INTERSECTS", intersects, flush=True)
         intersects = self._grid[intersects]  # geopandas.GeoDataFrame
-        # print(intersects)
-
-        # print("==> NUMBER OF FILES TO LOAD", len(intersects), flush=True)
 
         arrays = []
         for i, filename in enumerate(intersects.filename):
@@ -116,7 +117,6 @@ class MultiFileNetCDF:
         # If nothing intersects region of interest, send back empty DataArray.
         # Should be able to identify this earlier in the pipeline.
         if not arrays:
-            # print("EARLY EXIT", flush=True)
             return xr.DataArray()
 
         merged = xr.merge(arrays)
@@ -131,7 +131,8 @@ class MultiFileNetCDF:
 
     def reproject(self, proj_str):
         if self._crs_reproject:
-            raise RuntimeError("Cannot call reproject more than once")
+            # Already reprojected so do not repeat.
+            return self
 
         self._crs_reproject = proj_str
 

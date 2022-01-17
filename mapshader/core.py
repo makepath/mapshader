@@ -18,7 +18,8 @@ from xrspatial.classify import quantile
 from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
-from mapshader.sources import MapSource, SingleBandProxySource
+from mapshader.sources import MapSource
+from .multifile import MultiFileNetCDF
 
 import spatialpandas
 
@@ -78,8 +79,8 @@ def create_agg(source: MapSource,
     if z and z in source.overviews:
         print(f'Using overview: {z}', file=sys.stdout)
         dataset = source.overviews[z]
-    elif isinstance(source, SingleBandProxySource):
-        dataset = source.load_bounds(xmin, ymin, xmax, ymax)
+    elif isinstance(source.data, MultiFileNetCDF):
+        dataset = source.data.load_bounds(xmin, ymin, xmax, ymax, source.band)
     else:
         dataset = source.data
 
@@ -510,7 +511,7 @@ def render_map(source: MapSource,  # noqa: C901
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
 
-    sxmin, symin, sxmax, symax = source.get_full_extent()
+    sxmin, symin, sxmax, symax = source.full_extent
 
     # handle null extent
     if xmin is None:
@@ -537,11 +538,8 @@ def render_map(source: MapSource,  # noqa: C901
         x_range, y_range = ((xmin, xmax), (ymin, ymax))
         width = height_implied_by_aspect_ratio(height, y_range, x_range)
 
-    # print("==> tile extent", xmin, ymin, xmax, ymax, "data extent", sxmin, symin, sxmax, symax)
-
     # handle out of bounds
     if xmax < sxmin or ymax < symin or xmin > symax or ymin > symax:
-        # print("==> OUT OF BOUNDS", flush=True)
         agg = tf.Image(np.zeros(shape=(height, width), dtype=np.uint32),
                        coords={'x': np.linspace(xmin, xmax, width),
                                'y': np.linspace(ymin, ymax, height)},

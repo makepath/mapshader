@@ -21,9 +21,7 @@ from mapshader.sources import elevation_source
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_to_geojson(source_func):
-    objs = MapSource.from_obj(source_func())
-    assert len(objs) == 1
-    source = objs[0].load()
+    source = MapSource.from_obj(source_func()).load()
     geojson = render_geojson(source)
     assert isinstance(geojson, str)
     data = json.loads(geojson)
@@ -37,9 +35,7 @@ def test_default_to_geojson(source_func):
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_to_image(source_func):
-    objs = MapSource.from_obj(source_func())
-    assert len(objs) == 1
-    source = objs[0].load()
+    source = MapSource.from_obj(source_func()).load()
     img = render_map(source, xmin=-20e6, ymin=-20e6,
                      xmax=20e6, ymax=20e6, width=500, height=500)
     assert isinstance(img, Image)
@@ -47,18 +43,14 @@ def test_default_to_image(source_func):
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_default_to_tile(source_func):
-    objs = MapSource.from_obj(source_func())
-    assert len(objs) == 1
-    source = objs[0].load()
+    source = MapSource.from_obj(source_func()).load()
     img = render_map(source, x=0, y=0, z=0, height=256, width=256)
     assert isinstance(img, Image)
 
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_to_raster(source_func):
-    objs = MapSource.from_obj(source_func())
-    assert len(objs) == 1
-    source = objs[0].load()
+    source = MapSource.from_obj(source_func()).load()
     result = to_raster(source, xmin=-20e6, ymin=-20e6,
                      xmax=20e6, ymax=20e6, width=500, height=500)
     assert isinstance(result, xr.DataArray)
@@ -66,9 +58,7 @@ def test_to_raster(source_func):
 
 
 def test_tile_render_edge_effects():
-    objs = MapSource.from_obj(elevation_source())
-    assert len(objs) == 1
-    source = objs[0].load()
+    source = MapSource.from_obj(elevation_source()).load()
 
     # this tile was bad...
     agg = create_agg(source, x=10, y=11, z=5)

@@ -30,9 +30,7 @@ DEFAULT_SOURCES_FUNCS = [world_countries_source,
 
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_load_default_dataset(source_func):
-    objs = MapSource.from_obj(source_func())
-    assert len(objs) == 1
-    source = objs[0].load()
+    source = MapSource.from_obj(source_func()).load()
     assert isinstance(source, MapSource)
 
 
@@ -64,9 +62,7 @@ def test_create_map_source_with_existing_geodataframe():
     source_obj['transforms'] = transforms
     source_obj['service_types'] = ['tile', 'wms', 'image', 'geojson']
 
-    objs = MapSource.from_obj(source_obj)
-    assert len(objs) == 1
-    source = objs[0].load()
+    source = MapSource.from_obj(source_obj).load()
     assert isinstance(source, VectorSource)
 
     arr = to_raster(source, width=100)

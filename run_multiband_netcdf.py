@@ -13,22 +13,20 @@ with open(yaml_file, 'r') as f:
 
 sources = []
 for source_obj in source_objs:
-    sources += (MapSource.from_obj(source_obj))
+    sources.append(MapSource.from_obj(source_obj))
 
 print(sources)
 
-source = sources[1].load()
-
 
 # Want tile containing slightly positive lat and lon
-def run(x, y, z, index):
+def run(x, y, z, index, j):
     print("XYZ", x, y, z)
 
     img = render_map(source, x=x, y=y, z=z, height=256, width=256)  # xarray Image 8x8
 
     bytes = img.to_bytesio()
     pillow_img = PIL.Image.open(bytes)
-    pillow_img.save(f"out_{index}.png", format="png")
+    pillow_img.save(f"out_{j}_{index}.png", format="png")
 
 def xyz_contains_data(z):
     ntiles = 2**z  # In both x and y directions.
@@ -37,10 +35,13 @@ def xyz_contains_data(z):
     return x, y, z
 
 
-i = 0
-for z in range(0, 3):
-    x, y, z = xyz_contains_data(z)
-    run(x, y, z, i)
-    i += 1
+for j in range(3):
+    source = sources[j].load()
 
-run(x-1, y, z, i)
+    i = 0
+    for z in range(0, 3):
+        x, y, z = xyz_contains_data(z)
+        run(x, y, z, i, j)
+        i += 1
+
+    # run(x-1, y, z, i, j)

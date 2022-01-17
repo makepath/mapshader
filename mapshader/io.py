@@ -4,7 +4,7 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 
-from mapshader.multifile import MultiFileNetCDF
+from mapshader.multifile import SharedMultiFile
 
 
 def load_raster(file_path, xmin=None, ymin=None,
@@ -52,8 +52,7 @@ def load_raster(file_path, xmin=None, ymin=None,
     elif file_path.endswith('.nc'):
 
         if '*' in file_path:
-            arr = MultiFileNetCDF(file_path)
-
+            arr = SharedMultiFile.get(file_path)
         else:
             # TODO: add chunk parameter to config
             arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})[layername]
