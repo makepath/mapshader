@@ -1,8 +1,8 @@
 # Create multiple netcdf files that are adjacent tiles containing the same
 # multiple variables.
-# Each tile is 1x1 degree for simplicity, EPSG 4326.
 
 import numpy as np
+import os
 import rioxarray  # noqa: F401
 import xarray as xr
 
@@ -35,7 +35,7 @@ for lat in range(lat_limits[0], lat_limits[1]):
 
         x = np.linspace(lon*scale + offset + dx/2, (lon + 1)*scale + offset - dx/2, nx)
         y = np.linspace(lat*scale + offset + dy/2, (lat + 1)*scale + offset - dy/2, ny)
-        filename = f"dummy_{lon}_{lat}.nc"
+        filename = os.path.join("example_multiband", f"dummy_{lon}_{lat}.nc")
 
         red = rng.random(size=(ny, nx), dtype=np.float32)
         green = rng.random(size=(ny, nx), dtype=np.float32) + lon

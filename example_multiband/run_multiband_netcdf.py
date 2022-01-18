@@ -4,7 +4,7 @@ import PIL
 import yaml
 
 
-yaml_file = "multiband_netcdf.yaml"
+yaml_file = "example_multiband/multiband_netcdf.yaml"
 
 with open(yaml_file, 'r') as f:
     content = f.read()

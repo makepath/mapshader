@@ -20,7 +20,7 @@ sources:
     raster_interpolate: linear
     xfield: geometry
     yfield: geometry
-    filepath: examples/dummy_*.nc
+    filepath: example_multiband/dummy_*.nc
     band: red
     transforms:
       - name: reproject_raster
@@ -45,7 +45,7 @@ sources:
     raster_interpolate: linear
     xfield: geometry
     yfield: geometry
-    filepath: examples/dummy_*.nc
+    filepath: example_multiband/dummy_*.nc
     band: green
     transforms:
       - name: reproject_raster
@@ -70,7 +70,7 @@ sources:
     raster_interpolate: linear
     xfield: geometry
     yfield: geometry
-    filepath: examples/dummy_*.nc
+    filepath: example_multiband/dummy_*.nc
     band: blue
     transforms:
       - name: reproject_raster
