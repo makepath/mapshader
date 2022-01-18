@@ -27,10 +27,12 @@ DEFAULT_SOURCES_FUNCS = [world_countries_source,
                          nybb_source,
                          elevation_source]
 
+
 @pytest.mark.parametrize("source_func", DEFAULT_SOURCES_FUNCS)
 def test_load_default_dataset(source_func):
     source = MapSource.from_obj(source_func()).load()
     assert isinstance(source, MapSource)
+
 
 def test_create_map_source_with_existing_geodataframe():
 

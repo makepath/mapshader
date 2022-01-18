@@ -14,7 +14,7 @@ from mapshader.transforms import get_transform_by_name
 import spatialpandas
 
 
-class MapSource(object):
+class MapSource:
     """
     This class represents a map source object.
 
@@ -128,6 +128,7 @@ class MapSource(object):
                  default_width=256,
                  overviews=None,
                  transforms=None,
+                 band=None,
                  attrs=None,
                  preload=False):
 
@@ -196,6 +197,7 @@ class MapSource(object):
         self.default_height = default_height
         self.preload = preload
         self.geometry_field = geometry_field
+        self.band = band
 
         self.is_loaded = False
         self.data = data
@@ -208,9 +210,6 @@ class MapSource(object):
 
     @property
     def load_func(self):
-        raise NotImplementedError()
-
-    def get_full_extent(self):
         raise NotImplementedError()
 
     def load(self):
@@ -318,10 +317,13 @@ class RasterSource(MapSource):
     @property
     @memoized()
     def full_extent(self):
-        return (self.data.coords['x'].min().compute().item(),
-                self.data.coords['y'].min().compute().item(),
-                self.data.coords['x'].max().compute().item(),
-                self.data.coords['y'].max().compute().item())
+        if hasattr(self.data, "full_extent"):
+            return self.data.full_extent()
+        else:
+            return (self.data.coords['x'].min().compute().item(),
+                    self.data.coords['y'].min().compute().item(),
+                    self.data.coords['x'].max().compute().item(),
+                    self.data.coords['y'].max().compute().item())
 
 
 class VectorSource(MapSource):

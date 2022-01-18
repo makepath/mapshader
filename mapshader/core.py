@@ -19,7 +19,7 @@ from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
-
+from .multifile import MultiFileNetCDF
 
 import spatialpandas
 
@@ -79,6 +79,8 @@ def create_agg(source: MapSource,
     if z and z in source.overviews:
         print(f'Using overview: {z}', file=sys.stdout)
         dataset = source.overviews[z]
+    elif isinstance(source.data, MultiFileNetCDF):
+        dataset = source.data.load_bounds(xmin, ymin, xmax, ymax, source.band)
     else:
         dataset = source.data
 
@@ -537,7 +539,7 @@ def render_map(source: MapSource,  # noqa: C901
         width = height_implied_by_aspect_ratio(height, y_range, x_range)
 
     # handle out of bounds
-    if xmin < sxmin and ymin < symin and xmax > symax and ymax > symax:
+    if xmax < sxmin or ymax < symin or xmin > symax or ymin > symax:
         agg = tf.Image(np.zeros(shape=(height, width), dtype=np.uint32),
                        coords={'x': np.linspace(xmin, xmax, width),
                                'y': np.linspace(ymin, ymax, height)},

@@ -4,6 +4,8 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 
+from mapshader.multifile import SharedMultiFile
+
 
 def load_raster(file_path, xmin=None, ymin=None,
                 xmax=None, ymax=None, chunks=None,
@@ -48,9 +50,13 @@ def load_raster(file_path, xmin=None, ymin=None,
         arr.name = file_path
 
     elif file_path.endswith('.nc'):
-        # TODO: add chunk parameter to config
-        arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})[layername]
-        arr['name'] = file_path
+
+        if '*' in file_path:
+            arr = SharedMultiFile.get(file_path)
+        else:
+            # TODO: add chunk parameter to config
+            arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})[layername]
+            arr['name'] = file_path
 
     else:
         raise TypeError(f"Unable to load raster {file_path}")
