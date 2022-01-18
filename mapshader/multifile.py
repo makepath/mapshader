@@ -41,7 +41,12 @@ class MultiFileNetCDF:
         for filename in filenames:
             with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
                 if self._crs_file is None:
-                    self._crs_file = ds.attrs["crs"]
+                    self._crs_file = ds.rio.crs
+                    if not self._crs_file:
+                        # Fallback for reading spatial_ref written in strange way.
+                        self._crs_file = ds.spatial_ref.spatial_ref
+                        ds.rio.set_crs(self._crs_file)
+
                     self._bands = list(ds.data_vars.keys())
                 # Should really check CRS is the same across all files.
 
