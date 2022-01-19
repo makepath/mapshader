@@ -3,20 +3,29 @@ from glob import glob
 from pyproj import CRS, Transformer
 import rioxarray  # noqa: F401
 from shapely.geometry import Polygon
+from threading import Lock
 import xarray as xr
 
 
 class SharedMultiFile:
     """
-    Simple implementation of shared MultiFileNetCDF objects.
+    Simple thread-safe implementation of shared MultiFileNetCDF objects.
+
+    Client code never instantiates a MultiFileNetCDF object directly, instead
+    it calls the get() method of this class.  This uses a lock to ensure that
+    only one MultiFileNetCDF is ever created and is shared between all the
+    clients.
     """
+    _lock = Lock()
     _lookup = {}
 
     @classmethod
     def get(cls, file_path):
-        shared = cls._lookup.get(file_path, None)
-        if not shared:
-            cls._lookup[file_path] = shared = MultiFileNetCDF(file_path)
+        with cls._lock:
+            shared = cls._lookup.get(file_path, None)
+            if not shared:
+                shared = MultiFileNetCDF(file_path)
+                cls._lookup[file_path] = shared
         return shared
 
 
@@ -30,6 +39,7 @@ class MultiFileNetCDF:
     """
     def __init__(self, file_path):
         filenames = glob(file_path)
+        self._lock = Lock()  # Limits reading of underlying data files to a single thread,
         self._crs_file = None
         self._bands = None
         xmins = []
@@ -38,6 +48,7 @@ class MultiFileNetCDF:
         ymaxs = []
         polygons = []
 
+        # No thread locking required here as this is done by SharedMultiFile.get().
         for filename in filenames:
             with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
                 if self._crs_file is None:
@@ -89,7 +100,8 @@ class MultiFileNetCDF:
         self._crs_reproject = None
 
     def full_extent(self):
-        return self._total_bounds
+        with self._lock:
+            return self._total_bounds
 
     def load_bounds(self, xmin, ymin, xmax, ymax, band):
         # Load data for required bounds from disk and return xr.DataArray containing it.
@@ -100,7 +112,8 @@ class MultiFileNetCDF:
 
         # Polygon of interest needs to be in files' CRS.
         if self._crs_reproject:
-            transformer = Transformer.from_crs(self._crs_reproject, self._crs_file)
+            with self._lock:
+                transformer = Transformer.from_crs(self._crs_reproject, self._crs_file)
             xmin, ymin = transformer.transform(xmin, ymin)
             xmax, ymax = transformer.transform(xmax, ymax)
             if ymax < -179.999999 and self._crs_file == CRS("EPSG:4326"):
@@ -111,18 +124,19 @@ class MultiFileNetCDF:
         intersects = self._grid.intersects(polygon)  # pandas.Series of booleans.
         intersects = self._grid[intersects]  # geopandas.GeoDataFrame
 
-        arrays = []
-        for i, filename in enumerate(intersects.filename):
-            with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-                arr = ds[band]
-                if i == 0:
-                    arr.rio.write_crs(self._crs_file, inplace=True)  # Only the first needs CRS set.
-                arrays.append(arr)
-
         # If nothing intersects region of interest, send back empty DataArray.
         # Should be able to identify this earlier in the pipeline.
-        if not arrays:
+        if intersects.empty:
             return xr.DataArray()
+
+        arrays = []
+        with self._lock:
+            for i, filename in enumerate(intersects.filename):
+                with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
+                    arr = ds[band]
+                    if i == 0:
+                        arr.rio.write_crs(self._crs_file, inplace=True)  # Only first needs CRS set.
+                    arrays.append(arr)
 
         merged = xr.merge(arrays)
         # merged = merge_arrays(arrays)  # This gives mismatch between bounds and transform???
@@ -130,7 +144,8 @@ class MultiFileNetCDF:
         merged = merged[band]
 
         if self._crs_reproject:
-            merged = merged.rio.reproject(self._crs_reproject)
+            with self._lock:
+                merged = merged.rio.reproject(self._crs_reproject)
 
         return merged
 
@@ -139,16 +154,17 @@ class MultiFileNetCDF:
             # Already reprojected so do not repeat.
             return self
 
-        self._crs_reproject = proj_str
-
         # Reproject the total bounds.
         # Assuming x and y transforms are independent.
         # This will not be necessary when required CRS is passed to constructor.
-        transformer = Transformer.from_crs(self._crs_file, self._crs_reproject)
+        transformer = Transformer.from_crs(self._crs_file, proj_str)
         xmin, ymin, xmax, ymax = self._total_bounds
         xmin, ymin = transformer.transform(xmin, ymin)
         xmax, ymax = transformer.transform(xmax, ymax)
-        self._total_bounds = (xmin, ymin, xmax, ymax)
+
+        with self._lock:
+            self._crs_reproject = proj_str
+            self._total_bounds = (xmin, ymin, xmax, ymax)
 
         # Coordinates from individual netcdf files will be reprojected each time they are loaded.
 
