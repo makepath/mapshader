@@ -78,4 +78,18 @@ def test_valid_conversion(tmpdir):
 
     shutil.copy2(path.join(FIXTURES_DIR, input_filename), input_filepath)
     runner.invoke(tif_to_netcdf, [input_filepath], standalone_mode=False)
-    assert filecmp.cmp(output_filepath, expected_output_filepath)
+
+    # xarray.to_netcdf can produce NETCDF3 or 4 files depending on availability of scipy.io and
+    # python netCDF4 libraries.  Need to check both possibilities.
+    if not filecmp.cmp(output_filepath, expected_output_filepath):
+        # Files differ, but may just be different netcdf version so check contents.
+        from numpy.testing import assert_array_almost_equal
+        import xarray as xr
+
+        a = xr.open_dataset(output_filepath)
+        b = xr.open_dataset(expected_output_filepath)
+        assert a.attrs == b.attrs
+        assert a.spatial_ref == b.spatial_ref
+        assert_array_almost_equal(a.coords["x"], b.coords["x"])
+        assert_array_almost_equal(a.coords["y"], b.coords["y"])
+        assert_array_almost_equal(a.data, b.data)
