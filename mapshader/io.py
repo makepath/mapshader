@@ -7,7 +7,7 @@ import xarray as xr
 from mapshader.multifile import SharedMultiFile
 
 
-def load_raster(file_path, xmin=None, ymin=None,
+def load_raster(file_path, transforms, xmin=None, ymin=None,
                 xmax=None, ymax=None, chunks=None,
                 layername='data'):
     """
@@ -52,7 +52,7 @@ def load_raster(file_path, xmin=None, ymin=None,
     elif file_path.endswith('.nc'):
 
         if '*' in file_path:
-            arr = SharedMultiFile.get(file_path)
+            arr = SharedMultiFile.get(file_path, transforms)
         else:
             # TODO: add chunk parameter to config
             arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})[layername]
@@ -64,7 +64,7 @@ def load_raster(file_path, xmin=None, ymin=None,
     return arr
 
 
-def load_vector(filepath: str):
+def load_vector(filepath: str, transforms):
     """
     Load vector data.
 

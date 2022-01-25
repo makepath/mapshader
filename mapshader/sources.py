@@ -10,6 +10,7 @@ from mapshader.colors import colors
 from mapshader.io import load_raster
 from mapshader.io import load_vector
 from mapshader.transforms import get_transform_by_name
+from .multifile import MultiFileNetCDF
 
 import spatialpandas
 
@@ -242,7 +243,7 @@ class MapSource:
                 print('Using Given Filepath unmodified: config{self.config_file}', file=sys.stdout)
                 data_path = self.filepath
 
-            data = self.load_func(data_path)
+            data = self.load_func(data_path, self.transforms)
         else:
             data = self.data
 
@@ -258,7 +259,8 @@ class MapSource:
         if self.is_loaded:
             return self
 
-        self._apply_transforms()
+        if not isinstance(self.data, MultiFileNetCDF):
+            self._apply_transforms()
 
         self.is_loaded = True
 

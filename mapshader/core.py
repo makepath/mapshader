@@ -80,7 +80,7 @@ def create_agg(source: MapSource,
         print(f'Using overview: {z}', file=sys.stdout)
         dataset = source.overviews[z]
     elif isinstance(source.data, MultiFileNetCDF):
-        dataset = source.data.load_bounds(xmin, ymin, xmax, ymax, source.band)
+        dataset = source.data.load_bounds(xmin, ymin, xmax, ymax, source.band, source.transforms)
     else:
         dataset = source.data
 
