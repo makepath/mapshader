@@ -56,6 +56,7 @@ setup_args = dict(
         mapshader=mapshader.commands:main
 
         [mapshader.commands]
+        build_raster_overviews=mapshader.commands.build_raster_overviews:build_raster_overviews
         examples=mapshader.commands.examples:examples
         tif_to_netcdf=mapshader.commands.tif_to_netcdf:tif_to_netcdf
     ''',

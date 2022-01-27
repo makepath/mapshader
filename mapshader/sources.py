@@ -95,6 +95,8 @@ class MapSource:
         'polygon_to_line', and 'raster_to_categorical_points'.
     preload : bool, default=False
         Preload the data after the service started.
+    force_recreate_overviews : bool, default=False
+        For overviews to be recreated even if they already exist.
     """
 
     def __init__(self,  # noqa: C901
@@ -131,7 +133,8 @@ class MapSource:
                  transforms=None,
                  band=None,
                  attrs=None,
-                 preload=False):
+                 preload=False,
+                 force_recreate_overviews=False):
 
         if fields is None and isinstance(data, (gpd.GeoDataFrame)):
             fields = [geometry_field]
@@ -199,6 +202,7 @@ class MapSource:
         self.preload = preload
         self.geometry_field = geometry_field
         self.band = band
+        self.force_recreate_overviews = force_recreate_overviews
 
         self.is_loaded = False
         self.data = data
@@ -243,7 +247,7 @@ class MapSource:
                 print('Using Given Filepath unmodified: config{self.config_file}', file=sys.stdout)
                 data_path = self.filepath
 
-            data = self.load_func(data_path, self.transforms)
+            data = self.load_func(data_path, self.transforms, self.force_recreate_overviews)
         else:
             data = self.data
 
@@ -509,11 +513,14 @@ def elevation_source():
     orient_transform = dict(name='orient_array')
     flip_transform = dict(name='flip_coords', args=dict(dim='y'))
     reproject_transform = dict(name='reproject_raster', args=dict(epsg=3857))
+    overviews_transform = dict(name='build_raster_overviews',
+                               args=dict(levels={'2': 1250, '3': 650}))
     transforms = [squeeze_transform,
                   cast_transform,
                   orient_transform,
                   flip_transform,
-                  reproject_transform]
+                  reproject_transform,
+                  overviews_transform]
 
     # construct value obj
     source_obj = dict()
