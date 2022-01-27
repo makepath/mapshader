@@ -19,6 +19,7 @@ from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
+from mapshader.services import MapService
 from .multifile import MultiFileNetCDF
 
 import spatialpandas
@@ -654,3 +655,23 @@ def render_legend(source: MapSource):
     geojson : string
     """
     return json.dumps(get_legend(source))
+
+
+def render_services(services: list):
+    """
+    Get the MapService dictonary representation and return as a JSON string.
+
+    Parameters
+    ----------
+    services : List of mapshader.service.MapService
+        The input datasource.
+
+    Returns
+    -------
+    geojson : string
+    """
+    service_list = []
+    for service in services:
+        service_list.append(service.to_dict())
+
+    return json.dumps(service_list)

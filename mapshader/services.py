@@ -87,6 +87,18 @@ class MapService():
         Get the service page name.
         """
         return f'/{self.key}-{self.service_type}'
+    
+    def to_dict(self):
+        """
+        Get JSON representation of service
+        """
+        service_dict = dict(
+            (key, getattr(self, key)) for key in dir(self) if "__" not in key
+        )
+        service_dict.pop("source")
+        service_dict.pop("renderers")
+        service_dict.pop("to_dict")
+        return service_dict
 
     @property
     def service_url(self):
