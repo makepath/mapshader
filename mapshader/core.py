@@ -185,13 +185,6 @@ def polygon_aggregation(cvs, data, zfield, agg_func):
         return cvs.polygons(data, 'geometry')
 
 
-def get_data_array_extent(dataarray):
-    return (dataarray.coords['x'].min().item(),
-            dataarray.coords['y'].min().item(),
-            dataarray.coords['x'].max().item(),
-            dataarray.coords['y'].max().item())
-
-
 def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd.max()):
     """
     Sample a raster dataset by canvas size and bounds.
