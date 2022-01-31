@@ -19,7 +19,6 @@ from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
-from mapshader.services import MapService
 from .multifile import MultiFileNetCDF
 
 import spatialpandas
