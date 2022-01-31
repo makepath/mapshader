@@ -658,7 +658,7 @@ def render_legend(source: MapSource):
 
 def render_services(services: list):
     """
-    Get the MapService dictonary representation and return as a JSON string.
+    Get the MapService dictionary representation and return as a JSON string.
 
     Parameters
     ----------
