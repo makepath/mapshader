@@ -76,11 +76,14 @@ def create_agg(source: MapSource,
     agg_func = source.agg_func
     geometry_type = source.geometry_type
 
-    if z and z in source.overviews:
+    if isinstance(source.data, MultiFileNetCDF):
+        dataset = source.data.load_overview(z, source.band)
+        if dataset is None:
+            dataset = source.data.load_bounds(xmin, ymin, xmax, ymax, source.band,
+                                              source.transforms)
+    elif z and z in source.overviews:
         print(f'Using overview: {z}', file=sys.stdout)
         dataset = source.overviews[z]
-    elif isinstance(source.data, MultiFileNetCDF):
-        dataset = source.data.load_bounds(xmin, ymin, xmax, ymax, source.band, source.transforms)
     else:
         dataset = source.data
 

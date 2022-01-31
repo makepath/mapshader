@@ -1,6 +1,7 @@
 from affine import Affine
 import geopandas as gpd
 from glob import glob
+import itertools
 import numpy as np
 import os
 from rasterio.enums import Resampling
@@ -54,8 +55,9 @@ class MultiFileNetCDF:
         if not filenames:
             raise RuntimeError(f"Unable to read any files from path {file_path}")
 
-        self._lock = Lock()  # Limits reading of underlying data files to a single thread,
+        self._lock = Lock()  # Limits reading of underlying data files to a single thread.
         self._bands = None
+        self._overviews = None  # dict[tuple[int level, str band], xr.Dataset].  Loaded on demand.
         xmins = []
         xmaxs = []
         ymins = []
@@ -66,7 +68,7 @@ class MultiFileNetCDF:
         for filename in filenames:
             with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
                 if not self._bands:
-                    self._bands = list(ds.data_vars.keys())
+                    self._bands = [key for key in ds.data_vars.keys() if key != "spatial_ref"]
 
                 # Can be any one of the DataArrays in the Dataset.
                 da = list(ds.values())[0]
@@ -123,8 +125,6 @@ class MultiFileNetCDF:
         return da
 
     def _create_overviews(self, raster_overviews, transforms, force_recreate_overviews=False):
-        print("_create_overviews", raster_overviews)
-
         overview_directory = self._get_overview_directory()
         if not os.path.isdir(overview_directory):
             os.makedirs(overview_directory)
@@ -132,10 +132,14 @@ class MultiFileNetCDF:
         # Bounds of entire CRS.
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(0, 0, 0)
 
-        for level, resolution in raster_overviews["args"]["levels"].items():
+        levels_and_resolutions = raster_overviews["args"]["levels"]  # dict[int, int]
+        tuple_keys = itertools.product(levels_and_resolutions.keys(), self._bands)
+        self._overviews = dict.fromkeys(tuple_keys, None)
+
+        for level, resolution in levels_and_resolutions.items():
             if not force_recreate_overviews:
                 # If overviews exist for all bands at this level can abort early.
-                if all([os.path.isfile(self._get_overview_filename(band, level))
+                if all([os.path.isfile(self._get_overview_filename(level, band))
                         for band in self._bands]):
                     print(f"Overviews exist for all bands at level {level} {self._bands}",
                           flush=True)
@@ -156,7 +160,7 @@ class MultiFileNetCDF:
             # Block size of one file initially.
             # Each file needs transforms applied before it can be resampled/reprojected.
             for band in self._bands:
-                overview_filename = self._get_overview_filename(band, level)
+                overview_filename = self._get_overview_filename(level, band)
                 if not force_recreate_overviews and os.path.isfile(overview_filename):
                     print(f"Overview already exists {overview_filename}", flush=True)
                     continue
@@ -187,39 +191,19 @@ class MultiFileNetCDF:
                             overview,
                             da)
 
+                # Remove attrs that can cause problem serializing xarrays.
+                for key in ["grid_mapping"]:
+                    if key in overview.attrs:
+                        del overview.attrs[key]
+
                 # Save overview as geotiff.
                 print(f"Writing overview {overview_filename}", flush=True)
-                overview.rio.to_raster(overview_filename)
-
-                if 1:
-                    import matplotlib.pyplot as plt
-                    plt.pcolor(overview)
-                    plt.show()
-
-#    values = {}
-#    overviews = {}
-#    for level, resolution in levels.items():
-#
-#        print(f'Generating Raster Overview level {level} at {resolution} pixel width',
-#              file=sys.stdout)
-#
-#        if resolution in values:
-#            overviews[int(level)] = values[resolution]
-#            continue
-#
-#        cvs = canvas_like(arr)
-#        height = height_implied_by_aspect_ratio(resolution, cvs.x_range, cvs.y_range)
-#        cvs.plot_height = height
-#        cvs.plot_width = resolution
-#        agg = (cvs.raster(arr, interpolate=interpolate)
-#                  .compute()
-#                  .chunk(512, 512)
-#                  .persist())
-#
-#        overviews[int(level)] = agg
-#        values[resolution] = agg
-#
-#    return overviews
+                try:
+                    overview.rio.to_raster(overview_filename)
+                except:
+                    if os.path.isfile(overview_filename):
+                        os.remove(overview_filename)
+                    raise
 
     def _get_crs(self, ds):
         crs = ds.rio.crs
@@ -231,7 +215,7 @@ class MultiFileNetCDF:
     def _get_overview_directory(self):
         return os.path.join(self._base_dir, "overviews")
 
-    def _get_overview_filename(self, band, level):
+    def _get_overview_filename(self, level, band):
         return os.path.join(self._get_overview_directory(), f"{level}_{band}.tif")
 
     def full_extent(self):
@@ -276,3 +260,23 @@ class MultiFileNetCDF:
             merged = self._apply_transforms(merged, transforms)
 
         return merged
+
+    def load_overview(self, level, band):
+        key = (level, band)
+        if self._overviews is None or key not in self._overviews:
+            return None
+
+        with self._lock:
+            ds = self._overviews[key]
+
+            if ds is None:
+                filename = self._get_overview_filename(level, band)
+                print("Reading overview", filename)
+
+                ds = rioxarray.open_rasterio(filename, chunks=dict(y=512, x=512))
+                ds = ds.squeeze()
+                self._overviews[key] = ds
+            else:
+                print(f"Cached overview {level} {band}")
+
+        return ds

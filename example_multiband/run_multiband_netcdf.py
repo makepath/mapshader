@@ -36,12 +36,11 @@ def xyz_contains_data(z):
 
 
 for j in range(3):
+#for j in (0,):
     source = sources[j].load()
 
     i = 0
-    for z in range(0, 3):
+    for z in range(0, 4):
         x, y, z = xyz_contains_data(z)
         run(x, y, z, i, j)
         i += 1
-
-    # run(x-1, y, z, i, j)
