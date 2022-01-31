@@ -647,3 +647,23 @@ def render_legend(source: MapSource):
     geojson : string
     """
     return json.dumps(get_legend(source))
+
+
+def render_services(services: list):
+    """
+    Get the MapService dictionary representation and return as a JSON string.
+
+    Parameters
+    ----------
+    services : List of mapshader.service.MapService
+        The input datasource.
+
+    Returns
+    -------
+    geojson : string
+    """
+    service_list = []
+    for service in services:
+        service_list.append(service.to_dict())
+
+    return json.dumps(service_list)

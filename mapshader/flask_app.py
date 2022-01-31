@@ -24,6 +24,7 @@ from mapshader import hello
 from mapshader.core import render_map
 from mapshader.core import render_geojson
 from mapshader.core import render_legend
+from mapshader.core import render_services
 
 from mapshader.services import get_services, MapService
 
@@ -83,6 +84,11 @@ def flask_to_geojson(source: MapSource):
 
 def flask_to_legend(source: MapSource):
     resp = render_legend(source)
+    return resp
+
+
+def flask_to_services(services: list):
+    resp = render_services(services)
     return resp
 
 
@@ -187,6 +193,7 @@ def configure_app(app: Flask, user_source_filepath=None, contains=None):
                          partial(service_page, service=service))
 
     app.add_url_rule('/', 'home', partial(index_page, services=services))
+    app.add_url_rule('/services', 'services', partial(flask_to_services, services=services))
     app.add_url_rule('/psutil', 'psutil', psutil_fetching)
 
     hello(services)
@@ -214,4 +221,5 @@ if __name__ == '__main__':
     if user_file:
         user_file = path.abspath(path.expanduser(user_file))
 
-    app = create_app(user_file, contains=service_grep).run(host='0.0.0.0', debug=debug)
+    app = create_app(user_file, contains=service_grep).run(
+        host='0.0.0.0', debug=False)

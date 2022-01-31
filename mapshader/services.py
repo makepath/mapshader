@@ -88,6 +88,20 @@ class MapService():
         """
         return f'/{self.key}-{self.service_type}'
 
+    def to_dict(self):
+        """
+        Get JSON representation of service
+        """
+        service_dict = dict(
+            (key, getattr(self, key)) for key in dir(self) if "__" not in key
+        )
+        service_dict.pop("source")
+        service_dict.pop("renderers")
+        service_dict.pop("to_dict")
+        service_dict['type'] = service_dict['service_type']
+        service_dict.pop("service_type")
+        return service_dict
+
     @property
     def service_url(self):
         raise NotImplementedError()
