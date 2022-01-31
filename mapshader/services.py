@@ -98,6 +98,8 @@ class MapService():
         service_dict.pop("source")
         service_dict.pop("renderers")
         service_dict.pop("to_dict")
+        service_dict['type'] = service_dict['service_type']
+        service_dict.pop("service_type")
         return service_dict
 
     @property
