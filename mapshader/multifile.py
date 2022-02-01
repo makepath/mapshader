@@ -124,6 +124,51 @@ class MultiFileNetCDF:
 
         return da
 
+    def _create_single_band_overview(self, overview_shape, overview_transform, overview_crs, band,
+                                     overview_filename, transforms):
+        # Open a block of files at a time for writing to overview DataArray.
+        # Block size of one file initially.
+        # Each file needs transforms applied before it can be resampled/reprojected.
+        overview = None
+        for filename in self._grid.filename:
+            with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
+                da = ds[band]
+                crs = self._get_crs(ds)
+                da.rio.set_crs(crs, inplace=True)
+
+            da = self._apply_transforms(da, transforms)
+
+            # Reproject to same grid as overview.
+            da = da.rio.reproject(
+                dst_crs=overview_crs,
+                shape=overview_shape,
+                transform=overview_transform,
+                resampling=Resampling.average,
+                nodata=np.nan)
+
+            if overview is None:
+                overview = da
+            else:
+                # Elementwise maximum taking into account nans.
+                overview = xr.where(
+                    np.logical_and(np.isfinite(overview), ~(overview > da)),
+                    overview,
+                    da)
+
+        # Remove attrs that can cause problem serializing xarrays.
+        for key in ["grid_mapping"]:
+            if key in overview.attrs:
+                del overview.attrs[key]
+
+        # Save overview as geotiff.
+        print(f"Writing overview {overview_filename}", flush=True)
+        try:
+            overview.rio.to_raster(overview_filename)
+        except:  # noqa: E722
+            if os.path.isfile(overview_filename):
+                os.remove(overview_filename)
+            raise
+
     def _create_overviews(self, raster_overviews, transforms, force_recreate_overviews=False):
         overview_directory = self._get_overview_directory()
         if not os.path.isdir(overview_directory):
@@ -156,54 +201,15 @@ class MultiFileNetCDF:
             # But it is always EPSG:3857.
             overview_crs = "EPSG:3857"
 
-            # Open a block of files at a time for writing to overview DataArray.
-            # Block size of one file initially.
-            # Each file needs transforms applied before it can be resampled/reprojected.
             for band in self._bands:
                 overview_filename = self._get_overview_filename(level, band)
                 if not force_recreate_overviews and os.path.isfile(overview_filename):
                     print(f"Overview already exists {overview_filename}", flush=True)
                     continue
 
-                overview = None
-                for filename in self._grid.filename:
-                    with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-                        da = ds[band]
-                        crs = self._get_crs(ds)
-                        da.rio.set_crs(crs, inplace=True)
-
-                    da = self._apply_transforms(da, transforms)
-
-                    # Reproject to same grid as overview.
-                    da = da.rio.reproject(
-                        dst_crs=overview_crs,
-                        shape=overview_shape,
-                        transform=overview_transform,
-                        resampling=Resampling.average,
-                        nodata=np.nan)
-
-                    if overview is None:
-                        overview = da
-                    else:
-                        # Elementwise maximum taking into account nans.
-                        overview = xr.where(
-                            np.logical_and(np.isfinite(overview), ~(overview > da)),
-                            overview,
-                            da)
-
-                # Remove attrs that can cause problem serializing xarrays.
-                for key in ["grid_mapping"]:
-                    if key in overview.attrs:
-                        del overview.attrs[key]
-
-                # Save overview as geotiff.
-                print(f"Writing overview {overview_filename}", flush=True)
-                try:
-                    overview.rio.to_raster(overview_filename)
-                except:
-                    if os.path.isfile(overview_filename):
-                        os.remove(overview_filename)
-                    raise
+                self._create_single_band_overview(
+                    overview_shape, overview_transform, overview_crs, band, overview_filename,
+                    transforms)
 
     def _get_crs(self, ds):
         crs = ds.rio.crs

@@ -290,8 +290,8 @@ def build_raster_overviews(arr, levels, interpolate='linear'):
                   .chunk(512, 512)
                   .persist())
 
-        overviews[int(level)] = None #agg
-        values[resolution] = None #agg
+        overviews[int(level)] = agg
+        values[resolution] = agg
 
     return overviews
 

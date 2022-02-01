@@ -36,7 +36,6 @@ def xyz_contains_data(z):
 
 
 for j in range(3):
-#for j in (0,):
     source = sources[j].load()
 
     i = 0
