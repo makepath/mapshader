@@ -26,6 +26,12 @@ sources:
       - name: reproject_raster
         args:
           epsg: 3857
+      - name: build_raster_overviews
+        args:
+          levels:
+            0: 256
+            1: 512
+            2: 1024
     service_types:
       - tile
 
@@ -51,6 +57,12 @@ sources:
       - name: reproject_raster
         args:
           epsg: 3857
+      - name: build_raster_overviews
+        args:
+          levels:
+            0: 256
+            1: 512
+            2: 1024
     service_types:
       - tile
 
@@ -76,5 +88,11 @@ sources:
       - name: reproject_raster
         args:
           epsg: 3857
+      - name: build_raster_overviews
+        args:
+          levels:
+            0: 256
+            1: 512
+            2: 1024
     service_types:
       - tile
