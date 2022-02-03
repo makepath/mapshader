@@ -19,11 +19,11 @@ tile_def = MercatorTileDefinition(x_range=(-20037508.34, 20037508.34),
 
 class SharedMultiFile:
     """
-    Simple thread-safe implementation of shared MultiFileNetCDF objects.
+    Simple thread-safe implementation of shared MultiFileRaster objects.
 
-    Client code never instantiates a MultiFileNetCDF object directly, instead
+    Client code never instantiates a MultiFileRaster object directly, instead
     it calls the get() method of this class.  This uses a lock to ensure that
-    only one MultiFileNetCDF is ever created and is shared between all the
+    only one MultiFileRaster is ever created and is shared between all the
     clients.
     """
     _lock = Lock()
@@ -34,15 +34,16 @@ class SharedMultiFile:
         with cls._lock:
             shared = cls._lookup.get(file_path, None)
             if not shared:
-                shared = MultiFileNetCDF(file_path, transforms, force_recreate_overviews)
+                shared = MultiFileRaster(file_path, transforms, force_recreate_overviews)
                 cls._lookup[file_path] = shared
         return shared
 
 
-class MultiFileNetCDF:
+class MultiFileRaster:
     """
-    Proxy for multiple netCDF files that provides a similar interface to
-    xr.DataArray.
+    Proxy for multiple raster files that provides a similar interface to
+    xr.DataArray. Accepts raster files that can be read by rasterio/rioxarray
+    such as NetCDF and GeoTIFF.
 
     This is an interim solution until we replace the objects returned by
     load_raster() and load_vector() with a considered class hierarchy.
@@ -57,7 +58,7 @@ class MultiFileNetCDF:
 
         self._lock = Lock()  # Limits reading of underlying data files to a single thread.
         self._bands = None
-        self._overviews = None  # dict[tuple[int level, str band], xr.Dataset].  Loaded on demand.
+        self._overviews = None  # dict[tuple[int level, str band], xr.DataArray].  Loaded on demand.
         xmins = []
         xmaxs = []
         ymins = []
@@ -100,6 +101,8 @@ class MultiFileNetCDF:
 
         # Actually it is slightly larger than this by half a pixel in each direction
         self._total_bounds = self._grid.total_bounds  # [xmin, ymin, xmax, ymax]
+
+        print("TOTAL_BOUNDS", self._total_bounds)
 
         # Overviews are dealt with separately as they need access to all the combined data.
         # Assume create overviews for each band in the files.
@@ -168,12 +171,14 @@ class MultiFileNetCDF:
             if key in overview.attrs:
                 del overview.attrs[key]
 
+        print("OVERVIEW LIMITS", band_limits)
         overview.attrs["limits"] = band_limits
+        print(overview)
 
         # Save overview as geotiff.
         print(f"Writing overview {overview_filename}", flush=True)
         try:
-            overview.rio.to_raster(overview_filename)
+            overview.rio.to_raster(overview_filename, tags=dict(hello="Ian"))
         except:  # noqa: E722
             if os.path.isfile(overview_filename):
                 os.remove(overview_filename)
@@ -284,16 +289,16 @@ class MultiFileNetCDF:
             return None
 
         with self._lock:
-            ds = self._overviews[key]
+            da = self._overviews[key]
 
-            if ds is None:
+            if da is None:
                 filename = self._get_overview_filename(level, band)
                 print("Reading overview", filename)
 
-                ds = rioxarray.open_rasterio(filename, chunks=dict(y=512, x=512))
-                ds = ds.squeeze()
-                self._overviews[key] = ds
+                da = rioxarray.open_rasterio(filename, chunks=dict(y=512, x=512))
+                da = da.squeeze()
+                self._overviews[key] = da
             else:
                 print(f"Cached overview {level} {band}")
 
-        return ds
+        return da

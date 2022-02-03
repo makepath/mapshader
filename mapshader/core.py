@@ -19,7 +19,7 @@ from xrspatial.utils import height_implied_by_aspect_ratio
 
 from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
-from .multifile import MultiFileNetCDF
+from .multifile import MultiFileRaster
 
 import spatialpandas
 
@@ -76,8 +76,9 @@ def create_agg(source: MapSource,
     agg_func = source.agg_func
     geometry_type = source.geometry_type
 
-    if isinstance(source.data, MultiFileNetCDF):
+    if isinstance(source.data, MultiFileRaster):
         dataset = source.data.load_overview(z, source.band)
+        # Note this is really an xr.DataArray.
         if dataset is None:
             dataset = source.data.load_bounds(xmin, ymin, xmax, ymax, source.band,
                                               source.transforms)

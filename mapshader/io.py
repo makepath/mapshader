@@ -1,4 +1,4 @@
-from os.path import expanduser
+from os.path import expanduser, splitext
 
 import geopandas as gpd
 import numpy as np
@@ -34,31 +34,37 @@ def load_raster(file_path, transforms, force_recreate_overviews,
         The loaded data.
     """
 
-    if file_path.endswith('.tif'):
+    file_extension = splitext(file_path)[1]
+    if not file_extension:
+        raise RuntimeError(f"file_path does not have a file extension: {file_path}")
 
-        arr = xr.open_rasterio(expanduser(file_path),
-                               chunks={'y': 512, 'x': 512})
+    arr = None
 
-        if hasattr(arr, 'nodatavals'):
-
-            if np.issubdtype(arr.data.dtype, np.integer):
-                arr.data = arr.data.astype('f8')
-
-            for val in arr.nodatavals:
-                arr.data[arr.data == val] = np.nan
-
-        arr.name = file_path
-
-    elif file_path.endswith('.nc'):
-
-        if '*' in file_path:
+    if '*' in file_path:
+        # Multiple files.
+        if file_extension in ['.nc', '.tif']:
             arr = SharedMultiFile.get(file_path, transforms, force_recreate_overviews)
-        else:
+
+    else:
+        # Single file.
+        if file_extension == '.tif':
+            arr = xr.open_rasterio(expanduser(file_path), chunks={'y': 512, 'x': 512})
+
+            if hasattr(arr, 'nodatavals'):
+                if np.issubdtype(arr.data.dtype, np.integer):
+                    arr.data = arr.data.astype('f8')
+
+                for val in arr.nodatavals:
+                    arr.data[arr.data == val] = np.nan
+
+            arr.name = file_path
+
+        elif file_path.endswith('.nc'):
             # TODO: add chunk parameter to config
             arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})[layername]
             arr['name'] = file_path
 
-    else:
+    if arr is None:
         raise TypeError(f"Unable to load raster {file_path}")
 
     return arr
