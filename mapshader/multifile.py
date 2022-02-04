@@ -1,5 +1,4 @@
 from affine import Affine
-import dask
 import geopandas as gpd
 from glob import glob
 import itertools
@@ -7,6 +6,7 @@ import numpy as np
 import os
 from rasterio.enums import Resampling
 import rioxarray  # noqa: F401
+from rioxarray.merge import merge_arrays
 from shapely.geometry import Polygon
 from threading import Lock
 import xarray as xr
@@ -308,18 +308,14 @@ class MultiFileRaster:
                     da = ds[band]
                     if i == 0:
                         crs = self._get_crs(ds)
-                        da.rio.set_crs(crs, inplace=True)
+                    da.rio.set_crs(crs, inplace=True)
                     arrays.append(da)
 
-        with dask.config.set({'array.slicing.split_large_chunks': True}):
-            merged = xr.merge(arrays)
-            # merged = merge_arrays(arrays)  # This gives mismatch between bounds and transform???
+        merged = merge_arrays(arrays)
+        merged = merged.squeeze()
 
-            merged = merged[band]
-            merged.rio.set_crs(crs, inplace=True)
-
-            with self._lock:
-                merged = self._apply_transforms(merged, transforms)
+        with self._lock:
+            merged = self._apply_transforms(merged, transforms)
 
         return merged
 

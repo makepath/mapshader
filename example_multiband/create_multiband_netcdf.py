@@ -35,6 +35,7 @@ for lat in range(lat_limits[0], lat_limits[1]):
 
         x = np.linspace(lon*scale + offset + dx/2, (lon + 1)*scale + offset - dx/2, nx)
         y = np.linspace(lat*scale + offset + dy/2, (lat + 1)*scale + offset - dy/2, ny)
+        y = y[::-1]
         filename = os.path.join("example_multiband", f"dummy_{lon}_{lat}.nc")
 
         red = rng.random(size=(ny, nx), dtype=np.float32)
