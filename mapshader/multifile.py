@@ -1,4 +1,5 @@
 from affine import Affine
+import dask.bag as db
 import geopandas as gpd
 from glob import glob
 import itertools
@@ -8,7 +9,7 @@ from rasterio.enums import Resampling
 import rioxarray  # noqa: F401
 from rioxarray.merge import merge_arrays
 from shapely.geometry import Polygon
-from threading import Lock
+#from threading import Lock
 import xarray as xr
 
 from .mercator import MercatorTileDefinition
@@ -160,7 +161,6 @@ class MultiFileRaster:
         levels_and_resolutions = raster_overviews["args"]["levels"]  # dict[int, int]
         tuple_keys = itertools.product(levels_and_resolutions.keys(), self._bands)
         self._overviews = dict.fromkeys(tuple_keys, None)
-        band_limits = dict.fromkeys(self._bands, [None, None])
 
         for level, resolution in levels_and_resolutions.items():
             if not force_recreate_overviews:
@@ -188,93 +188,29 @@ class MultiFileRaster:
                     print(f"Overview already exists {overview_filename}", flush=True)
                     continue
 
-                #self._create_single_band_overview(
-                self._create_single_band_overview_dask(
+                self._create_single_band_overview(
                     overview_shape, overview_transform, overview_crs, band, overview_filename,
-                    transforms, band_limits[band])
-
-
-
-    def _map_func(self, filename, band):
-        with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-            da = ds[band]
-            da = da.squeeze()
-            crs = self._get_crs(ds)
-            da.rio.set_crs(crs, inplace=True)
-        return da
-
-
-    def _create_single_band_overview_dask(self, overview_shape, overview_transform, overview_crs,
-                                          band, overview_filename, transforms, band_limits):
-        print("START")
-
-        filenames = self._grid.filename
-        print(type(filenames))
-        filenames = list(filenames)
-        print(type(filenames))
-
-        import dask.bag as db
-
-        bag = db.from_sequence(filenames)
-        print(bag)
-
-        bag = bag.map(lambda filename: self._map_func(filename, band))
-        print(bag)
-
-        a = bag.take(1)
-        print(a)
-
-
-
-        print("END")
+                    transforms)
 
     def _create_single_band_overview(self, overview_shape, overview_transform, overview_crs, band,
-                                     overview_filename, transforms, band_limits):
-        # Open a block of files at a time for writing to overview DataArray.
-        # Block size of one file initially.
-        # Each file needs transforms applied before it can be resampled/reprojected.
-        calc_limits = band_limits[0] is None or band_limits[1] is None
-        overview = None
-        for filename in self._grid.filename:
-            with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-                da = ds[band]
-                da = da.squeeze()
-                crs = self._get_crs(ds)
-                da.rio.set_crs(crs, inplace=True)
+                                     overview_filename, transforms):
+        bag = db.from_sequence(self._grid.filename)
 
-            da = self._apply_transforms(da, transforms)
+        # Map from filename to reprojected xr.DataArray.
+        bag = bag.map(lambda filename: self._overview_map(
+            filename, band, overview_crs, overview_shape, overview_transform, transforms))
 
-            if calc_limits:
-                min_ = da.min().item()
-                max_ = da.max().item()
-                # Update limits in place.
-                band_limits[0] = min_ if band_limits[0] is None else min(band_limits[0], min_)
-                band_limits[1] = max_ if band_limits[1] is None else max(band_limits[1], max_)
+        # Combine xr.DataArrays using elementwise maximum taking into account nans.
+        bag = bag.fold(self._overview_combine)
 
-            # Reproject to same grid as overview.
-            da = da.rio.reproject(
-                dst_crs=overview_crs,
-                shape=overview_shape,
-                transform=overview_transform,
-                # resampling=Resampling.average,  # Prefer this, but gives missing pixels.
-                resampling=Resampling.bilinear,
-                nodata=np.nan)
+        overview = bag.compute()
 
-            if overview is None:
-                overview = da
-            else:
-                # Elementwise maximum taking into account nans.
-                overview = xr.where(
-                    np.logical_and(np.isfinite(overview), ~(overview > da)),
-                    overview,
-                    da)
+        print("combined", overview.min().item(), overview.max().item())
 
         # Remove attrs that can cause problem serializing xarrays.
         for key in ["grid_mapping"]:
             if key in overview.attrs:
                 del overview.attrs[key]
-
-        overview.attrs["limits"] = band_limits
 
         # Save overview as geotiff.
         print(f"Writing overview {overview_filename}", flush=True)
@@ -303,6 +239,32 @@ class MultiFileRaster:
 
     def _get_overview_filename(self, level, band):
         return os.path.join(self._get_overview_directory(), f"{level}_{band}.tif")
+
+    def _overview_combine(self, da1, da2):
+        # Elementwise maximum taking into account nans.
+        return xr.where(np.logical_and(np.isfinite(da1), ~(da1 > da2)), da1, da2)
+
+    def _overview_map(self, filename, band, overview_crs, overview_shape, overview_transform,
+                      transforms):
+        print(filename)
+        with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
+            da = ds[band]
+            da = da.squeeze()
+            crs = self._get_crs(ds)
+            da.rio.set_crs(crs, inplace=True)
+
+        da = self._apply_transforms(da, transforms)
+
+        # Reproject to same grid as overview.
+        da = da.rio.reproject(
+            dst_crs=overview_crs,
+            shape=overview_shape,
+            transform=overview_transform,
+            # resampling=Resampling.average,  # Prefer this, but gives missing pixels.
+            resampling=Resampling.bilinear,
+            nodata=np.nan)
+
+        return da
 
     def _read_grid(self):
         grid_filename = self._get_grid_filename()
