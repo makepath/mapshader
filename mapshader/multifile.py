@@ -1,18 +1,16 @@
 from affine import Affine
-import dask.bag as db
 import geopandas as gpd
 from glob import glob
 import itertools
-import numpy as np
 import os
-from rasterio.enums import Resampling
 import rioxarray  # noqa: F401
 from rioxarray.merge import merge_arrays
 from shapely.geometry import Polygon
-#from threading import Lock
+from threading import Lock
 import xarray as xr
 
 from .mercator import MercatorTileDefinition
+from .overview import create_single_band_overview
 from .transforms import get_transform_by_name
 
 
@@ -28,16 +26,16 @@ class SharedMultiFile:
     only one MultiFileRaster is ever created and is shared between all the
     clients.
     """
-    #_lock = Lock()
+    _lock = Lock()
     _lookup = {}
 
     @classmethod
     def get(cls, file_path, transforms, force_recreate_overviews):
-        #with cls._lock:
-        shared = cls._lookup.get(file_path, None)
-        if not shared:
-            shared = MultiFileRaster(file_path, transforms, force_recreate_overviews)
-            cls._lookup[file_path] = shared
+        with cls._lock:
+            shared = cls._lookup.get(file_path, None)
+            if not shared:
+                shared = MultiFileRaster(file_path, transforms, force_recreate_overviews)
+                cls._lookup[file_path] = shared
         return shared
 
 
@@ -54,7 +52,7 @@ class MultiFileRaster:
         self._file_path = file_path
         self._base_dir = os.path.split(file_path)[0]
 
-        #self._lock = Lock()  # Limits reading of underlying data files to a single thread.
+        self._lock = Lock()  # Limits reading of underlying data files to a single thread.
         self._bands = None
         self._overviews = None  # dict[tuple[int level, str band], xr.DataArray].  Loaded on demand.
 
@@ -188,38 +186,9 @@ class MultiFileRaster:
                     print(f"Overview already exists {overview_filename}", flush=True)
                     continue
 
-                self._create_single_band_overview(
-                    overview_shape, overview_transform, overview_crs, band, overview_filename,
-                    transforms)
-
-    def _create_single_band_overview(self, overview_shape, overview_transform, overview_crs, band,
-                                     overview_filename, transforms):
-        bag = db.from_sequence(self._grid.filename)
-
-        # Map from filename to reprojected xr.DataArray.
-        bag = bag.map(lambda filename: self._overview_map(
-            filename, band, overview_crs, overview_shape, overview_transform, transforms))
-
-        # Combine xr.DataArrays using elementwise maximum taking into account nans.
-        bag = bag.fold(self._overview_combine)
-
-        overview = bag.compute()
-
-        print("combined", overview.min().item(), overview.max().item())
-
-        # Remove attrs that can cause problem serializing xarrays.
-        for key in ["grid_mapping"]:
-            if key in overview.attrs:
-                del overview.attrs[key]
-
-        # Save overview as geotiff.
-        print(f"Writing overview {overview_filename}", flush=True)
-        try:
-            overview.rio.to_raster(overview_filename, tags=dict(hello="Ian"))
-        except:  # noqa: E722
-            if os.path.isfile(overview_filename):
-                os.remove(overview_filename)
-            raise
+                create_single_band_overview(
+                    self._grid.filename, overview_shape, overview_transform, overview_crs, band,
+                    overview_filename, transforms)
 
     def _get_crs(self, ds):
         crs = ds.rio.crs
@@ -240,32 +209,6 @@ class MultiFileRaster:
     def _get_overview_filename(self, level, band):
         return os.path.join(self._get_overview_directory(), f"{level}_{band}.tif")
 
-    def _overview_combine(self, da1, da2):
-        # Elementwise maximum taking into account nans.
-        return xr.where(np.logical_and(np.isfinite(da1), ~(da1 > da2)), da1, da2)
-
-    def _overview_map(self, filename, band, overview_crs, overview_shape, overview_transform,
-                      transforms):
-        print(filename)
-        with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-            da = ds[band]
-            da = da.squeeze()
-            crs = self._get_crs(ds)
-            da.rio.set_crs(crs, inplace=True)
-
-        da = self._apply_transforms(da, transforms)
-
-        # Reproject to same grid as overview.
-        da = da.rio.reproject(
-            dst_crs=overview_crs,
-            shape=overview_shape,
-            transform=overview_transform,
-            # resampling=Resampling.average,  # Prefer this, but gives missing pixels.
-            resampling=Resampling.bilinear,
-            nodata=np.nan)
-
-        return da
-
     def _read_grid(self):
         grid_filename = self._get_grid_filename()
 
@@ -279,8 +222,8 @@ class MultiFileRaster:
         return grid
 
     def full_extent(self):
-        #with self._lock:
-        return self._total_bounds
+        with self._lock:
+            return self._total_bounds
 
     def load_bounds(self, xmin, ymin, xmax, ymax, band, transforms):
         # Load data for required bounds from disk and return xr.DataArray containing it.
@@ -301,20 +244,20 @@ class MultiFileRaster:
 
         arrays = []
         crs = None
-        #with self._lock:
-        for i, filename in enumerate(intersects.filename):
-            with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-                da = ds[band]
-                if i == 0:
-                    crs = self._get_crs(ds)
-                da.rio.set_crs(crs, inplace=True)
-                arrays.append(da)
+        with self._lock:
+            for i, filename in enumerate(intersects.filename):
+                with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
+                    da = ds[band]
+                    if i == 0:
+                        crs = self._get_crs(ds)
+                    da.rio.set_crs(crs, inplace=True)
+                    arrays.append(da)
 
         merged = merge_arrays(arrays)
         merged = merged.squeeze()
 
-        #with self._lock:
-        merged = self._apply_transforms(merged, transforms)
+        with self._lock:
+            merged = self._apply_transforms(merged, transforms)
 
         return merged
 
@@ -323,17 +266,17 @@ class MultiFileRaster:
         if self._overviews is None or key not in self._overviews:
             return None
 
-        #with self._lock:
-        da = self._overviews[key]
+        with self._lock:
+            da = self._overviews[key]
 
-        if da is None:
-            filename = self._get_overview_filename(level, band)
-            print("Reading overview", filename)
+            if da is None:
+                filename = self._get_overview_filename(level, band)
+                print("Reading overview", filename)
 
-            da = rioxarray.open_rasterio(filename, chunks=dict(y=512, x=512))
-            da = da.squeeze()
-            self._overviews[key] = da
-        else:
-            print(f"Cached overview {level} {band}")
+                da = rioxarray.open_rasterio(filename, chunks=dict(y=512, x=512))
+                da = da.squeeze()
+                self._overviews[key] = da
+            else:
+                print(f"Cached overview {level} {band}")
 
         return da
