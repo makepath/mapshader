@@ -207,7 +207,7 @@ class MultiFileRaster:
         return os.path.join(self._base_dir, "overviews")
 
     def _get_overview_filename(self, level, band):
-        return os.path.join(self._get_overview_directory(), f"{level}_{band}.tif")
+        return os.path.join(self._get_overview_directory(), f"{level}_{band}.nc")
 
     def _read_grid(self):
         grid_filename = self._get_grid_filename()
@@ -273,8 +273,9 @@ class MultiFileRaster:
                 filename = self._get_overview_filename(level, band)
                 print("Reading overview", filename)
 
-                da = rioxarray.open_rasterio(filename, chunks=dict(y=512, x=512))
-                da = da.squeeze()
+                ds = xr.open_dataset(filename, chunks=dict(y=512, x=512))
+                bands = [key for key in ds.data_vars.keys() if key != "spatial_ref"]
+                da = ds[bands[0]]
                 self._overviews[key] = da
             else:
                 print(f"Cached overview {level} {band}")

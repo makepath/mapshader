@@ -73,10 +73,12 @@ def create_single_band_overview(filenames, overview_shape, overview_transform, o
         if key in overview.attrs:
             del overview.attrs[key]
 
-    # Save overview as geotiff.
+    overview.attrs["new_attr"] = 1.234  # Test.
+    #overview.rio.set_crs(overview_crs, inplace=True)
+
     print(f"Writing overview {overview_filename}", flush=True)
     try:
-        overview.rio.to_raster(overview_filename)
+        overview.to_netcdf(overview_filename)
     except:  # noqa: E722
         if os.path.isfile(overview_filename):
             os.remove(overview_filename)
