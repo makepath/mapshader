@@ -73,7 +73,6 @@ def create_single_band_overview(filenames, overview_shape, overview_transform, o
         if key in overview.attrs:
             del overview.attrs[key]
 
-    overview.attrs["new_attr"] = 1.234  # Test.
     #overview.rio.set_crs(overview_crs, inplace=True)
 
     print(f"Writing overview {overview_filename}", flush=True)
