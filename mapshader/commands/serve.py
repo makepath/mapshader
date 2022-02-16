@@ -1,5 +1,4 @@
 import click
-import yaml
 
 from ..flask_app import create_app
 
@@ -52,5 +51,5 @@ def serve(config_yaml=None, host='0.0.0.0', port=5000, glob=None, debug=False):
     if config_yaml:
         config_yaml = path.abspath(path.expanduser(config_yaml))
 
-    app = create_app(config_yaml, contains=glob).run(
+    create_app(config_yaml, contains=glob).run(
         host=host, port=port, debug=False)
