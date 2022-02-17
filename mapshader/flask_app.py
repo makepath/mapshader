@@ -1,4 +1,5 @@
 from functools import partial
+from os import path
 import sys
 
 from bokeh.models.sources import GeoJSONDataSource
@@ -32,7 +33,10 @@ from mapshader.sources import MapSource
 
 from mapshader.utils import psutil_fetching
 
-jinja2_env = Environment(loader=FileSystemLoader("mapshader/templates/"))
+HERE = path.abspath(path.dirname(__file__))
+TEMPLATE_DIR = path.join(HERE, 'templates')
+jinja2_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+
 
 def flask_to_tile(source: MapSource, z=0, x=0, y=0):
 

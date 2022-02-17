@@ -1,6 +1,7 @@
 include *.txt
 include *.md
 include mapshader/.version
+include mapshader/templates/*.html
 
 graft mapshader
 
