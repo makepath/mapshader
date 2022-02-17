@@ -4,7 +4,6 @@ from ..flask_app import create_app
 
 
 @click.command(
-    no_args_is_help=True,
     context_settings=dict(help_option_names=['-h', '--help']),
     short_help='Start default mapshader server using Flask',
     help=(
