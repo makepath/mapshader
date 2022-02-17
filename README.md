@@ -34,7 +34,7 @@ pytest mapshader/tests -sv
 #### Run Flask Server
 ```bash
 conda activate mapshader
-python mapshader/flask_app.py
+mapshader serve
 
 >>> * Serving Flask app "flask_app" (lazy loading)
 >>> * Environment: production
@@ -96,7 +96,7 @@ This configuration file can then be passed to the flask server upon startup:
 
 ```bash
 conda activate mapshader
-python mapshader/flask_app.py -f my_services.yaml
+mapshader serve my_services.yaml
 
 >>> * Serving Flask app "flask_app" (lazy loading)
 >>> * Environment: production
