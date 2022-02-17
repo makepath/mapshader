@@ -52,4 +52,4 @@ def serve(config_yaml=None, host='0.0.0.0', port=5000, glob=None, debug=False):
         config_yaml = path.abspath(path.expanduser(config_yaml))
 
     create_app(config_yaml, contains=glob).run(
-        host=host, port=port, debug=False)
+        host=host, port=port, debug=debug)
