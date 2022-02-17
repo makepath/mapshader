@@ -2,6 +2,7 @@ from affine import Affine
 import geopandas as gpd
 from glob import glob
 import itertools
+import math
 import os
 import rioxarray  # noqa: F401
 from rioxarray.merge import merge_arrays
@@ -169,16 +170,43 @@ class MultiFileRaster:
                           flush=True)
                     continue
 
-            # Overview shape, transform and CRS.
-            overview_shape = (resolution, resolution)
-
-            dx = (xmax - xmin) / resolution
-            dy = (ymax - ymin) / resolution
-            overview_transform = Affine.translation(xmin, ymin)*Affine.scale(dx, dy)
-
             # CRS could be read from first loaded file (after transformation).
             # But it is always EPSG:3857.
             overview_crs = "EPSG:3857"
+
+            # Overview shape and transform.
+            dx = (xmax - xmin) / resolution
+            dy = (ymax - ymin) / resolution
+
+            resolution_x = resolution_y = resolution
+
+            if True:  # Limit overview to data bounds.
+                data_xmin, data_ymin, data_xmax, data_ymax = self.full_extent()
+
+                imin = math.floor((data_xmin - xmin) / dx - 0.5)
+                imax = math.ceil((data_xmax - xmin) / dx - 0.5)
+                jmin = math.floor((data_ymin - ymin) / dy - 0.5)
+                jmax = math.ceil((data_ymax - ymin) / dy - 0.5)
+
+                def get_x(i):
+                    return xmin + dx*(i + 0.5)
+
+                def get_y(j):
+                    return ymin + dy*(j + 0.5)
+
+                # Extend one pixel in each direction, and clip to bounds.
+                imin = min(max(imin-1, 0), resolution_x-1)
+                imax = min(max(imax+1, 0), resolution_x-1)
+                jmin = min(max(jmin-1, 0), resolution_y-1)
+                jmax = min(max(jmax+1, 0), resolution_y-1)
+
+                resolution_x = imax - imin + 1
+                resolution_y = jmax - jmin + 1
+                xmin = get_x(imin)
+                ymin = get_y(jmin)
+
+            overview_shape = (resolution_y, resolution_x)
+            overview_transform = Affine.translation(xmin, ymin)*Affine.scale(dx, dy)
 
             for band in self._bands:
                 overview_filename = self._get_overview_filename(level, band)
@@ -207,7 +235,7 @@ class MultiFileRaster:
         return os.path.join(self._base_dir, "overviews")
 
     def _get_overview_filename(self, level, band):
-        return os.path.join(self._get_overview_directory(), f"{level}_{band}.tif")
+        return os.path.join(self._get_overview_directory(), f"{level}_{band}.nc")
 
     def _read_grid(self):
         grid_filename = self._get_grid_filename()
@@ -273,8 +301,9 @@ class MultiFileRaster:
                 filename = self._get_overview_filename(level, band)
                 print("Reading overview", filename)
 
-                da = rioxarray.open_rasterio(filename, chunks=dict(y=512, x=512))
-                da = da.squeeze()
+                ds = xr.open_dataset(filename, chunks=dict(y=512, x=512))
+                bands = [key for key in ds.data_vars.keys() if key != "spatial_ref"]
+                da = ds[bands[0]]
                 self._overviews[key] = da
             else:
                 print(f"Cached overview {level} {band}")
