@@ -1,5 +1,21 @@
 ## Mapshader Changelog
------------
+----------------------
+
+### Version 0.1.1 - 2022-02-17
+- Overviews netcdf limited area (#113)
+- Added serve cli command to start default flask server (#112)
+- Fixed issue with template paths when install mapshader via pip (#111)
+- Use dask to generate overviews (#110)
+- Support multiple GeoTIFF files (#109)
+- Add requirements packages version #104 (#106)
+- Overviews (#108)
+- Services endpoint (#107)
+- Remove duplicated get_data_array_extent function #74 (#105)
+- Allow different netcdf version in test_valid_conversion (#103)
+- Multithreaded support for multiband multiple NetCDF files (#102)
+- Add support for reading multiband tiled netcdf files (#101)
+- Run tests on pull request and push to default branch (#98)
+- Use yaml.safe_load rather than yaml.load (#96)
 
 ### Version 0.1.0 - 2021-10-07
 - Fixed mapshader config example (#95)
