@@ -1,0 +1,33 @@
+---
+sources:
+  - name: Large GeoTIFF
+    key: large-geotiff
+    text: Large GeoTIFF
+    description: large GeoTIFF
+    geometry_type: raster
+    shade_how: linear
+    cmap:
+      - black
+      - white
+    span:
+      - 0
+      - 1
+    raster_padding: 0
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: examples/large_geotiff/large_geotiff*.tif
+    band: band_data
+    transforms:
+      - name: build_raster_overviews
+        args:
+          levels:
+            0: 256
+            1: 512
+            2: 1024
+            3: 2048
+            4: 4096
+            5: 8192
+            6: 16384
+    service_types:
+      - tile
