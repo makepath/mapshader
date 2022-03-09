@@ -24,6 +24,7 @@ projections = {
     2163: us_national_equal_area_str
 }
 
+
 def reproject_raster(arr: xr.DataArray, epsg=3857):
     """
     Reproject raster data.
@@ -164,6 +165,7 @@ def orient_array(arr):
     arr.data = ds.utils.orient_array(arr)
     return arr
 
+
 def get_data_array_extent(dataarray):
     """
     Get the coordinate of the lower left corner and the coordinate of
@@ -183,6 +185,7 @@ def get_data_array_extent(dataarray):
             dataarray.coords['y'].min().item(),
             dataarray.coords['x'].max().item(),
             dataarray.coords['y'].max().item())
+
 
 def canvas_like(dataarray):
     """

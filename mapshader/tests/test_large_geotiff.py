@@ -2,13 +2,9 @@ import math
 import numpy as np
 import os
 import pytest
-import rioxarray
+import rioxarray  # noqa: F401
 import subprocess
 import xarray as xr
-import yaml
-
-from mapshader.sources import MapSource
-from mapshader.core import render_map
 
 
 def check_and_create_large_geotiff():
@@ -28,7 +24,6 @@ def check_and_create_large_geotiff():
     x_limits = [-2e7, 2e7]
     y_limits = [0.2e7, 1e7]
 
-    #nx = 10000  # 0.075 GB
     nx = 115000  # 10 GB
 
     dx = (x_limits[1] - x_limits[0]) / (nx-1)

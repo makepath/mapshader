@@ -256,6 +256,7 @@ def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd
 additional_transforms = {'hillshade': hillshade,
                          'quantile': quantile}
 
+
 def apply_additional_transforms(source: MapSource, agg: xr.DataArray):
     """
     Apply additional transforms over the data, which options could be
@@ -415,6 +416,7 @@ def shade_agg(source: MapSource, agg: xr.DataArray, xmin, ymin, xmax, ymax):
         else:
             print('Shade without Span')
             return tf.shade(agg, cmap=cmap, how=how)
+
 
 def to_raster(source: MapSource,
               xmin: float = None, ymin: float = None,

@@ -1,13 +1,9 @@
-import json
 from os import path
-
-from io import BytesIO
 
 import xarray as xr
 
 import pytest
 
-from PIL import Image
 import geopandas as gpd
 
 from mapshader.sources import MapSource

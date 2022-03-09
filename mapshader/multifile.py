@@ -18,6 +18,7 @@ from .transforms import get_transform_by_name
 tile_def = MercatorTileDefinition(x_range=(-20037508.34, 20037508.34),
                                   y_range=(-20037508.34, 20037508.34))
 
+
 class SharedMultiFile:
     """
     Simple thread-safe implementation of shared MultiFileRaster objects.
