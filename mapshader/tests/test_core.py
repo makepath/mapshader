@@ -1,7 +1,4 @@
 import json
-from os import path
-
-from io import BytesIO
 
 import pytest
 
@@ -27,7 +24,7 @@ def test_default_to_geojson(source_func):
     data = json.loads(geojson)
     assert isinstance(data, dict)
 
-    if not source.geometry_type in ('raster', 'line'):
+    if source.geometry_type not in ('raster', 'line'):
         assert data.get('type') == 'FeatureCollection'
     else:
         assert data
@@ -52,7 +49,7 @@ def test_default_to_tile(source_func):
 def test_to_raster(source_func):
     source = MapSource.from_obj(source_func()).load()
     result = to_raster(source, xmin=-20e6, ymin=-20e6,
-                     xmax=20e6, ymax=20e6, width=500, height=500)
+                       xmax=20e6, ymax=20e6, width=500, height=500)
     assert isinstance(result, xr.DataArray)
     assert result.data.shape == (500, 500)
 
@@ -65,7 +62,7 @@ def test_tile_render_edge_effects():
 
     first_col = agg.data[:, 0]
     last_col = agg.data[:, -1]
-    top_row = agg.data[0, :] # TODO: do i have these flipped?
+    top_row = agg.data[0, :]  # TODO: do i have these flipped?
     bottom_row = agg.data[-1, :]
 
     assert np.all(~np.isnan(first_col))

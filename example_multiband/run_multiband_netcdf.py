@@ -28,6 +28,7 @@ def run(x, y, z, index, j):
     pillow_img = PIL.Image.open(bytes)
     pillow_img.save(f"out_{j}_{index}.png", format="png")
 
+
 def xyz_contains_data(z):
     ntiles = 2**z  # In both x and y directions.
     x = ntiles // 2

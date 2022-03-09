@@ -1,25 +1,6 @@
-include *.txt
 include *.md
-include mapshader/.version
 include mapshader/templates/*.html
 
 graft mapshader
 
-prune docs
 prune *.egg-info
-
-global-exclude *.png
-prune conda.recipe
-prune examples
-prune img
-
-exclude mapshader/_version.py
-exclude tile_idea.py
-exclude *.yml
-exclude *.enc
-exclude .gitignore
-exclude .isort.cfg
-exclude *.dot
-exclude *.gif
-exclude *.svg
-exclude tox.ini

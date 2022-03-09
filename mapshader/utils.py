@@ -1,6 +1,7 @@
 import numpy as np
 import psutil
 
+
 def find_and_set_categoricals(df):
     '''
     Experimental utility to find undefined categorical categories
@@ -37,6 +38,7 @@ def find_and_set_categoricals(df):
                 categorical_fields.append(c)
 
     return categorical_fields, non_categorical_object_fields
+
 
 def psutil_fetching():
     # CPU logs

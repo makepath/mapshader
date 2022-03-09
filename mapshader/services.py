@@ -172,6 +172,7 @@ class ImageService(MapService):
     def service_type(self):
         return 'image'
 
+
 class WMSService(MapService):
     """
     This class represents a WMS service object.

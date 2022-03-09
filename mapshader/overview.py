@@ -24,6 +24,7 @@ def _apply_transforms(da, transforms):
 
     return da
 
+
 def _get_crs(ds):
     crs = ds.rio.crs
     if not crs:
@@ -31,9 +32,11 @@ def _get_crs(ds):
         crs = ds.spatial_ref.spatial_ref
     return crs
 
+
 def _overview_combine(da1, da2):
     # Elementwise maximum taking into account nans.
     return xr.where(np.logical_and(np.isfinite(da1), ~(da1 > da2)), da1, da2)
+
 
 def _overview_map(filename, band, overview_crs, overview_shape, overview_transform, transforms):
     with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
@@ -54,6 +57,7 @@ def _overview_map(filename, band, overview_crs, overview_shape, overview_transfo
         nodata=np.nan)
 
     return da
+
 
 def create_single_band_overview(filenames, overview_shape, overview_transform, overview_crs, band,
                                 overview_filename, transforms):

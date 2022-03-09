@@ -1,4 +1,0 @@
-import mapshader
-
-
-mapshader.test()
