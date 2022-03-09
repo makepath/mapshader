@@ -77,8 +77,6 @@ class MultiFileRaster:
         # Actually it is slightly larger than this by half a pixel in each direction
         self._total_bounds = self._grid.total_bounds  # [xmin, ymin, xmax, ymax]
 
-        print("TOTAL_BOUNDS", self._total_bounds)
-
         # Overviews are dealt with separately as they need access to all the combined data.
         # Assume create overviews for each band in the files.
         raster_overviews = list(filter(lambda t: t["name"] == "build_raster_overviews", transforms))
@@ -281,7 +279,11 @@ class MultiFileRaster:
                     da.rio.set_crs(crs, inplace=True)
                     arrays.append(da)
 
-        merged = merge_arrays(arrays)
+        if len(arrays) == 1:
+            merged = arrays[0]
+        else:
+            merged = merge_arrays(arrays)
+
         merged = merged.squeeze()
 
         with self._lock:
