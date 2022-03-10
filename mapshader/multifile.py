@@ -280,14 +280,13 @@ class MultiFileRaster:
                     da.rio.set_crs(crs, inplace=True)
                     arrays.append(da)
 
-        if len(arrays) == 1:
-            merged = arrays[0]
-        else:
-            merged = merge_arrays(arrays)
+            if len(arrays) == 1:
+                merged = arrays[0]
+            else:
+                merged = merge_arrays(arrays)
 
-        merged = merged.squeeze()
+            merged = merged.squeeze()
 
-        with self._lock:
             merged = self._apply_transforms(merged, transforms)
 
         return merged

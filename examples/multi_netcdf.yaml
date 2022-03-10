@@ -1,0 +1,69 @@
+---
+sources:
+  - name: Multi Netcdf constant
+    key: multi-netcdf-constant
+    text: multi netcdf constant
+    description: multi netcdf constant
+    geometry_type: raster
+    shade_how: linear
+    cmap:
+      - white
+      - red
+    span:
+      - 0
+      - 1
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: examples/multi_netcdf/multi_*.nc
+    band: constant
+    transforms:
+      - name: reproject_raster
+        args:
+          epsg: 3857
+      - name: build_raster_overviews
+        args:
+          levels:
+            0: 256
+            1: 512
+            2: 1024
+            3: 2048
+            4: 4096
+            5: 8192
+            6: 16384
+    service_types:
+      - tile
+
+  - name: Multi Netcdf increasing
+    key: multi-netcdf-increasing
+    text: multi netcdf increasing
+    description: multi netcdf increasing
+    geometry_type: raster
+    shade_how: linear
+    cmap:
+      - black
+      - yellow
+    span:
+      - 0
+      - 10
+    raster_interpolate: linear
+    xfield: geometry
+    yfield: geometry
+    filepath: examples/multi_netcdf/multi_*.nc
+    band: increasing
+    transforms:
+      - name: reproject_raster
+        args:
+          epsg: 3857
+      - name: build_raster_overviews
+        args:
+          levels:
+            0: 256
+            1: 512
+            2: 1024
+            3: 2048
+            4: 4096
+            5: 8192
+            6: 16384
+    service_types:
+      - tile
