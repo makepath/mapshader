@@ -61,16 +61,22 @@ def _overview_map(filename, band, overview_crs, overview_shape, overview_transfo
 
 def create_single_band_overview(filenames, overview_shape, overview_transform, overview_crs, band,
                                 overview_filename, transforms):
-    bag = db.from_sequence(filenames)
 
-    # Map from filename to reprojected xr.DataArray.
-    bag = bag.map(lambda filename: _overview_map(
-        filename, band, overview_crs, overview_shape, overview_transform, transforms))
+    if len(filenames) == 1:
+        filename = filenames[0]
+        overview = _overview_map(
+            filename, band, overview_crs, overview_shape, overview_transform, transforms)
+    else:
+        bag = db.from_sequence(filenames)
 
-    # Combine xr.DataArrays using elementwise maximum taking into account nans.
-    bag = bag.fold(_overview_combine)
+        # Map from filename to reprojected xr.DataArray.
+        bag = bag.map(lambda filename: _overview_map(
+            filename, band, overview_crs, overview_shape, overview_transform, transforms))
 
-    overview = bag.compute()
+        # Combine xr.DataArrays using elementwise maximum taking into account nans.
+        bag = bag.fold(_overview_combine)
+
+        overview = bag.compute()
 
     # Remove attrs that can cause problem serializing xarrays.
     for key in ["grid_mapping"]:
