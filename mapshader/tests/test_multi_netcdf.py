@@ -13,6 +13,8 @@ def check_and_create_multi_netcdf():
         print(f"Creating directory {directory}")
         os.makedirs(directory)
 
+    crs = "EPSG:4326"
+
     # Number of files.
     nx_tile = 50
     ny_tile = 20
@@ -52,10 +54,7 @@ def check_and_create_multi_netcdf():
                     increasing=(dims, increasing),
                 ),
                 coords=dict(y=y, x=x),
-                attrs=dict(
-                    description="Test multi netcdf data",
-                    crs="epsg:4326",
-                ),
+                attrs=dict(description="Test multi netcdf data", crs=crs),
             )
 
             ds.to_netcdf(full_filename)

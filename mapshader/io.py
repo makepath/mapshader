@@ -42,7 +42,7 @@ def load_raster(file_path, transforms, force_recreate_overviews,
 
     if '*' in file_path:
         # Multiple files.
-        if file_extension in ['.nc', '.tif']:
+        if file_extension in ['.nc', '.tif', '.vrt']:
             arr = SharedMultiFile.get(file_path, transforms, force_recreate_overviews)
 
     else:
