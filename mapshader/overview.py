@@ -122,7 +122,7 @@ def create_single_band_overview(filenames, overview_shape, overview_transform, o
 
     print(f"Writing overview {overview_filename}", flush=True)
     try:
-        overview.to_netcdf(overview_filename)
+        overview.rio.to_raster(overview_filename)
     except:  # noqa: E722
         if os.path.isfile(overview_filename):
             os.remove(overview_filename)

@@ -4,7 +4,6 @@ import os
 import pytest
 import rioxarray  # noqa: F401
 import subprocess
-import xarray as xr
 
 from .common import check_and_create_large_geotiff
 
@@ -59,12 +58,13 @@ def test_large_vrt_create_overviews():
     [6, (7269, 16371)],
 ])
 def test_large_vrt_overview_files(z, shape):
+    band = "band_data"
     directory = os.path.join("examples", "large_vrt", "overviews")
-    filename = os.path.join(directory, f"{z}_band_data.nc")
+    filename = os.path.join(directory, f"{z}_{band}.tif")
     assert os.path.isfile(filename)
 
-    ds = xr.open_dataset(filename, chunks=dict(y=2048, x=2048))
-    da = ds["band_data"]
+    da = rioxarray.open_rasterio(filename, chunks=dict(y=2048, x=2048))
+    da = da.squeeze()
     assert da.dtype == np.float32
     assert da.shape == shape
 
