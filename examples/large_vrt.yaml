@@ -1,9 +1,9 @@
 ---
 sources:
-  - name: Large GeoTIFF
-    key: large-geotiff
-    text: Large GeoTIFF
-    description: large GeoTIFF
+  - name: Large VRT
+    key: large-vrt
+    text: Large VRT
+    description: large VRT
     geometry_type: raster
     shade_how: linear
     cmap:
@@ -16,7 +16,7 @@ sources:
     raster_interpolate: linear
     xfield: geometry
     yfield: geometry
-    filepath: examples/large_geotiff/large_geotiff*.tif
+    filepath: examples/large_vrt/large_vrt*.vrt
     band: band_data
     transforms:
       - name: build_raster_overviews

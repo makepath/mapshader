@@ -1,6 +1,7 @@
 __pycache__/
 .pytest_cache/
 examples/large_geotiff/
+examples/large_vrt/
 examples/multi_netcdf/
 mapshader.egg-info/
 mapshader/.version

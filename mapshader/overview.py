@@ -1,7 +1,9 @@
 import dask.bag as db
 import numpy as np
 import os
+import rasterio
 from rasterio.enums import Resampling
+import rioxarray
 import xarray as xr
 
 from .transforms import get_transform_by_name
@@ -17,7 +19,7 @@ def _apply_transforms(da, transforms):
         func = get_transform_by_name(transform_name)
         args = trans.get('args', {})
 
-        if 'overviews' in transform_name:
+        if 'overviews' in transform_name or 'reproject' in transform_name:
             pass
         else:
             da = func(da, **args)
@@ -25,7 +27,7 @@ def _apply_transforms(da, transforms):
     return da
 
 
-def _get_crs(ds):
+def _get_crs(ds):  # Could be xr.Dataset or xr.DataArray
     crs = ds.rio.crs
     if not crs:
         # Fallback for reading spatial_ref written in strange way.
@@ -39,11 +41,14 @@ def _overview_combine(da1, da2):
 
 
 def _overview_map(filename, band, overview_crs, overview_shape, overview_transform, transforms):
-    with xr.open_dataset(filename, chunks=dict(y=512, x=512)) as ds:
-        da = ds[band]
+    ychunks = xchunks = 8192
+
+    with rioxarray.open_rasterio(filename, chunks=dict(y=ychunks, x=xchunks), variable=band) as da:
+        if isinstance(da, xr.Dataset):
+            da = da[band]
         da = da.squeeze()
-        crs = _get_crs(ds)
-        da.rio.set_crs(crs, inplace=True)
+        crs = _get_crs(da)
+        da.rio.write_crs(crs, inplace=True)
 
     da = _apply_transforms(da, transforms)
 
@@ -52,20 +57,49 @@ def _overview_map(filename, band, overview_crs, overview_shape, overview_transfo
         dst_crs=overview_crs,
         shape=overview_shape,
         transform=overview_transform,
-        # resampling=Resampling.average,  # Prefer this, but gives missing pixels.
-        resampling=Resampling.bilinear,
-        nodata=np.nan)
+        resampling=Resampling.average,
+        nodata=np.nan,
+    )
+
+    return da
+
+
+def _overview_map_vrt(filename, band, overview_crs, overview_shape, overview_transform, transforms):
+    ychunks = xchunks = 8192
+
+    with rasterio.open(filename) as src:
+        with rasterio.vrt.WarpedVRT(src,
+                                    crs=overview_crs,
+                                    height=overview_shape[0],
+                                    width=overview_shape[1],
+                                    transform=overview_transform,
+                                    resampling=Resampling.average,
+                                    dtype="float32",
+                                    nodata=np.nan,
+                                    ) as vrt:
+            da = rioxarray.open_rasterio(vrt, chunks=dict(y=ychunks, x=xchunks), variable=band)
+
+    da = da.squeeze()
+    crs = _get_crs(da)
+    da.rio.write_crs(crs, inplace=True)
+
+    # In original code transforms are applied after loading and before reproject.  Here they are
+    # applied after the reproject.  Problem???
+    da = _apply_transforms(da, transforms)
 
     return da
 
 
 def create_single_band_overview(filenames, overview_shape, overview_transform, overview_crs, band,
                                 overview_filename, transforms):
-
     if len(filenames) == 1:
         filename = filenames[0]
-        overview = _overview_map(
-            filename, band, overview_crs, overview_shape, overview_transform, transforms)
+        if filename.endswith(".vrt"):
+            overview = _overview_map_vrt(
+                filename, band, overview_crs, overview_shape, overview_transform, transforms)
+        else:
+            overview = _overview_map(
+                filename, band, overview_crs, overview_shape, overview_transform, transforms)
     else:
         bag = db.from_sequence(filenames)
 
@@ -83,11 +117,12 @@ def create_single_band_overview(filenames, overview_shape, overview_transform, o
         if key in overview.attrs:
             del overview.attrs[key]
 
-    # overview.rio.set_crs(overview_crs, inplace=True)
+    overview.rio.write_crs(overview_crs, inplace=True)
+    overview.name = band
 
     print(f"Writing overview {overview_filename}", flush=True)
     try:
-        overview.to_netcdf(overview_filename)
+        overview.rio.to_raster(overview_filename)
     except:  # noqa: E722
         if os.path.isfile(overview_filename):
             os.remove(overview_filename)
