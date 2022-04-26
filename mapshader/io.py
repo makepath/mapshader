@@ -40,13 +40,11 @@ def load_raster(file_path, transforms, force_recreate_overviews,
 
     arr = None
 
-    if '*' in file_path:
-        # Multiple files.
+    if '*' in file_path or file_extension == '.vrt':
         if file_extension in ['.nc', '.tif', '.vrt']:
             arr = SharedMultiFile.get(file_path, transforms, force_recreate_overviews)
 
     else:
-        # Single file.
         if file_extension == '.tif':
             arr = xr.open_rasterio(expanduser(file_path), chunks={'y': 512, 'x': 512})
 
@@ -59,7 +57,7 @@ def load_raster(file_path, transforms, force_recreate_overviews,
 
             arr.name = file_path
 
-        elif file_path.endswith('.nc'):
+        elif file_extension == '.nc':
             # TODO: add chunk parameter to config
             arr = xr.open_dataset(file_path, chunks={'x': 512, 'y': 512})[layername]
             arr['name'] = file_path

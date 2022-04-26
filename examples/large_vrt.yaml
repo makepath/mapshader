@@ -16,7 +16,7 @@ sources:
     raster_interpolate: linear
     xfield: geometry
     yfield: geometry
-    filepath: examples/large_vrt/large_vrt*.vrt
+    filepath: examples/large_vrt/large_vrt.vrt
     band: band_data
     transforms:
       - name: build_raster_overviews
