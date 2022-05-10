@@ -1,6 +1,7 @@
 import click
 
 from ..flask_app import create_app
+from ..scan import directory_to_config
 
 
 @click.command(
@@ -43,12 +44,20 @@ from ..flask_app import create_app
     default=False,
     help='Run server in debug mode',
 )
-def serve(config_yaml=None, host='0.0.0.0', port=5000, glob=None, debug=False):
+@click.option(
+    '--scan_directory',
+    type=click.Path(exists=True),
+)
+def serve(config_yaml=None, host='0.0.0.0', port=5000, glob=None, debug=False, scan_directory=None):
 
     from os import path
 
     if config_yaml:
         config_yaml = path.abspath(path.expanduser(config_yaml))
 
-    create_app(config_yaml, contains=glob).run(
+    sources = []
+    if scan_directory:
+        sources = directory_to_config(scan_directory)
+
+    create_app(config_yaml, contains=glob, sources=sources).run(
         host=host, port=port, debug=debug)

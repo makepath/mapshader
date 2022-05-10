@@ -17,8 +17,12 @@ def test_large_geotiff_create_overviews():
     check_and_create_large_geotiff()
 
     yaml_file = os.path.join("examples", "large_geotiff.yaml")
-    cmd = ["mapshader", "build-raster-overviews", yaml_file]
-    subprocess.run(cmd)
+    cmd = ["mapshader", "build-raster-overviews", "--config_yaml", yaml_file]
+    subprocess.run(cmd, check=True)
+
+    for level in range(7):
+        filename = os.path.join("examples", "large_geotiff", "overviews", f"{level}_band_data.tif")
+        assert os.path.isfile(filename)
 
 
 @pytest.mark.large
