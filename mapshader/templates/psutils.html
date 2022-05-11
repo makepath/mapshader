@@ -101,7 +101,7 @@
 </div>
 <script>
   const fetchAndPopulate = async () => {
-    const data = await fetch("http://localhost:5000/psutil");
+    const data = await fetch("/psutil");
     const log = await data.json();
 
     document.getElementById(
