@@ -21,7 +21,7 @@ def create_tiles():
 
         # Split single large GeoTIFF into multiple tiles.
         tiff_file = os.path.join("examples", "large_geotiff", "large_geotiff.tif")
-        tile_size = 8192
+        tile_size = 4096
         cmd = ["gdal_retile.py", "-ps", str(tile_size), str(tile_size), "-targetDir",
                tile_directory, tiff_file]
         subprocess.run(cmd)

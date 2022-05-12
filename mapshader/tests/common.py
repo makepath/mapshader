@@ -22,7 +22,7 @@ def check_and_create_large_geotiff():
     x_limits = [-2e7, 2e7]
     y_limits = [0.2e7, 1e7]
 
-    nx = 115000  # 10 GB
+    nx = 36200  # 1 GB
 
     dx = (x_limits[1] - x_limits[0]) / (nx-1)
     ny = math.ceil((y_limits[1] - y_limits[0]) / dx) + 1
