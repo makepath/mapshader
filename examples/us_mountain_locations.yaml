@@ -4,8 +4,8 @@ metadata:
   version: 1
 
 sources:
-  - name: Locations of US Mountains (Point data)
-    key: example of tiling point data
+  - name: Location of US Mountains (Point data)
+    key: tiling-point-data
     text: Example of tiling point data
     description: Example of tiling point data
     service_types:
@@ -18,8 +18,9 @@ sources:
     shade_how: linear
     raster_interpolate: linear
     geometry_field: geometry
-    filepath: examples/us_peaks.shp
+    filepath: examples/peaks_data/us_peaks.shp
     transforms:
       - name: reproject_vector
         args:
           epsg: 3857
+      - name: to_spatialpandas

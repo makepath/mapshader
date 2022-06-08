@@ -129,9 +129,6 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, geometry_field, agg_fun
         The transformed datasource.
     """
 
-    # convert to spatialpandas dataframe to rasterize points with datashader
-    data = spd.GeoDataFrame(data)
-
     if zfield:
         if geometry_field:
             return cvs.points(
