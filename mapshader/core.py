@@ -1,11 +1,14 @@
 import json
 import sys
+import os
+import errno
+
+from PIL.Image import fromarray
 
 import datashader as ds
 import numpy as np
 import geopandas as gpd
 import dask.array as da
-
 
 import datashader.transfer_functions as tf
 import datashader.reductions as rd
@@ -495,7 +498,8 @@ def render_map(source: MapSource,  # noqa: C901
                xmax: float = None, ymax: float = None,
                x: float = None, y: float = None,
                z: float = None,
-               height: int = None, width: int = None, ):
+               height: int = None, width: int = None,
+               output_location: str='./examples/output_points/'):
     """
     Export a MapSource object to a map object.
 
@@ -517,6 +521,8 @@ def render_map(source: MapSource,  # noqa: C901
         Height of the output aggregate in pixels.
     width : int
         Width of the output aggregate in pixels.
+    output_location: str
+        Path to write tile images
     """
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
@@ -555,21 +561,76 @@ def render_map(source: MapSource,  # noqa: C901
                                'y': np.linspace(ymin, ymax, height)},
                        dims=['x', 'y'])
         img = shade_agg(source, agg, xmin, ymin, xmax, ymax)
-        return img
+    else:
+        agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
 
-    agg = create_agg(source, xmin, ymin, xmax, ymax, x, y, z, height, width)
+        if source.span and isinstance(source.span, (list, tuple)):
+            agg = agg.where((agg >= source.span[0]) & (agg <= source.span[1]))
 
-    if source.span and isinstance(source.span, (list, tuple)):
-        agg = agg.where((agg >= source.span[0]) & (agg <= source.span[1]))
+        source, agg = apply_additional_transforms(source, agg)
+        img = shade_agg(source, agg, xmin, ymin, xmax, ymax)
 
-    source, agg = apply_additional_transforms(source, agg)
-    img = shade_agg(source, agg, xmin, ymin, xmax, ymax)
+        # apply dynamic spreading ----------
+        if source.dynspread and source.dynspread > 0:
+            img = tf.dynspread(img, threshold=1, max_px=int(source.dynspread))
 
-    # apply dynamic spreading ----------
-    if source.dynspread and source.dynspread > 0:
-        img = tf.dynspread(img, threshold=1, max_px=int(source.dynspread))
+    if output_location is not None:
+        # write image to local disk
+        write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location)
 
     return img
+
+
+def write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location):
+    """
+    Write a tile image to local disk
+
+    Parameters
+    ----------
+    agg: xarray.DataArray
+        aggregation data array of the tile to write to image
+    x, y, z : float
+        The coordinates to be used to get the bounds inclusive space along the axis.
+    xmin : float
+        X-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymin : float
+        Y-axis minimum range.
+    ymax : float
+        Y-axis maximum range.
+    output_location: str
+        Path to write tile image
+
+    Returns
+    -------
+        None
+    """
+
+    arr = agg.loc[{'x': slice(xmin, xmax), 'y': slice(ymin, ymax)}]
+
+    if 0 in arr.shape:
+        return
+
+    tile_format = 'PNG'
+    tile_file_name = '{}.{}'.format(y, tile_format.lower())
+    tile_directory = os.path.join(output_location, str(z), str(x))
+    try:
+        os.makedirs(tile_directory)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    output_file = os.path.join(tile_directory, tile_file_name)
+
+    # flip since y tiles go down (Google map tiles)
+    tile_img = fromarray(np.flip(arr.data, 0), 'RGBA')
+
+    print(f'Writing tile ({x, y, z}) to {output_file}')
+
+    # save to local disk
+    tile_img.save(output_file, tile_format)
+
+    return
 
 
 def get_source_data(source: MapSource, simplify=None):
