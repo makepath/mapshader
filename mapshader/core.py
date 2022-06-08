@@ -499,7 +499,7 @@ def render_map(source: MapSource,  # noqa: C901
                x: float = None, y: float = None,
                z: float = None,
                height: int = None, width: int = None,
-               output_location: str='./examples/output_points/'):
+               output_location: str = None):
     """
     Export a MapSource object to a map object.
 
