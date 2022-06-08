@@ -1,0 +1,26 @@
+---
+
+metadata:
+  version: 1
+
+sources:
+  - name: Location of US Mountains (Point data)
+    key: tiling-point-data
+    text: Example of tiling point data
+    description: Example of tiling point data
+    service_types:
+      - tile
+    span:
+      - 0
+      - 1
+    cmap: white
+    geometry_type: point
+    shade_how: linear
+    raster_interpolate: linear
+    geometry_field: geometry
+    filepath: examples/peaks_data/us_peaks.shp
+    transforms:
+      - name: reproject_vector
+        args:
+          epsg: 3857
+      - name: to_spatialpandas

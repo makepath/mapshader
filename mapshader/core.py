@@ -21,8 +21,7 @@ from mapshader.mercator import MercatorTileDefinition
 from mapshader.sources import MapSource
 from .multifile import MultiFileRaster
 
-import spatialpandas
-
+import spatialpandas as spd
 
 tile_def = MercatorTileDefinition(x_range=(-20037508.34, 20037508.34),
                                   y_range=(-20037508.34, 20037508.34))
@@ -73,6 +72,7 @@ def create_agg(source: MapSource,
     xfield = source.xfield
     yfield = source.yfield
     zfield = source.zfield
+    geometry_field = source.geometry_field
     agg_func = source.agg_func
     geometry_type = source.geometry_type
 
@@ -92,7 +92,7 @@ def create_agg(source: MapSource,
                     x_range=(xmin, xmax), y_range=(ymin, ymax))
 
     if geometry_type == 'point':
-        return point_aggregation(cvs, dataset, xfield, yfield, zfield, agg_func)
+        return point_aggregation(cvs, dataset, xfield, yfield, zfield, geometry_field, agg_func)
 
     elif geometry_type == 'line':
         return line_aggregation(cvs, dataset, zfield, agg_func)
@@ -106,7 +106,7 @@ def create_agg(source: MapSource,
         raise ValueError('Unkown geometry type for {}'.format(dataset['name']))
 
 
-def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
+def point_aggregation(cvs, data, xfield, yfield, zfield, geometry_field, agg_func):
     """
     Compute a reduction by pixel, mapping data to pixels as points.
 
@@ -118,6 +118,8 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
         The input datasource.
     xfield, yfield, zfield : str
         Column names for the x, y, and z coordinates of each point.
+    geometry_field: str
+        Column name for geometry field. If provided, the xfield and yfield arguments will be ignored
     agg_func : Reduction, optional
         Reduction to compute. Default is ``count()``.
 
@@ -126,10 +128,19 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, agg_func):
     agg : xarray.DataArray
         The transformed datasource.
     """
+
     if zfield:
-        return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
+        if geometry_field:
+            return cvs.points(
+                data, agg=getattr(ds, agg_func)(zfield), geometry=geometry_field
+            )
+        else:
+            return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
     else:
-        return cvs.points(data, xfield, yfield)
+        if geometry_field:
+            return cvs.points(data, geometry=geometry_field)
+        else:
+            return cvs.points(data, xfield, yfield)
 
 
 def line_aggregation(cvs, data, zfield, agg_func):
@@ -578,7 +589,7 @@ def get_source_data(source: MapSource, simplify=None):
     gdf : GeoDataFrame or dict
         The Mapsource data
     """
-    if isinstance(source.data, spatialpandas.GeoDataFrame):
+    if isinstance(source.data, spd.GeoDataFrame):
         gdf = source.data.to_geopandas()
 
     elif isinstance(source.data, gpd.GeoDataFrame):
