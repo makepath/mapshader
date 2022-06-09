@@ -24,3 +24,9 @@ sources:
         args:
           epsg: 3857
       - name: to_spatialpandas
+    output:
+      - name: save_tile_images
+        args:
+          levels:
+            0: 512
+            1: 256

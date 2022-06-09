@@ -8,7 +8,6 @@ def invert_y_tile(y, z):
     return (2 ** z) - 1 - y
 
 
-# TODO: change name from source to definition
 class MercatorTileDefinition(object):
     """
     Implementation of mercator tile source. In general, tile sources
@@ -20,9 +19,6 @@ class MercatorTileDefinition(object):
         Full extent of x dimension in data units.
     y_range : tuple
         Full extent of y dimension in data units.
-    max_zoom : int
-        A maximum zoom level for the tile layer. This is the most
-        zoomed-in level.
     min_zoom : int
         A minimum zoom level for the tile layer. This is the most
         zoomed-out level.
