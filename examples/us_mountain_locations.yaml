@@ -18,7 +18,7 @@ sources:
     shade_how: linear
     raster_interpolate: linear
     geometry_field: geometry
-    filepath: examples/peaks_data/us_peaks.shp
+    filepath: mapshader/tests/fixtures/us_peaks.shp
     transforms:
       - name: reproject_vector
         args:

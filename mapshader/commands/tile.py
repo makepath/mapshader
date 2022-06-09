@@ -26,6 +26,11 @@ from ..sources import MapSource
     help='Output location to write tile images.',
 )
 def tile(config_yaml, outpath):
+    _tile(config_yaml, outpath)
+
+
+def _tile(config_yaml, outpath):
+
     config_yaml = path.abspath(path.expanduser(config_yaml))
     with open(config_yaml, 'r') as f:
         content = f.read()

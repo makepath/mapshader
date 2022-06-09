@@ -1,20 +1,21 @@
-# import json
-# from os import path
+from os import path, listdir
 
-# from io import BytesIO
+from mapshader.commands.tile import _tile
 
-# import pytest
+HERE = path.abspath(path.dirname(__file__))
+FIXTURES_DIR = path.join(HERE, 'fixtures')
+EXAMPLES_DIR = path.join(HERE, '../../examples/')
 
-# import xarray as xr
 
-# from datashader.transfer_functions import Image
+def test_tile():
+    file_yaml = 'us_mountain_locations.yaml'
+    config_yaml = path.join(EXAMPLES_DIR, file_yaml)
 
-# from mapshader.sources import MapSource
-# from mapshader.core import render_map
-# from mapshader.core import render_geojson
+    outdir = 'tile_us_mountain_locations/'
+    outpath = path.join(FIXTURES_DIR, outdir)
 
-# from mapshader.sources import elevation_source
+    _tile(config_yaml, outpath)
 
-# from mapshader.tests.data import DEFAULT_SOURCES_FUNCS
-
-# TODO: add transform tests (test_transforms.py)
+    # validate output
+    level_dirs = listdir(outpath)
+    assert level_dirs == ['0', '1']
