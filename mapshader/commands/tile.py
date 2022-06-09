@@ -42,12 +42,14 @@ def tile(config_yaml, outpath):
         out_tile_config = list(filter(lambda t: t["name"] == "save_tile_images", source.output))[0]
         levels_and_resolutions = out_tile_config["args"]["levels"]
 
-        print(f'Processing level {z} with resolution {resolution}...')
         for level, resolution in levels_and_resolutions.items():
+
             z = int(level)
             nx = 2 ** z
             ny = 2 ** z
             height = width = int(resolution)
+
+            print(f'Processing level={z} with tile shape of {(resolution, resolution)}...')
             for x in range(nx):
                 for y in range(ny):
                     render_map(
