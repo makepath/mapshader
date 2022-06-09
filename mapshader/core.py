@@ -1,9 +1,6 @@
 import json
 import sys
 import os
-import errno
-
-from PIL.Image import fromarray
 
 import datashader as ds
 import numpy as np
@@ -581,6 +578,43 @@ def render_map(source: MapSource,  # noqa: C901
     return img
 
 
+def tile_to_image(agg, xmin, xmax, ymin, ymax):
+    """
+    Create PIL Image from a tile
+
+    Parameters
+    ----------
+    agg: xarray.DataArray
+        aggregation data array of the tile to write to image
+    xmin : float
+        X-axis minimum range.
+    xmax : float
+        X-axis maximum range.
+    ymin : float
+        Y-axis minimum range.
+    ymax : float
+        Y-axis maximum range.
+
+    Returns
+    -------
+        tile_img: PIL.Image
+    """
+
+    arr = agg.loc[{'x': slice(xmin, xmax), 'y': slice(ymin, ymax)}]
+
+    if 0 in arr.shape:
+        return None
+
+    try:
+        from PIL.Image import fromarray
+    except ImportError:
+        raise ImportError('conda install pillow to enable rendering to local disk')
+
+    # flip since y tiles go down (Google map tiles)
+    tile_img = fromarray(np.flip(arr.data, 0), 'RGBA')
+    return tile_img
+
+
 def write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location):
     """
     Write a tile image to local disk
@@ -606,31 +640,22 @@ def write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location):
     -------
         None
     """
-
-    arr = agg.loc[{'x': slice(xmin, xmax), 'y': slice(ymin, ymax)}]
-
-    if 0 in arr.shape:
-        return
-
     tile_format = 'PNG'
     tile_file_name = '{}.{}'.format(y, tile_format.lower())
     tile_directory = os.path.join(output_location, str(z), str(x))
     try:
         os.makedirs(tile_directory)
     except OSError as e:
+        import errno
         if e.errno != errno.EEXIST:
             raise
     output_file = os.path.join(tile_directory, tile_file_name)
 
-    # flip since y tiles go down (Google map tiles)
-    tile_img = fromarray(np.flip(arr.data, 0), 'RGBA')
-
-    print(f'Writing tile ({x, y, z}) to {output_file}')
-
-    # save to local disk
-    tile_img.save(output_file, tile_format)
-
-    return
+    tile_img = tile_to_image(agg, xmin, xmax, ymin, ymax)
+    if tile_img is not None:
+        # save to local disk
+        print(f'Writing tile ({x, y, z}) to {output_file}')
+        tile_img.save(output_file, tile_format)
 
 
 def get_source_data(source: MapSource, simplify=None):
