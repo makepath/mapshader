@@ -1,0 +1,23 @@
+---
+
+metadata:
+  version: 1
+
+sources:
+  - name: Census Blocks Synthetic People
+    key: census-synthetic-people
+    text: Census Blocks Synthetic People
+    description: Census Blocks Synthetic People
+    service_types:
+      - tile
+    span:
+      - 0
+      - 1
+    cmap:
+      - white
+    geometry_type: point
+    shade_how: linear
+    raster_interpolate: linear
+    xfield: x
+    yfield: y
+    filepath: synthetic-people/*.parquet
