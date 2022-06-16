@@ -10,9 +10,6 @@ sources:
     description: Census Blocks Synthetic People
     service_types:
       - tile
-    span:
-      - 0
-      - 1
     cmap:
       - white
     geometry_type: point
