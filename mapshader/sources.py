@@ -4,6 +4,7 @@ import os
 from os import path
 import sys
 
+import pandas as pd
 import geopandas as gpd
 
 from mapshader.colors import colors
@@ -351,8 +352,16 @@ class VectorSource(MapSource):
     def full_extent(self):
         if isinstance(self.data, spatialpandas.GeoDataFrame):
             return self.data.to_geopandas()[self.geometry_field].total_bounds
-        else:
+        elif isinstance(self.data, gpd.GeoDataFrame):
             return self.data[self.geometry_field].total_bounds
+        elif isinstance(self.data, pd.DataFrame):
+            minx, miny, maxx, maxy = (
+                self.data[self.xfield].min(),
+                self.data[self.xfield].max(),
+                self.data[self.yfield].min(),
+                self.data[self.yfield].max()
+            )
+            return minx, miny, maxx, maxy
 
 
 # ----------------------------------------------------------------------------
