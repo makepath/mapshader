@@ -130,17 +130,21 @@ def point_aggregation(cvs, data, xfield, yfield, zfield, geometry_field, agg_fun
     """
 
     if zfield:
-        if geometry_field:
+        if xfield and yfield:
+            return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
+        elif geometry_field:
             return cvs.points(
                 data, agg=getattr(ds, agg_func)(zfield), geometry=geometry_field
             )
         else:
-            return cvs.points(data, xfield, yfield, getattr(ds, agg_func)(zfield))
+            raise ValueError('None of xfield, yfield, or geometry_field was provided')
     else:
-        if geometry_field:
+        if xfield and yfield:
+            return cvs.points(data, xfield, yfield)
+        elif geometry_field:
             return cvs.points(data, geometry=geometry_field)
         else:
-            return cvs.points(data, xfield, yfield)
+            raise ValueError('None of xfield, yfield, or geometry_field was provided')
 
 
 def line_aggregation(cvs, data, zfield, agg_func):
