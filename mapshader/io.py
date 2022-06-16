@@ -1,7 +1,6 @@
 from os import listdir
 from os.path import expanduser, split, splitext
 
-import dask_geopandas as dask_gpd
 import geopandas as gpd
 import pandas as pd
 import numpy as np
