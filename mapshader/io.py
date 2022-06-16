@@ -100,7 +100,5 @@ def load_vector(filepath: str, transforms, force_recreate_overviews):
         else:
             return pd.read_parquet(filepath)
 
-    elif file_extension == '.shp':
+    else:
         return gpd.read_file(filepath)
-
-    raise ValueError('Only supports shapfile and parquet data formats for vector data.')
