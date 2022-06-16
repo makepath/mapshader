@@ -1,6 +1,9 @@
-from os.path import expanduser, splitext
+from os import listdir
+from os.path import expanduser, split, splitext
 
+import dask_geopandas as dask_gpd
 import geopandas as gpd
+import pandas as pd
 import numpy as np
 import xarray as xr
 
@@ -82,4 +85,23 @@ def load_vector(filepath: str, transforms, force_recreate_overviews):
     gpd : geopandas.DataFrame
         The loaded data.
     """
-    return gpd.read_file(filepath)
+
+    file_extension = splitext(filepath)[1]
+
+    if file_extension == '.parquet':
+        if '*' in filepath:
+            data = []
+            # read all parquet files in the specified folder
+            base_dir = split(filepath)[0]
+            files = [f for f in listdir(base_dir) if 'parquet' in f]
+            for f in files:
+                chunk_data = pd.read_parquet(base_dir + '/' + f)
+                data.append(chunk_data)
+            return pd.concat(data, ignore_index=True)
+        else:
+            return pd.read_parquet(filepath)
+
+    elif file_extension == '.shp':
+        return gpd.read_file(filepath)
+
+    raise ValueError('Only supports shapfile and parquet data formats for vector data.')
