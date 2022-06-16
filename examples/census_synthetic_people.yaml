@@ -20,4 +20,4 @@ sources:
     raster_interpolate: linear
     xfield: x
     yfield: y
-    filepath: synthetic-people/*.parquet
+    filepath: makepath-prealpha-synthetic-people-2020/*.parquet
