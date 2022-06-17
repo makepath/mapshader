@@ -9,7 +9,7 @@ import xarray as xr
 from mapshader.multifile import SharedMultiFile
 
 
-def load_raster(file_path, transforms, force_recreate_overviews,
+def load_raster(file_path, transforms, force_recreate_overviews, region_of_interest,
                 xmin=None, ymin=None, xmax=None, ymax=None, chunks=None,
                 layername='data'):
     """
@@ -70,7 +70,7 @@ def load_raster(file_path, transforms, force_recreate_overviews,
     return arr
 
 
-def load_vector(filepath: str, transforms, force_recreate_overviews):
+def load_vector(filepath: str, transforms, force_recreate_overviews, region_of_interest):
     """
     Load vector data.
 
@@ -95,7 +95,17 @@ def load_vector(filepath: str, transforms, force_recreate_overviews):
             files = [f for f in listdir(base_dir) if 'parquet' in f]
             for f in files:
                 chunk_data = pd.read_parquet(base_dir + '/' + f)
+
+                if region_of_interest is not None:
+                    # limit data to be within the region of interest
+                    minx, miny, maxx, maxy = eval(region_of_interest)
+                    chunk_data = chunk_data[
+                        (chunk_data.x >= minx) & (chunk_data.x <= maxx)
+                        & (chunk_data.y >= miny) & (chunk_data.y <= maxy)
+                    ]
+
                 data.append(chunk_data)
+
             return pd.concat(data, ignore_index=True)
         else:
             return pd.read_parquet(filepath)

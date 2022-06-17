@@ -127,6 +127,7 @@ class MapSource:
                  raster_padding=0,
                  service_types=None,
                  full_extent=None,
+                 region_of_interest=None,
                  default_extent=None,
                  default_height=256,
                  default_width=256,
@@ -204,6 +205,7 @@ class MapSource:
         self.geometry_field = geometry_field
         self.band = band
         self.force_recreate_overviews = force_recreate_overviews
+        self.region_of_interest = region_of_interest
 
         self.is_loaded = False
         self.data = data
@@ -248,7 +250,9 @@ class MapSource:
                 print('Using Given Filepath unmodified: config{self.config_file}', file=sys.stdout)
                 data_path = self.filepath
 
-            data = self.load_func(data_path, self.transforms, self.force_recreate_overviews)
+            data = self.load_func(
+                data_path, self.transforms, self.force_recreate_overviews, self.region_of_interest
+            )
         else:
             data = self.data
 

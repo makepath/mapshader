@@ -12,6 +12,7 @@ sources:
       - tile
     cmap:
       - white
+    region_of_interest: -13898124.212, 2801774.864, -7445653.568, 6340332.344
     geometry_type: point
     shade_how: linear
     raster_interpolate: linear
