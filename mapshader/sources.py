@@ -244,6 +244,10 @@ class MapSource:
                 print('Zipfile Path', file=sys.stdout)
                 data_path = self.filepath
 
+            elif self.filepath.startswith('s3://'):
+                print('S3 Path', file=sys.stdout)
+                data_path = self.filepath
+
             elif not path.isabs(self.filepath):
                 print('Not Absolute', file=sys.stdout)
                 data_path = path.abspath(path.expanduser(self.filepath))

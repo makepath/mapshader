@@ -23,6 +23,9 @@ sources:
     raster_interpolate: linear
     xfield: x
     yfield: y
-    filepath: makepath-prealpha-synthetic-people-2020/part.6.parquet
+    filepath: s3://makepath-synthetic-people-2022-alpha-webm-demo/part.6.parquet
     transforms:
       - name: load_in_memory
+    storage_options:
+        key: your_access_key_id
+        secret: your_secret_access_key
