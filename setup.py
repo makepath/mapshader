@@ -23,9 +23,10 @@ setup_args = dict(
     ],
     install_requires=[
         'bokeh >=2.4.2',
-        'xarray-spatial >=0.3.1',
+        'xarray-spatial >=0.3.5',
         'datashader >=0.13.0',
         'geopandas >=0.10.2',
+        'dask-geopandas',
         'click >=8.0.3',
         'click_plugins >=1.1.1',
         'jinja2 >=3.0.3',
