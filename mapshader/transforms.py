@@ -452,4 +452,3 @@ def get_transform_by_name(name: str):
         The transform function name.
     """
     return _transforms[name]
-

@@ -1,7 +1,5 @@
-from os import listdir
-from os.path import expanduser, split, splitext
+from os.path import expanduser, splitext
 
-import pandas as pd
 import numpy as np
 import xarray as xr
 import geopandas as gpd
