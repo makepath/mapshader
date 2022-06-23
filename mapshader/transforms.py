@@ -408,6 +408,22 @@ def raster_to_categorical_points(arr, cats: dict, dim: str = 'data'):
     return df
 
 
+def load_in_memory(df):
+    """
+    Compute dask data frame.
+
+    Parameters
+    ----------
+    df: dask.dataframe or dask_geopandas.GeoDataFrame object
+
+    Returns
+    -------
+    computed_df: pandas.DataFrame or geopandas.GeoDataFrame object
+    """
+    df = df.compute()
+    return df
+
+
 _transforms = {
     'reproject_raster': reproject_raster,
     'reproject_vector': reproject_vector,
@@ -421,7 +437,8 @@ _transforms = {
     'add_xy_fields': add_xy_fields,
     'select_by_attributes': select_by_attributes,
     'polygon_to_line': polygon_to_line,
-    'raster_to_categorical_points': raster_to_categorical_points
+    'raster_to_categorical_points': raster_to_categorical_points,
+    'load_in_memory': load_in_memory,
 }
 
 
@@ -435,13 +452,4 @@ def get_transform_by_name(name: str):
         The transform function name.
     """
     return _transforms[name]
-
-
-def load_in_memory(gdf: gpd.GeoDataFrame):
-    """
-
-    Returns
-    -------
-
-    """
 
