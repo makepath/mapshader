@@ -435,3 +435,13 @@ def get_transform_by_name(name: str):
         The transform function name.
     """
     return _transforms[name]
+
+
+def load_in_memory(gdf: gpd.GeoDataFrame):
+    """
+
+    Returns
+    -------
+
+    """
+

@@ -9,7 +9,8 @@ import xarray as xr
 from mapshader.multifile import SharedMultiFile
 
 
-def load_raster(file_path, transforms, force_recreate_overviews, region_of_interest,
+def load_raster(file_path, transforms, force_recreate_overviews,
+                storage_options, geometry, region_of_interest,
                 xmin=None, ymin=None, xmax=None, ymax=None, chunks=None,
                 layername='data'):
     """
@@ -70,7 +71,14 @@ def load_raster(file_path, transforms, force_recreate_overviews, region_of_inter
     return arr
 
 
-def load_vector(filepath: str, transforms, force_recreate_overviews, region_of_interest):
+def load_vector(
+    filepath: str,
+    transforms,
+    force_recreate_overviews,
+    storage_options,
+    geometry,
+    region_of_interest,
+):
     """
     Load vector data.
 
@@ -87,6 +95,7 @@ def load_vector(filepath: str, transforms, force_recreate_overviews, region_of_i
 
     file_extension = splitext(filepath)[1]
 
+    # TODO: add storage_options to test from S3 dataset, public and private files
     if file_extension == '.parquet':
         if '*' in filepath:
             data = []

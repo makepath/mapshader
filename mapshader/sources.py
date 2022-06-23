@@ -127,6 +127,7 @@ class MapSource:
                  raster_padding=0,
                  service_types=None,
                  full_extent=None,
+                 storage_options=None,
                  region_of_interest=None,
                  default_extent=None,
                  default_height=256,
@@ -198,6 +199,7 @@ class MapSource:
         self.extras = extras
         self.service_types = service_types
         self.transforms = transforms
+        self.storage_options = storage_options
         self.default_extent = default_extent
         self.default_width = default_width
         self.default_height = default_height
@@ -251,7 +253,12 @@ class MapSource:
                 data_path = self.filepath
 
             data = self.load_func(
-                data_path, self.transforms, self.force_recreate_overviews, self.region_of_interest
+                data_path,
+                self.transforms,
+                self.force_recreate_overviews,
+                self.storage_options,
+                self.geometry_field,
+                self.region_of_interest,
             )
         else:
             data = self.data
