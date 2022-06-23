@@ -1,10 +1,12 @@
 from os import listdir
 from os.path import expanduser, split, splitext
 
-import geopandas as gpd
 import pandas as pd
 import numpy as np
 import xarray as xr
+import geopandas as gpd
+import dask_geopandas
+import dask
 
 from mapshader.multifile import SharedMultiFile
 
@@ -95,29 +97,21 @@ def load_vector(
 
     file_extension = splitext(filepath)[1]
 
-    # TODO: add storage_options to test from S3 dataset, public and private files
     if file_extension == '.parquet':
-        if '*' in filepath:
-            data = []
-            # read all parquet files in the specified folder
-            base_dir = split(filepath)[0]
-            files = [f for f in listdir(base_dir) if 'parquet' in f]
-            for f in files:
-                chunk_data = pd.read_parquet(base_dir + '/' + f)
-
-                if region_of_interest is not None:
-                    # limit data to be within the region of interest
-                    minx, miny, maxx, maxy = eval(region_of_interest)
-                    chunk_data = chunk_data[
-                        (chunk_data.x >= minx) & (chunk_data.x <= maxx)
-                        & (chunk_data.y >= miny) & (chunk_data.y <= maxy)
-                    ]
-
-                data.append(chunk_data)
-
-            return pd.concat(data, ignore_index=True)
+        kwargs = {'storage_options': storage_options} if storage_options is not None else {}
+        if geometry is not None:
+            # read data into a dask_geopandas dataframe
+            df = dask_geopandas.read_parquet(filepath, **kwargs)
         else:
-            return pd.read_parquet(filepath)
-
+            # read data into a dask dataframe
+            df = dask.dataframe.read_parquet(filepath, **kwargs)
     else:
-        return gpd.read_file(filepath)
+        # assume a geopandas DataFrame
+        df = gpd.read_file(filepath)
+
+    if region_of_interest is not None:
+        # limit data to be within the region of interest
+        minx, miny, maxx, maxy = region_of_interest
+        df = df[(df.x >= minx) & (df.x <= maxx) & (df.y >= miny) & (df.y <= maxy)]
+
+    return df
