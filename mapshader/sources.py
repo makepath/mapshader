@@ -97,6 +97,8 @@ class MapSource:
         Preload the data after the service started.
     force_recreate_overviews : bool, default=False
         For overviews to be recreated even if they already exist.
+    output: list of dict
+        The config of levels and corresponding resolutions to save tiles to images.
     """
 
     def __init__(self,  # noqa: C901
@@ -134,7 +136,8 @@ class MapSource:
                  band=None,
                  attrs=None,
                  preload=False,
-                 force_recreate_overviews=False):
+                 force_recreate_overviews=False,
+                 output=None,):
 
         if fields is None and isinstance(data, (gpd.GeoDataFrame)):
             fields = [geometry_field]
@@ -203,6 +206,7 @@ class MapSource:
         self.geometry_field = geometry_field
         self.band = band
         self.force_recreate_overviews = force_recreate_overviews
+        self.output = output
 
         self.is_loaded = False
         self.data = data

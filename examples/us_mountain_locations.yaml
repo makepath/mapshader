@@ -18,9 +18,15 @@ sources:
     shade_how: linear
     raster_interpolate: linear
     geometry_field: geometry
-    filepath: examples/peaks_data/us_peaks.shp
+    filepath: mapshader/tests/fixtures/us_peaks.shp
     transforms:
       - name: reproject_vector
         args:
           epsg: 3857
       - name: to_spatialpandas
+    output:
+      - name: save_tile_images
+        args:
+          levels:
+            0: 512
+            1: 256

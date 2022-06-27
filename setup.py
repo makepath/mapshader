@@ -60,6 +60,7 @@ setup_args = dict(
         examples=mapshader.commands.examples:examples
         tif_to_netcdf=mapshader.commands.tif_to_netcdf:tif_to_netcdf
         serve=mapshader.commands.serve:serve
+        tile=mapshader.commands.tile:tile
     ''',
 )
 
