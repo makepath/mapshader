@@ -24,13 +24,13 @@ def create_tiles():
         tile_size = 4096
         cmd = ["gdal_retile.py", "-ps", str(tile_size), str(tile_size), "-targetDir",
                tile_directory, tiff_file]
-        subprocess.run(cmd)
+        subprocess.run(cmd, check=True)
 
         # Create VRT for tile set.
         tile_names = glob(os.path.join(tile_directory, "*.tif"))
         tile_names.sort()
         cmd = ["gdalbuildvrt", vrt_file] + tile_names
-        subprocess.run(cmd)
+        subprocess.run(cmd, check=True)
 
 
 @pytest.mark.large
@@ -43,8 +43,12 @@ def test_large_vrt_create_overviews():
     create_tiles()
 
     yaml_file = os.path.join("examples", "large_vrt.yaml")
-    cmd = ["mapshader", "build-raster-overviews", yaml_file]
-    subprocess.run(cmd)
+    cmd = ["mapshader", "build-raster-overviews", "--config_yaml", yaml_file]
+    subprocess.run(cmd, check=True)
+
+    for level in range(7):
+        filename = os.path.join("examples", "large_vrt", "overviews", f"{level}_band_data.tif")
+        assert os.path.isfile(filename)
 
 
 @pytest.mark.large

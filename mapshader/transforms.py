@@ -299,12 +299,26 @@ def build_raster_overviews(arr, levels, interpolate='linear'):
     return overviews
 
 
-def add_xy_fields(gdf, geometry_field='geometry'):
+def add_xy_fields(gdf, geometry_field='geometry', x_field_name='X', y_field_name='Y'):
     """
     Extract x and y fields from geometry and create new columns with them.
     """
-    gdf['X'] = gdf[geometry_field].apply(lambda p: p.x)
-    gdf['Y'] = gdf[geometry_field].apply(lambda p: p.y)
+    gdf[x_field_name] = gdf[geometry_field].apply(lambda p: p.x)
+    gdf[y_field_name] = gdf[geometry_field].apply(lambda p: p.y)
+    return gdf
+
+
+def add_projected_buffered_extent(gdf, buffer_distance, crs='4326', geometry_field='geometry'):
+    """
+    Project geometry -> buffer -> take bounding box and add it to attributes
+    """
+
+    bounds = gdf.to_crs(crs)[geometry_field].buffer(buffer_distance).bounds
+
+    gdf = gdf.join(bounds.rename(columns={"minx": f"buffer_{int(buffer_distance)}_{crs}_xmin",
+                                          "miny": f"buffer_{int(buffer_distance)}_{crs}_ymin",
+                                          "maxx": f"buffer_{int(buffer_distance)}_{crs}_xmax",
+                                          "maxy": f"buffer_{int(buffer_distance)}_{crs}_ymax"}))
     return gdf
 
 
@@ -435,6 +449,7 @@ _transforms = {
     'squeeze': squeeze,
     'to_spatialpandas': to_spatialpandas,
     'add_xy_fields': add_xy_fields,
+    'add_projected_buffered_extent': add_projected_buffered_extent,
     'select_by_attributes': select_by_attributes,
     'polygon_to_line': polygon_to_line,
     'raster_to_categorical_points': raster_to_categorical_points,

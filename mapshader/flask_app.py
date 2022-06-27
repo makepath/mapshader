@@ -164,7 +164,7 @@ def index_page(services):
     return template.render(services=services)
 
 
-def configure_app(app: Flask, user_source_filepath=None, contains=None):
+def configure_app(app: Flask, user_source_filepath=None, contains=None, sources=None):
 
     CORS(app)
 
@@ -177,7 +177,8 @@ def configure_app(app: Flask, user_source_filepath=None, contains=None):
     }
 
     services = []
-    for service in get_services(config_path=user_source_filepath, contains=contains):
+    for service in get_services(
+            config_path=user_source_filepath, contains=contains, sources=sources):
         services.append(service)
 
         view_func = view_func_creators[service.service_type]
@@ -205,9 +206,9 @@ def configure_app(app: Flask, user_source_filepath=None, contains=None):
     return app
 
 
-def create_app(user_source_filepath=None, contains=None):
+def create_app(user_source_filepath=None, contains=None, sources=None):
     app = Flask(__name__)
-    return configure_app(app, user_source_filepath, contains)
+    return configure_app(app, user_source_filepath, contains, sources)
 
 
 if __name__ == '__main__':
