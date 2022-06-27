@@ -285,7 +285,7 @@ def get_services(config_path=None, include_default=True, contains=None, sources=
 
     source_objs = None
 
-    if sources is not None:
+    if sources:
         source_objs = sources
 
     elif config_path is None:
