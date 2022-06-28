@@ -3,7 +3,7 @@ from os import path
 import click
 import yaml
 
-from ..core import render_map
+from ..core import render_tile
 from ..sources import MapSource
 
 
@@ -52,13 +52,8 @@ def _tile(config_yaml, outpath):
             z = int(level)
             nx = 2 ** z
             ny = 2 ** z
-            height = width = int(resolution)
 
             print(f'Processing level={z} with tile shape of {(resolution, resolution)}...')
             for x in range(nx):
                 for y in range(ny):
-                    render_map(
-                        source, x=x, y=y, z=z,
-                        height=height, width=width,
-                        output_location=outpath
-                    )
+                    render_tile(source, output_location=outpath, x=x, y=y, z=z)
