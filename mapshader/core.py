@@ -2,6 +2,8 @@ import json
 import sys
 import os
 
+from io import BytesIO
+
 import datashader as ds
 import numpy as np
 import geopandas as gpd
