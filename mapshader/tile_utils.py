@@ -332,24 +332,20 @@ def save_tile_by_extent(xmin, ymin, xmax, ymax,
     return output_path
 
 
-def save_tiles_to_outpath(source, outpath):
+def all_tiles_vector_source(source):
     """
-    Save tile images of a source object to an output location.
+    List all tile of a VectorSource object.
 
     Parameters
     ----------
     source (MapSource): source object
-    outpath (str): output location, can be a folder in local disk, or an S3 bucket
 
     Returns
     -------
-    None
+    all_tiles (list)
     """
 
-    if source.tiling is None:
-        return
-
-    # get necessary tiling settings from source object
+    # get necessary tiling settings from vector source object
     min_zoom = source.tiling['min_zoom']
     max_zoom = source.tiling['max_zoom']
     xmin_field = source.tiling['xmin_field']
@@ -369,6 +365,62 @@ def save_tiles_to_outpath(source, outpath):
             for x, y, z, q in tiles:
                 t = dict(x=x, y=y, z=z, q=q)
                 all_tiles.append(t)
+
+    return all_tiles
+
+
+def all_tiles_raster_source(source):
+    """
+    List all tile of a RasterSource object.
+
+    Parameters
+    ----------
+    source (MapSource): source object
+
+    Returns
+    -------
+    all_tiles (list)
+    """
+
+    # get necessary tiling settings from vector source object
+    min_zoom = source.tiling['min_zoom']
+    max_zoom = source.tiling['max_zoom']
+
+    extent = source.full_extent
+    # unpack extent and convert to tile coordinates
+    xmin, ymin, xmax, ymax = extent
+
+    all_tiles = []
+    for z in range(min_zoom, max_zoom + 1):
+        tiles = get_tiles_by_extent(xmin=xmin,
+                                    ymin=ymin,
+                                    xmax=xmax,
+                                    ymax=ymax,
+                                    level=z)
+        for x, y, z, q in tiles:
+            t = dict(x=x, y=y, z=z, q=q)
+            all_tiles.append(t)
+
+    return all_tiles
+
+
+def save_tiles_to_outpath(source, outpath):
+    """
+    Save tile images of a source object to an output location.
+
+    Parameters
+    ----------
+    source (MapSource): source object
+    outpath (str): output location, can be a folder in local disk, or an S3 bucket
+
+    Returns
+    -------
+    None
+    """
+    if source.source_type == 'vector':
+        all_tiles = all_tiles_vector_source(source)
+    elif source.source_type == 'raster':
+        all_tiles = all_tiles_raster_source(source)
 
     # Create a Pandas DataFrame of Tile to Process based on Map Source feature extents
     tiles_df = pd.DataFrame(all_tiles)
