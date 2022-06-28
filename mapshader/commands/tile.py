@@ -4,7 +4,7 @@ import click
 import yaml
 
 from ..sources import MapSource
-from ..tile_utils import save_tile_images
+from ..tile_utils import save_tiles_to_outpath
 
 
 @click.command(
@@ -40,4 +40,4 @@ def tile(config_yaml, outpath):
         if source.tiling is None:
             continue
 
-        save_tile_images(source, outpath)
+        save_tiles_to_outpath(source, outpath)

@@ -332,7 +332,7 @@ def save_tile_by_extent(xmin, ymin, xmax, ymax,
     return output_path
 
 
-def save_tile_images(source, outpath):
+def save_tiles_to_outpath(source, outpath):
     """
     Save tile images of a source object to an output location.
 
