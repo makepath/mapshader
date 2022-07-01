@@ -10,10 +10,8 @@ sources:
     description: Example of tiling point data
     service_types:
       - tile
-    span:
-      - 0
-      - 1
-    cmap: white
+    cmap:
+      - white
     geometry_type: point
     shade_how: linear
     raster_interpolate: linear
@@ -23,10 +21,17 @@ sources:
       - name: reproject_vector
         args:
           epsg: 3857
-      - name: to_spatialpandas
-    output:
-      - name: save_tile_images
+      - name: add_projected_buffered_extent
         args:
-          levels:
-            0: 512
-            1: 256
+          crs: 4326
+          buffer_distance: 0.01
+          geometry_field: geometry
+      - name: to_spatialpandas
+    tiling:
+      min_zoom: 1
+      max_zoom: 2
+      xmin_field: buffer_0_4326_xmin
+      xmax_field: buffer_0_4326_xmax
+      ymin_field: buffer_0_4326_ymin
+      ymax_field: buffer_0_4326_ymax
+

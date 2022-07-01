@@ -2,6 +2,8 @@ import json
 import sys
 import os
 
+from io import BytesIO
+
 import datashader as ds
 import numpy as np
 import geopandas as gpd
@@ -495,8 +497,7 @@ def render_map(source: MapSource,  # noqa: C901
                xmax: float = None, ymax: float = None,
                x: float = None, y: float = None,
                z: float = None,
-               height: int = None, width: int = None,
-               output_location: str = None):
+               height: int = None, width: int = None):
     """
     Export a MapSource object to a map object.
 
@@ -518,8 +519,6 @@ def render_map(source: MapSource,  # noqa: C901
         Height of the output aggregate in pixels.
     width : int
         Width of the output aggregate in pixels.
-    output_location: str
-        Path to write tile images
     """
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
@@ -571,68 +570,19 @@ def render_map(source: MapSource,  # noqa: C901
         if source.dynspread and source.dynspread > 0:
             img = tf.dynspread(img, threshold=1, max_px=int(source.dynspread))
 
-    if output_location is not None:
-        # write image to local disk
-        write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location)
-
     return img
 
 
-def tile_to_image(agg, xmin, xmax, ymin, ymax):
-    """
-    Create PIL Image from a tile
-
-    Parameters
-    ----------
-    agg: xarray.DataArray
-        aggregation data array of the tile to write to image
-    xmin : float
-        X-axis minimum range.
-    xmax : float
-        X-axis maximum range.
-    ymin : float
-        Y-axis minimum range.
-    ymax : float
-        Y-axis maximum range.
-
-    Returns
-    -------
-        tile_img: PIL.Image
-    """
-
-    arr = agg.loc[{'x': slice(xmin, xmax), 'y': slice(ymin, ymax)}]
-
-    if 0 in arr.shape:
-        return None
-
-    try:
-        from PIL.Image import fromarray
-    except ImportError:
-        raise ImportError('conda install pillow to enable rendering to local disk')
-
-    # flip since y tiles go down (Google map tiles)
-    tile_img = fromarray(np.flip(arr.data, 0), 'RGBA')
-    return tile_img
-
-
-def write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location):
+def tile_to_disk(img, output_location, z=0, x=0, y=0, tile_format='png'):
     """
     Write a tile image to local disk
 
     Parameters
     ----------
-    agg: xarray.DataArray
+    img: xarray.DataArray
         aggregation data array of the tile to write to image
     x, y, z : float
         The coordinates to be used to get the bounds inclusive space along the axis.
-    xmin : float
-        X-axis minimum range.
-    xmax : float
-        X-axis maximum range.
-    ymin : float
-        Y-axis minimum range.
-    ymax : float
-        Y-axis maximum range.
     output_location: str
         Path to write tile image
 
@@ -640,7 +590,7 @@ def write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location):
     -------
         None
     """
-    tile_format = 'PNG'
+
     tile_file_name = '{}.{}'.format(y, tile_format.lower())
     tile_directory = os.path.join(output_location, str(z), str(x))
     try:
@@ -651,11 +601,72 @@ def write_to_local_disk(agg, x, y, z, xmin, xmax, ymin, ymax, output_location):
             raise
     output_file = os.path.join(tile_directory, tile_file_name)
 
-    tile_img = tile_to_image(agg, xmin, xmax, ymin, ymax)
-    if tile_img is not None:
-        # save to local disk
-        print(f'Writing tile ({x, y, z}) to {output_file}')
-        tile_img.save(output_file, tile_format)
+    # save to local disk
+    print(f'Writing tile ({x, y, z}) to {output_file}')
+    img.save(output_file, tile_format)
+
+    return output_file
+
+
+def tile_to_s3(img, output_location, z=0, x=0, y=0, tile_format='png'):
+    """
+
+    Parameters
+    ----------
+    img
+    output_location
+    z
+    x
+    y
+    tile_format
+
+    Returns
+    -------
+
+    """
+
+    try:
+        import boto3
+    except ImportError:
+        raise ImportError('conda install boto3 to enable rendering to S3')
+
+    try:
+        from urlparse import urlparse
+    except ImportError:
+        from urllib.parse import urlparse
+
+    s3_info = urlparse(output_location)
+    bucket = s3_info.netloc
+    s3_client = boto3.client('s3')
+
+    tile_file_name = '{}.{}'.format(y, tile_format.lower())
+    key = os.path.join(s3_info.path, str(z), str(x), tile_file_name).lstrip('/')
+    output_buf = BytesIO()
+    img.save(output_buf, tile_format)
+    output_buf.seek(0)
+    s3_client.put_object(Body=output_buf, Bucket=bucket, Key=key, ACL='public-read')
+    return 'https://{}.s3.amazonaws.com/{}'.format(bucket, key)
+
+
+def render_tile(source, output_location, z=0, x=0, y=0, tile_format='png'):
+    agg = render_map(source, x=int(x), y=int(y), z=int(z), height=256, width=256)
+
+    if 0 in agg.shape:
+        return None
+
+    try:
+        from PIL.Image import fromarray
+    except ImportError:
+        raise ImportError('conda install pillow to enable rendering to local disk')
+
+    # flip since y tiles go down (Google map tiles)
+    img = fromarray(np.flip(agg.data, 0), 'RGBA')
+
+    if output_location.startswith('s3:'):
+        tile_to_s3(img, output_location, z, x, y, tile_format)
+    else:
+        # write to local disk
+        tile_to_disk(img, output_location, z, x, y, tile_format)
 
 
 def get_source_data(source: MapSource, simplify=None):

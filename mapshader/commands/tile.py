@@ -3,8 +3,8 @@ from os import path
 import click
 import yaml
 
-from ..core import render_map
 from ..sources import MapSource
+from ..tile_utils import save_tiles_to_outpath
 
 
 @click.command(
@@ -26,10 +26,6 @@ from ..sources import MapSource
     help='Output location to write tile images.',
 )
 def tile(config_yaml, outpath):
-    _tile(config_yaml, outpath)
-
-
-def _tile(config_yaml, outpath):
 
     config_yaml = path.abspath(path.expanduser(config_yaml))
     with open(config_yaml, 'r') as f:
@@ -41,24 +37,7 @@ def _tile(config_yaml, outpath):
         source = MapSource.from_obj(source_obj)
         source = source.load()
 
-        if source.output is None:
+        if source.tiling is None:
             continue
 
-        out_tile_config = list(filter(lambda t: t["name"] == "save_tile_images", source.output))[0]
-        levels_and_resolutions = out_tile_config["args"]["levels"]
-
-        for level, resolution in levels_and_resolutions.items():
-
-            z = int(level)
-            nx = 2 ** z
-            ny = 2 ** z
-            height = width = int(resolution)
-
-            print(f'Processing level={z} with tile shape of {(resolution, resolution)}...')
-            for x in range(nx):
-                for y in range(ny):
-                    render_map(
-                        source, x=x, y=y, z=z,
-                        height=height, width=width,
-                        output_location=outpath
-                    )
+        save_tiles_to_outpath(source, outpath)

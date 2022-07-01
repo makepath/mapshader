@@ -1,6 +1,6 @@
 from os import path, listdir
 
-from mapshader.commands.tile import _tile
+from mapshader.commands.tile import tile
 
 HERE = path.abspath(path.dirname(__file__))
 FIXTURES_DIR = path.join(HERE, 'fixtures')
@@ -15,8 +15,8 @@ def _test_tile():
     outdir = 'tile_us_mountain_locations/'
     outpath = path.join(FIXTURES_DIR, outdir)
 
-    _tile(config_yaml, outpath)
+    tile(config_yaml, outpath)
 
     # validate output
     level_dirs = listdir(outpath)
-    assert level_dirs == ['0', '1']
+    assert level_dirs == ['1', '2']
