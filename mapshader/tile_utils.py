@@ -404,19 +404,20 @@ def all_tiles_raster_source(source):
     return all_tiles
 
 
-def save_tiles_to_outpath(source, outpath):
+def list_tiles(source, npartitions=200):
     """
-    Save tile images of a source object to an output location.
+    List all the tiles to generate from a source with tiling settings.
+    Results are saved into a dask dataframe
 
     Parameters
     ----------
     source (MapSource): source object
-    outpath (str): output location, can be a folder in local disk, or an S3 bucket
 
     Returns
     -------
-    None
+    tiles_ddf: dask.DataFrame
     """
+
     if source.source_type == 'vector':
         all_tiles = all_tiles_vector_source(source)
     elif source.source_type == 'raster':
@@ -427,8 +428,24 @@ def save_tiles_to_outpath(source, outpath):
     tiles_df = tiles_df.drop_duplicates().sort_values(by=['z', 'x', 'y'])
 
     # Create Dask DataFrame and persist across cluster
-    tiles_ddf = dd.from_pandas(tiles_df, npartitions=200)
-    tiles_ddf.persist()
+    tiles_ddf = dd.from_pandas(tiles_df, npartitions=npartitions)
+    return tiles_ddf
+
+
+def save_tiles_to_outpath(source, tiles_ddf, outpath):
+    """
+    Save tile images of a source object to an output location.
+
+    Parameters
+    ----------
+    source (MapSource): source object.
+    tiles_ddf (dask.DataFrame): table of tiles to generate.
+    outpath (str): output location, can be a folder in local disk, or an S3 bucket.
+
+    Returns
+    -------
+    None
+    """
 
     def tile_partition(df, output_location, source=None):
         def tile_row(row):
