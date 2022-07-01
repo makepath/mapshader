@@ -1,6 +1,21 @@
 ## Mapshader Changelog
 ----------------------
 
+### Version 0.1.2 - 2022-07-01
+- Add tile utils module with example notebook (#131)
+- added projected buffered extent transform (#130)
+- mapshader tile command: enable writing precomputed tiles to a output location (#128)
+- Support scanning directories for VRTs (#123)
+- Use relative url for psutils (#124)
+- Reduce test geotiff size from 10 GB to 1 GB (#125)
+- point_aggregation(): added geometry param (#127)
+- Always use multi file opening code for VRTs (#122)
+- Support VRTs (#121)
+- Avoid using dask.bag if creating overview of only 1 file (#120)
+- Test creating overviews for multiple netcdf files with multiple bands (#119)
+- Tidy up repo (#118)
+- Support large GeoTIFF files with creation of overviews (#117)
+
 ### Version 0.1.1 - 2022-02-17
 - Overviews netcdf limited area (#113)
 - Added serve cli command to start default flask server (#112)
