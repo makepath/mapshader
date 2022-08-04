@@ -1,13 +1,16 @@
 from os.path import expanduser, splitext
 
-import geopandas as gpd
 import numpy as np
 import xarray as xr
+import geopandas as gpd
+import dask_geopandas
+import dask
 
 from mapshader.multifile import SharedMultiFile
 
 
 def load_raster(file_path, transforms, force_recreate_overviews,
+                storage_options, geometry, region_of_interest,
                 xmin=None, ymin=None, xmax=None, ymax=None, chunks=None,
                 layername='data'):
     """
@@ -68,7 +71,14 @@ def load_raster(file_path, transforms, force_recreate_overviews,
     return arr
 
 
-def load_vector(filepath: str, transforms, force_recreate_overviews):
+def load_vector(
+    filepath: str,
+    transforms,
+    force_recreate_overviews,
+    storage_options,
+    geometry,
+    region_of_interest,
+):
     """
     Load vector data.
 
@@ -82,4 +92,24 @@ def load_vector(filepath: str, transforms, force_recreate_overviews):
     gpd : geopandas.DataFrame
         The loaded data.
     """
-    return gpd.read_file(filepath)
+
+    file_extension = splitext(filepath)[1]
+
+    if file_extension == '.parquet':
+        kwargs = {'storage_options': storage_options} if storage_options is not None else {}
+        if geometry is not None:
+            # read data into a dask_geopandas dataframe
+            df = dask_geopandas.read_parquet(filepath, **kwargs)
+        else:
+            # read data into a dask dataframe
+            df = dask.dataframe.read_parquet(filepath, **kwargs)
+    else:
+        # assume a geopandas DataFrame
+        df = gpd.read_file(filepath)
+
+    if region_of_interest is not None:
+        # limit data to be within the region of interest
+        minx, miny, maxx, maxy = region_of_interest
+        df = df[(df.x >= minx) & (df.x <= maxx) & (df.y >= miny) & (df.y <= maxy)]
+
+    return df

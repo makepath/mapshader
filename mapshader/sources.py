@@ -4,6 +4,7 @@ import os
 from os import path
 import sys
 
+import pandas as pd
 import geopandas as gpd
 
 from mapshader.colors import colors
@@ -128,6 +129,8 @@ class MapSource:
                  raster_padding=0,
                  service_types=None,
                  full_extent=None,
+                 storage_options=None,
+                 region_of_interest=None,
                  default_extent=None,
                  default_height=256,
                  default_width=256,
@@ -199,6 +202,7 @@ class MapSource:
         self.extras = extras
         self.service_types = service_types
         self.transforms = transforms
+        self.storage_options = storage_options
         self.default_extent = default_extent
         self.default_width = default_width
         self.default_height = default_height
@@ -206,6 +210,7 @@ class MapSource:
         self.geometry_field = geometry_field
         self.band = band
         self.force_recreate_overviews = force_recreate_overviews
+        self.region_of_interest = region_of_interest
         self.tiling = tiling
 
         self.is_loaded = False
@@ -243,6 +248,10 @@ class MapSource:
                 print('Zipfile Path', file=sys.stdout)
                 data_path = self.filepath
 
+            elif self.filepath.startswith('s3://'):
+                print('S3 Path', file=sys.stdout)
+                data_path = self.filepath
+
             elif not path.isabs(self.filepath):
                 print('Not Absolute', file=sys.stdout)
                 data_path = path.abspath(path.expanduser(self.filepath))
@@ -251,7 +260,14 @@ class MapSource:
                 print('Using Given Filepath unmodified: config{self.config_file}', file=sys.stdout)
                 data_path = self.filepath
 
-            data = self.load_func(data_path, self.transforms, self.force_recreate_overviews)
+            data = self.load_func(
+                data_path,
+                self.transforms,
+                self.force_recreate_overviews,
+                self.storage_options,
+                self.geometry_field,
+                self.region_of_interest,
+            )
         else:
             data = self.data
 
@@ -359,8 +375,16 @@ class VectorSource(MapSource):
     def full_extent(self):
         if isinstance(self.data, spatialpandas.GeoDataFrame):
             return self.data.to_geopandas()[self.geometry_field].total_bounds
-        else:
+        elif isinstance(self.data, gpd.GeoDataFrame):
             return self.data[self.geometry_field].total_bounds
+        elif isinstance(self.data, pd.DataFrame):
+            minx, miny, maxx, maxy = (
+                self.data[self.xfield].min(),
+                self.data[self.xfield].max(),
+                self.data[self.yfield].min(),
+                self.data[self.yfield].max()
+            )
+            return minx, miny, maxx, maxy
 
 
 # ----------------------------------------------------------------------------

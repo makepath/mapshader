@@ -1,0 +1,31 @@
+---
+
+metadata:
+  version: 1
+
+sources:
+  - name: Census Blocks Synthetic People
+    key: census-synthetic-people
+    text: Census Blocks Synthetic People
+    description: Census Blocks Synthetic People
+    service_types:
+      - tile
+    cmap:
+      - white
+    geometry_field: null
+    region_of_interest:
+      - -13898124.212
+      - 2801774.864
+      - -7445653.568
+      - 6340332.344
+    geometry_type: point
+    shade_how: linear
+    raster_interpolate: linear
+    xfield: x
+    yfield: y
+    filepath: s3://makepath-synthetic-people-2022-alpha-webm-demo/part.6.parquet
+    transforms:
+      - name: load_in_memory
+    storage_options:
+        key: your_access_key_id
+        secret: your_secret_access_key
