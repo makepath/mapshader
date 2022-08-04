@@ -98,8 +98,8 @@ class MapSource:
         Preload the data after the service started.
     force_recreate_overviews : bool, default=False
         For overviews to be recreated even if they already exist.
-    output: list of dict
-        The config of levels and corresponding resolutions to save tiles to images.
+    tiling: dict, default=None
+        Settings for saving tile images to an output location
     """
 
     def __init__(self,  # noqa: C901
@@ -140,7 +140,7 @@ class MapSource:
                  attrs=None,
                  preload=False,
                  force_recreate_overviews=False,
-                 output=None,):
+                 tiling=None):
 
         if fields is None and isinstance(data, (gpd.GeoDataFrame)):
             fields = [geometry_field]
@@ -211,7 +211,7 @@ class MapSource:
         self.band = band
         self.force_recreate_overviews = force_recreate_overviews
         self.region_of_interest = region_of_interest
-        self.output = output
+        self.tiling = tiling
 
         self.is_loaded = False
         self.data = data
@@ -336,6 +336,8 @@ class RasterSource(MapSource):
         The map source object.
     """
 
+    source_type = 'raster'
+
     @property
     def load_func(self):
         return load_raster
@@ -361,6 +363,8 @@ class VectorSource(MapSource):
     MapSource : mapshader.sources.MapSource
         The map source object.
     """
+
+    source_type = 'vector'
 
     @property
     def load_func(self):
