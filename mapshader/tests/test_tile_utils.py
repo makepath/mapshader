@@ -2,9 +2,8 @@ import pytest
 
 import geopandas as gpd
 import spatialpandas
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 
-from mapshader.sources import MapSource
 from mapshader.sources import VectorSource
 from mapshader.tile_utils import (
     get_tile,
@@ -13,9 +12,8 @@ from mapshader.tile_utils import (
     list_tiles
 )
 
-MIN_ZOOM = 0
-MAX_ZOOM = 5
-ALL_ZOOM_LEVELS = range(MIN_ZOOM, MAX_ZOOM)
+ZOOM_LEVELS_1_5 = range(1, 5)
+ZOOM_LEVELS_1_24 = range(1, 24)
 
 TEMPLATE = ('https://c.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png')
 
@@ -60,6 +58,37 @@ def full_map_polygon_vector_source(min_zoom, max_zoom):
     return polygon_source, min_zoom, max_zoom
 
 
+@pytest.fixture
+def point_vector_source(min_zoom, max_zoom):
+    if min_zoom > max_zoom:
+        point_source = None
+    else:
+        # create a point at (0, 0)
+        point = Point(0, 0)
+        crs = {'init': 'epsg:4326'}
+        point_gdf = gpd.GeoDataFrame(index=[0], crs=crs, geometry=[point])
+        point_gdf['x'] = [point.x]
+        point_gdf['y'] = [point.y]
+
+        # construct value obj
+        source_obj = dict()
+        source_obj['geometry_type'] = 'point'
+        source_obj['data'] = point_gdf
+        source_obj['tiling'] = dict(
+            min_zoom=min_zoom,
+            max_zoom=max_zoom,
+            xmin_field='x',
+            xmax_field='x',
+            ymin_field='y',
+            ymax_field='y',
+        )
+
+        # VectorSource from source object we created above
+        point_source = VectorSource.from_obj(source_obj)
+
+    return point_source, min_zoom, max_zoom
+
+
 def test_get_tile():
     lng = -90.283741
     lat = 29.890626
@@ -91,9 +120,9 @@ def test_get_tiles_by_extent():
     assert len(tile_list) == 6
 
 
-@pytest.mark.parametrize("min_zoom", ALL_ZOOM_LEVELS)
-@pytest.mark.parametrize("max_zoom", ALL_ZOOM_LEVELS)
-def test_list_tiles(full_map_polygon_vector_source):
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_5)
+@pytest.mark.parametrize("max_zoom", [5])
+def test_list_tiles_polygon(full_map_polygon_vector_source):
     polygon_source, minz, maxz = full_map_polygon_vector_source
     if polygon_source is not None:
         tiles_ddf = list_tiles(polygon_source)
@@ -101,3 +130,23 @@ def test_list_tiles(full_map_polygon_vector_source):
         # thus at each zoom level, all possible tiles will be generated
         num_all_possible_tiles = sum([2**(2*i) for i in range(minz, maxz + 1)])
         assert len(tiles_ddf) == num_all_possible_tiles
+
+
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_24)
+@pytest.mark.parametrize("max_zoom", [24])
+def test_list_tiles_point(point_vector_source):
+
+    point_source, minz, maxz = point_vector_source
+
+    if point_source is not None:
+        tiles_ddf = list_tiles(point_source).compute()
+        # there is only a single point at (0, 0) in the vector point source,
+        # thus at each zoom level, only one tile will be generated
+        assert len(tiles_ddf) == maxz - minz + 1
+
+        # at each zoom level, the generated tile is at the center of the map
+        for i, row in tiles_ddf.iterrows():
+            x = row['x']
+            y = row['y']
+            z = row['z']
+            assert x == y == 2**(z-1)
