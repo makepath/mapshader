@@ -89,7 +89,6 @@ def test_valid_conversion(tmpdir):
         a = xr.open_dataset(output_filepath)
         b = xr.open_dataset(expected_output_filepath)
         assert a.attrs == b.attrs
-        assert a.spatial_ref == b.spatial_ref
         assert_array_almost_equal(a.coords["x"], b.coords["x"])
         assert_array_almost_equal(a.coords["y"], b.coords["y"])
         assert_array_almost_equal(a.data, b.data)
