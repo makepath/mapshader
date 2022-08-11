@@ -1,10 +1,14 @@
 import pytest
 
 import numpy as np
+
+import datashader as ds
 import geopandas as gpd
+import spatialpandas as spd
 from shapely.geometry import Polygon, Point, LineString
 
-from mapshader.sources import VectorSource
+from mapshader.sources import VectorSource, RasterSource
+
 from mapshader.tile_utils import (
     get_tile,
     render_tiles_by_extent,
@@ -123,6 +127,38 @@ def line_vector_source(min_zoom, max_zoom):
     return line_source, min_zoom, max_zoom
 
 
+@pytest.fixture
+def line_raster_source(min_zoom, max_zoom):
+    if min_zoom > max_zoom:
+        line_source = None
+    else:
+        # create a horizontal line y=0 crossing 2 points (-180, 0), and (180, 0)
+        line = LineString([Point(-180, 0), Point(180, 0)])
+        line_gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[line])
+
+        # create a line raster
+        xrange = (-180, 180)
+        yrange = (-1, 0)
+        width = 360
+        height = 1
+        cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
+        line_raster = cvs.line(spd.GeoDataFrame(line_gdf), geometry='geometry').astype(np.float32)
+
+        # construct value obj
+        source_obj = dict()
+        source_obj['geometry_type'] = 'raster'
+        source_obj['data'] = line_raster
+        source_obj['tiling'] = dict(
+            min_zoom=min_zoom,
+            max_zoom=max_zoom,
+        )
+
+        # RasterSource from source object we created above
+        line_source = RasterSource.from_obj(source_obj)
+
+    return line_source, min_zoom, max_zoom
+
+
 def test_get_tile():
     lng = -90.283741
     lat = 29.890626
@@ -156,7 +192,7 @@ def test_get_tiles_by_extent():
 
 @pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
 @pytest.mark.parametrize("max_zoom", [8])
-def test_list_tiles_polygon(full_map_polygon_vector_source):
+def test_list_tiles_polygon_vector(full_map_polygon_vector_source):
 
     polygon_source, minz, maxz = full_map_polygon_vector_source
 
@@ -170,7 +206,7 @@ def test_list_tiles_polygon(full_map_polygon_vector_source):
 
 @pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_24)
 @pytest.mark.parametrize("max_zoom", [24])
-def test_list_tiles_point(point_vector_source):
+def test_list_tiles_point_vector(point_vector_source):
 
     point_source, minz, maxz = point_vector_source
 
@@ -190,9 +226,28 @@ def test_list_tiles_point(point_vector_source):
 
 @pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
 @pytest.mark.parametrize("max_zoom", [8])
-def test_list_tiles_line(line_vector_source):
+def test_list_tiles_line_vector(line_vector_source):
 
     line_source, minz, maxz = line_vector_source
+
+    if line_source is not None:
+
+        tiles_ddf = list_tiles(line_source)
+        assert len(tiles_ddf) == sum([2 ** z for z in range(minz, maxz + 1)])
+        tiles_ddf = tiles_ddf.compute()
+        tiles_ddf_by_zoom = tiles_ddf.groupby('z')
+        for z, tiles_z in tiles_ddf_by_zoom:
+            # at each zoom level, the generated tiles intersect with line y=0
+            assert len(tiles_z) == 2**z
+            assert np.all(np.unique(tiles_z['y']) == [2**(z - 1)])
+            assert np.all(np.sort(np.unique(tiles_z['x'])) == range(2**z))
+
+
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
+@pytest.mark.parametrize("max_zoom", [8])
+def test_list_tiles_line_raster(line_raster_source):
+
+    line_source, minz, maxz = line_raster_source
 
     if line_source is not None:
 
