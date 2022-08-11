@@ -1,5 +1,6 @@
 import pytest
 
+import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon, Point, LineString
 
@@ -194,13 +195,13 @@ def test_list_tiles_line(line_vector_source):
     line_source, minz, maxz = line_vector_source
 
     if line_source is not None:
+
         tiles_ddf = list_tiles(line_source)
-        assert len(tiles_ddf) == sum([2**z for z in range(minz, maxz+1)])
+        assert len(tiles_ddf) == sum([2 ** z for z in range(minz, maxz + 1)])
         tiles_ddf = tiles_ddf.compute()
-        # at each zoom level, the generated tiles intersect with line y=0
-        for i, row in tiles_ddf.iterrows():
-            x = row['x']
-            y = row['y']
-            z = row['z']
-            assert y == 2**(z-1)
-            assert x < 2**z
+        tiles_ddf_by_zoom = tiles_ddf.groupby('z')
+        for z, tiles_z in tiles_ddf_by_zoom:
+            # at each zoom level, the generated tiles intersect with line y=0
+            assert len(tiles_z) == 2**z
+            assert np.all(np.unique(tiles_z['y']) == [2**(z - 1)])
+            assert np.all(np.sort(np.unique(tiles_z['x'])) == range(2**z))
