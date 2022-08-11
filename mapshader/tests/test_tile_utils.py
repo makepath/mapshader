@@ -196,10 +196,11 @@ def test_list_tiles_line(line_vector_source):
     if line_source is not None:
         tiles_ddf = list_tiles(line_source)
         assert len(tiles_ddf) == sum([2**z for z in range(minz, maxz+1)])
-
-        # # at each zoom level, the generated tile is at the center of the map
-        # for i, row in tiles_ddf.iterrows():
-        #     x = row['x']
-        #     y = row['y']
-        #     z = row['z']
-        #     assert x == y == 2**(z-1)
+        tiles_ddf = tiles_ddf.compute()
+        # at each zoom level, the generated tiles intersect with line y=0
+        for i, row in tiles_ddf.iterrows():
+            x = row['x']
+            y = row['y']
+            z = row['z']
+            assert y == 2**(z-1)
+            assert x < 2**z
