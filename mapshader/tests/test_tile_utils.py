@@ -23,7 +23,7 @@ TEMPLATE = ('https://c.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png')
 
 
 @pytest.fixture
-def full_map_polygon_vector_source(min_zoom, max_zoom):
+def polygon_vector_source(min_zoom, max_zoom):
 
     if min_zoom > max_zoom:
         polygon_source = None
@@ -63,6 +63,39 @@ def full_map_polygon_vector_source(min_zoom, max_zoom):
 
 
 @pytest.fixture
+def polygon_raster_source(min_zoom, max_zoom):
+
+    if min_zoom > max_zoom:
+        polygon_source = None
+    else:
+        # create a polygon that fully covers the whole map
+        lat_point_list = [85.05112878, -85.05112878, -85.05112878, 85.05112878, 85.05112878]
+        lon_point_list = [-180, -180, 180, 180, -180]
+        polygon_geom = Polygon(zip(lon_point_list, lat_point_list))
+        polygon_gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[polygon_geom])
+        xrange = (-180, 180)
+        yrange = (-90, 90)
+        width = 360
+        height = 170
+        cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
+        polygon_raster = cvs.polygons(spd.GeoDataFrame(polygon_gdf), geometry='geometry')
+
+        # construct value obj
+        source_obj = dict()
+        source_obj['geometry_type'] = 'raster'
+        source_obj['data'] = polygon_raster
+        source_obj['tiling'] = dict(
+            min_zoom=min_zoom,
+            max_zoom=max_zoom,
+        )
+
+        polygon_source = RasterSource.from_obj(source_obj)
+        polygon_source.load()
+
+    return polygon_source, min_zoom, max_zoom
+
+
+@pytest.fixture
 def point_vector_source(min_zoom, max_zoom):
     if min_zoom > max_zoom:
         point_source = None
@@ -90,6 +123,35 @@ def point_vector_source(min_zoom, max_zoom):
         # VectorSource from source object we created above
         point_source = VectorSource.from_obj(source_obj)
 
+    return point_source, min_zoom, max_zoom
+
+
+@pytest.fixture
+def point_raster_source(min_zoom, max_zoom):
+    if min_zoom > max_zoom:
+        point_source = None
+    else:
+        # create a point at (0, 0)
+        point = Point(0, 0)
+        point_gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[point])
+        # rasterize the point
+        xrange = (1e-5, 0)
+        yrange = (-1e-5, 0)
+        width = 1
+        height = 1
+        cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
+        point_raster = cvs.points(spd.GeoDataFrame(point_gdf), geometry='geometry').astype(np.float32)
+
+        # construct value obj
+        source_obj = dict()
+        source_obj['geometry_type'] = 'raster'
+        source_obj['data'] = point_raster
+        source_obj['tiling'] = dict(
+            min_zoom=min_zoom,
+            max_zoom=max_zoom,
+        )
+        # RasterSource from source object we created above
+        point_source = RasterSource.from_obj(source_obj)
     return point_source, min_zoom, max_zoom
 
 
@@ -190,12 +252,7 @@ def test_get_tiles_by_extent():
     assert len(tile_list) == 6
 
 
-@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
-@pytest.mark.parametrize("max_zoom", [8])
-def test_list_tiles_polygon_vector(full_map_polygon_vector_source):
-
-    polygon_source, minz, maxz = full_map_polygon_vector_source
-
+def _test_list_tiles_polygon(polygon_source, minz, maxz):
     if polygon_source is not None:
         tiles_ddf = list_tiles(polygon_source)
         # the polygon fully covers the whole map,
@@ -204,13 +261,23 @@ def test_list_tiles_polygon_vector(full_map_polygon_vector_source):
         assert len(tiles_ddf) == num_all_possible_tiles
 
 
-@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_24)
-@pytest.mark.parametrize("max_zoom", [24])
-def test_list_tiles_point_vector(point_vector_source):
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
+@pytest.mark.parametrize("max_zoom", [8])
+def test_list_tiles_polygon_vector(polygon_vector_source):
+    polygon_source, minz, maxz = polygon_vector_source
+    _test_list_tiles_polygon(polygon_source, minz, maxz)
 
-    point_source, minz, maxz = point_vector_source
 
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
+@pytest.mark.parametrize("max_zoom", [8])
+def test_list_tiles_polygon_raster(polygon_raster_source):
+    polygon_source, minz, maxz = polygon_raster_source
+    _test_list_tiles_polygon(polygon_source, minz, maxz)
+
+
+def _test_list_tiles_point_geometry(point_source, minz, maxz):
     if point_source is not None:
+
         tiles_ddf = list_tiles(point_source).compute()
         # there is only a single point at (0, 0) in the vector point source,
         # thus at each zoom level, only one tile will be generated
@@ -224,7 +291,21 @@ def test_list_tiles_point_vector(point_vector_source):
             assert x == y == 2**(z-1)
 
 
-def _test_list_tiles_line_vector(line_source, minz, maxz):
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_24)
+@pytest.mark.parametrize("max_zoom", [24])
+def test_list_tiles_point_vector(point_vector_source):
+    point_source, minz, maxz = point_vector_source
+    _test_list_tiles_point_geometry(point_source, minz, maxz)
+
+
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_24)
+@pytest.mark.parametrize("max_zoom", [24])
+def test_list_tiles_point_raster(point_raster_source):
+    point_source, minz, maxz = point_raster_source
+    _test_list_tiles_point_geometry(point_source, minz, maxz)
+
+
+def _test_list_tiles_line_geometry(line_source, minz, maxz):
     if line_source is not None:
         tiles_ddf = list_tiles(line_source)
         assert len(tiles_ddf) == sum([2 ** z for z in range(minz, maxz + 1)])
@@ -241,11 +322,11 @@ def _test_list_tiles_line_vector(line_source, minz, maxz):
 @pytest.mark.parametrize("max_zoom", [8])
 def test_list_tiles_line_vector(line_vector_source):
     line_source, minz, maxz = line_vector_source
-    _test_list_tiles_line_vector(line_source, minz, maxz)
+    _test_list_tiles_line_geometry(line_source, minz, maxz)
 
 
 @pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
 @pytest.mark.parametrize("max_zoom", [8])
 def test_list_tiles_line_raster(line_raster_source):
     line_source, minz, maxz = line_raster_source
-    _test_list_tiles_line_vector(line_source, minz, maxz)
+    _test_list_tiles_line_geometry(line_source, minz, maxz)
