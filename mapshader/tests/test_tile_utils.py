@@ -224,14 +224,8 @@ def test_list_tiles_point_vector(point_vector_source):
             assert x == y == 2**(z-1)
 
 
-@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
-@pytest.mark.parametrize("max_zoom", [8])
-def test_list_tiles_line_vector(line_vector_source):
-
-    line_source, minz, maxz = line_vector_source
-
+def _test_list_tiles_line_vector(line_source, minz, maxz):
     if line_source is not None:
-
         tiles_ddf = list_tiles(line_source)
         assert len(tiles_ddf) == sum([2 ** z for z in range(minz, maxz + 1)])
         tiles_ddf = tiles_ddf.compute()
@@ -241,22 +235,17 @@ def test_list_tiles_line_vector(line_vector_source):
             assert len(tiles_z) == 2**z
             assert np.all(np.unique(tiles_z['y']) == [2**(z - 1)])
             assert np.all(np.sort(np.unique(tiles_z['x'])) == range(2**z))
+
+
+@pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
+@pytest.mark.parametrize("max_zoom", [8])
+def test_list_tiles_line_vector(line_vector_source):
+    line_source, minz, maxz = line_vector_source
+    _test_list_tiles_line_vector(line_source, minz, maxz)
 
 
 @pytest.mark.parametrize("min_zoom", ZOOM_LEVELS_1_8)
 @pytest.mark.parametrize("max_zoom", [8])
 def test_list_tiles_line_raster(line_raster_source):
-
     line_source, minz, maxz = line_raster_source
-
-    if line_source is not None:
-
-        tiles_ddf = list_tiles(line_source)
-        assert len(tiles_ddf) == sum([2 ** z for z in range(minz, maxz + 1)])
-        tiles_ddf = tiles_ddf.compute()
-        tiles_ddf_by_zoom = tiles_ddf.groupby('z')
-        for z, tiles_z in tiles_ddf_by_zoom:
-            # at each zoom level, the generated tiles intersect with line y=0
-            assert len(tiles_z) == 2**z
-            assert np.all(np.unique(tiles_z['y']) == [2**(z - 1)])
-            assert np.all(np.sort(np.unique(tiles_z['x'])) == range(2**z))
+    _test_list_tiles_line_vector(line_source, minz, maxz)
