@@ -23,201 +23,171 @@ TEMPLATE = ('https://c.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png')
 
 
 @pytest.fixture
-def polygon_vector_source(min_zoom, max_zoom):
+def polygon_gdf():
+    # create a polygon that fully covers the whole map
+    lat_point_list = [85.05112878, -85.05112878, -85.05112878, 85.05112878, 85.05112878]
+    lon_point_list = [-180, -180, 180, 180, -180]
+    geom = Polygon(zip(lon_point_list, lat_point_list))
+    gdf = gpd.GeoDataFrame(
+        index=[0], crs={'init': 'epsg:4326'}, geometry=[geom]
+    )
+    gdf['xmin'] = -180
+    gdf['xmax'] = 180
+    gdf['ymin'] = -85.05112878
+    gdf['ymax'] = 85.05112878
+    return gdf
 
-    if min_zoom > max_zoom:
-        polygon_source = None
-    else:
-        # create a polygon that fully covers the whole map
-        lat_point_list = [85.05112878, -85.05112878, -85.05112878, 85.05112878, 85.05112878]
-        lon_point_list = [-180, -180, 180, 180, -180]
-        polygon_geom = Polygon(zip(lon_point_list, lat_point_list))
-        crs = {'init': 'epsg:4326'}
-        polygon_gdf = gpd.GeoDataFrame(index=[0], crs=crs, geometry=[polygon_geom])
 
-        # construct transforms
-        buffered_extent_transform = dict(name='add_projected_buffered_extent',
-                                         args=dict(crs='4326',
-                                                   buffer_distance=.01,
-                                                   geometry_field='geometry'))
-        transforms = [buffered_extent_transform]
-        # construct value obj
-        source_obj = dict()
-        source_obj['geometry_type'] = 'polygon'
-        source_obj['data'] = polygon_gdf
-        source_obj['transforms'] = transforms
-        source_obj['tiling'] = dict(
-            min_zoom=min_zoom,
-            max_zoom=max_zoom,
-            xmin_field='buffer_0_4326_xmin',
-            xmax_field='buffer_0_4326_xmax',
-            ymin_field='buffer_0_4326_ymin',
-            ymax_field='buffer_0_4326_ymax',
-        )
-
-        # VectorSource from source object we created above
-        polygon_source = VectorSource.from_obj(source_obj)
-        polygon_source.load()
-
+@pytest.fixture
+def polygon_vector_source(min_zoom, max_zoom, polygon_gdf):
+    source_obj = dict()
+    source_obj['geometry_type'] = 'polygon'
+    source_obj['data'] = polygon_gdf
+    source_obj['tiling'] = dict(
+        min_zoom=min_zoom,
+        max_zoom=max_zoom,
+        xmin_field='xmin',
+        xmax_field='xmax',
+        ymin_field='ymin',
+        ymax_field='ymax',
+    )
+    polygon_source = VectorSource.from_obj(source_obj)
     return polygon_source, min_zoom, max_zoom
 
 
 @pytest.fixture
-def polygon_raster_source(min_zoom, max_zoom):
+def polygon_raster(polygon_gdf):
+    xrange = (-180, 180)
+    yrange = (-90, 90)
+    width = 360
+    height = 180
+    cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
+    raster = cvs.polygons(spd.GeoDataFrame(polygon_gdf), geometry='geometry')
+    return raster
 
-    if min_zoom > max_zoom:
-        polygon_source = None
-    else:
-        # create a polygon that fully covers the whole map
-        lat_point_list = [85.05112878, -85.05112878, -85.05112878, 85.05112878, 85.05112878]
-        lon_point_list = [-180, -180, 180, 180, -180]
-        polygon_geom = Polygon(zip(lon_point_list, lat_point_list))
-        polygon_gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[polygon_geom])
-        xrange = (-180, 180)
-        yrange = (-90, 90)
-        width = 360
-        height = 170
-        cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
-        polygon_raster = cvs.polygons(spd.GeoDataFrame(polygon_gdf), geometry='geometry')
 
-        # construct value obj
-        source_obj = dict()
-        source_obj['geometry_type'] = 'raster'
-        source_obj['data'] = polygon_raster
-        source_obj['tiling'] = dict(
-            min_zoom=min_zoom,
-            max_zoom=max_zoom,
-        )
-
-        polygon_source = RasterSource.from_obj(source_obj)
-        polygon_source.load()
-
+@pytest.fixture
+def polygon_raster_source(min_zoom, max_zoom, polygon_raster):
+    source_obj = dict()
+    source_obj['geometry_type'] = 'raster'
+    source_obj['data'] = polygon_raster
+    source_obj['tiling'] = dict(
+        min_zoom=min_zoom,
+        max_zoom=max_zoom,
+    )
+    polygon_source = RasterSource.from_obj(source_obj)
+    polygon_source.load()
     return polygon_source, min_zoom, max_zoom
 
 
 @pytest.fixture
-def point_vector_source(min_zoom, max_zoom):
-    if min_zoom > max_zoom:
-        point_source = None
-    else:
-        # create a point at (0, 0)
-        point = Point(0, 0)
-        crs = {'init': 'epsg:4326'}
-        point_gdf = gpd.GeoDataFrame(index=[0], crs=crs, geometry=[point])
-        point_gdf['x'] = [point.x]
-        point_gdf['y'] = [point.y]
+def point_gdf():
+    # create a point at (0, 0)
+    geom = Point(0, 0)
+    crs = {'init': 'epsg:4326'}
+    gdf = gpd.GeoDataFrame(index=[0], crs=crs, geometry=[geom])
+    gdf['x'] = [geom.x]
+    gdf['y'] = [geom.y]
+    return gdf
 
-        # construct value obj
-        source_obj = dict()
-        source_obj['geometry_type'] = 'point'
-        source_obj['data'] = point_gdf
-        source_obj['tiling'] = dict(
-            min_zoom=min_zoom,
-            max_zoom=max_zoom,
-            xmin_field='x',
-            xmax_field='x',
-            ymin_field='y',
-            ymax_field='y',
-        )
 
-        # VectorSource from source object we created above
-        point_source = VectorSource.from_obj(source_obj)
-
+@pytest.fixture
+def point_vector_source(min_zoom, max_zoom, point_gdf):
+    source_obj = dict()
+    source_obj['geometry_type'] = 'point'
+    source_obj['data'] = point_gdf
+    source_obj['tiling'] = dict(
+        min_zoom=min_zoom,
+        max_zoom=max_zoom,
+        xmin_field='x',
+        xmax_field='x',
+        ymin_field='y',
+        ymax_field='y',
+    )
+    point_source = VectorSource.from_obj(source_obj)
     return point_source, min_zoom, max_zoom
 
 
 @pytest.fixture
-def point_raster_source(min_zoom, max_zoom):
-    if min_zoom > max_zoom:
-        point_source = None
-    else:
-        # create a point at (0, 0)
-        point = Point(0, 0)
-        point_gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[point])
-        # rasterize the point
-        xrange = (1e-5, 0)
-        yrange = (-1e-5, 0)
-        width = 1
-        height = 1
-        cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
-        point_raster = cvs.points(spd.GeoDataFrame(point_gdf), geometry='geometry').astype(np.float32)
+def point_raster(point_gdf):
+    xrange = (1e-5, 0)
+    yrange = (-1e-5, 0)
+    width = 1
+    height = 1
+    cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
+    raster = cvs.points(spd.GeoDataFrame(point_gdf), geometry='geometry').astype(np.float32)
+    return raster
 
-        # construct value obj
-        source_obj = dict()
-        source_obj['geometry_type'] = 'raster'
-        source_obj['data'] = point_raster
-        source_obj['tiling'] = dict(
-            min_zoom=min_zoom,
-            max_zoom=max_zoom,
-        )
-        # RasterSource from source object we created above
-        point_source = RasterSource.from_obj(source_obj)
+
+@pytest.fixture
+def point_raster_source(min_zoom, max_zoom, point_raster):
+    source_obj = dict()
+    source_obj['geometry_type'] = 'raster'
+    source_obj['data'] = point_raster
+    source_obj['tiling'] = dict(
+        min_zoom=min_zoom,
+        max_zoom=max_zoom,
+    )
+    # RasterSource from source object we created above
+    point_source = RasterSource.from_obj(source_obj)
     return point_source, min_zoom, max_zoom
 
 
 @pytest.fixture
-def line_vector_source(min_zoom, max_zoom):
-    if min_zoom > max_zoom:
-        line_source = None
-    else:
-        # create a horizontal line y=0 crossing 2 points (-180, 0), and (180, 0)
-        p1 = Point(-180, 0)
-        p2 = Point(180, 0)
-        line = LineString([p1, p2])
-        line_gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[line])
-        line_gdf['xmin'] = [p1.x]
-        line_gdf['ymin'] = [p1.y]
-        line_gdf['xmax'] = [p2.x]
-        line_gdf['ymax'] = [p2.y]
+def line_gdf():
+    # create a horizontal line y=0 crossing 2 points (-180, 0), and (180, 0)
+    p1 = Point(-180, 0)
+    p2 = Point(180, 0)
+    geom = LineString([p1, p2])
+    gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[geom])
+    gdf['xmin'] = [p1.x]
+    gdf['ymin'] = [p1.y]
+    gdf['xmax'] = [p2.x]
+    gdf['ymax'] = [p2.y]
+    return gdf
 
-        # construct value obj
-        source_obj = dict()
-        source_obj['geometry_type'] = 'line'
-        source_obj['data'] = line_gdf
-        source_obj['tiling'] = dict(
-            min_zoom=min_zoom,
-            max_zoom=max_zoom,
-            xmin_field='xmin',
-            xmax_field='xmax',
-            ymin_field='ymin',
-            ymax_field='ymax',
-        )
 
-        # VectorSource from source object we created above
-        line_source = VectorSource.from_obj(source_obj)
-
+@pytest.fixture
+def line_vector_source(min_zoom, max_zoom, line_gdf):
+    source_obj = dict()
+    source_obj['geometry_type'] = 'line'
+    source_obj['data'] = line_gdf
+    source_obj['tiling'] = dict(
+        min_zoom=min_zoom,
+        max_zoom=max_zoom,
+        xmin_field='xmin',
+        xmax_field='xmax',
+        ymin_field='ymin',
+        ymax_field='ymax',
+    )
+    line_source = VectorSource.from_obj(source_obj)
     return line_source, min_zoom, max_zoom
 
 
 @pytest.fixture
-def line_raster_source(min_zoom, max_zoom):
-    if min_zoom > max_zoom:
-        line_source = None
-    else:
-        # create a horizontal line y=0 crossing 2 points (-180, 0), and (180, 0)
-        line = LineString([Point(-180, 0), Point(180, 0)])
-        line_gdf = gpd.GeoDataFrame(index=[0], crs={'init': 'epsg:4326'}, geometry=[line])
+def line_raster(line_gdf):
+    # create a line raster
+    xrange = (-180, 180)
+    yrange = (-1, 0)
+    width = 360
+    height = 1
+    cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
+    raster = cvs.line(spd.GeoDataFrame(line_gdf), geometry='geometry').astype(np.float32)
+    return raster
 
-        # create a line raster
-        xrange = (-180, 180)
-        yrange = (-1, 0)
-        width = 360
-        height = 1
-        cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=xrange, y_range=yrange)
-        line_raster = cvs.line(spd.GeoDataFrame(line_gdf), geometry='geometry').astype(np.float32)
 
-        # construct value obj
-        source_obj = dict()
-        source_obj['geometry_type'] = 'raster'
-        source_obj['data'] = line_raster
-        source_obj['tiling'] = dict(
-            min_zoom=min_zoom,
-            max_zoom=max_zoom,
-        )
-
-        # RasterSource from source object we created above
-        line_source = RasterSource.from_obj(source_obj)
-
+@pytest.fixture
+def line_raster_source(min_zoom, max_zoom, line_raster):
+    # construct value obj
+    source_obj = dict()
+    source_obj['geometry_type'] = 'raster'
+    source_obj['data'] = line_raster
+    source_obj['tiling'] = dict(
+        min_zoom=min_zoom,
+        max_zoom=max_zoom,
+    )
+    # RasterSource from source object we created above
+    line_source = RasterSource.from_obj(source_obj)
     return line_source, min_zoom, max_zoom
 
 
