@@ -1,6 +1,16 @@
 ## Mapshader Changelog
 ----------------------
 
+### Version 0.1.3 - 2022-08-16
+- release instructions
+- clean up nb
+- hotfix raster flipping tiling issue
+- list_tiles(): add tests for RasterSource (#141)
+- list_tiles(): add tests for VectorSource (#140)
+- test_valid_conversion: removed check for spatial_ref attr
+- WIP world elevation tiling example (#139)
+- Add synthetic people example (#129)
+
 ### Version 0.1.2 - 2022-07-01
 - Add tile utils module with example notebook (#131)
 - added projected buffered extent transform (#130)
