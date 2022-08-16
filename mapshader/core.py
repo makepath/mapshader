@@ -261,6 +261,8 @@ def raster_aggregation(cvs, data, interpolate='linear', padding=0, agg_method=rd
 
     try:
         agg = stcvs.raster(data, interpolate=interpolate, agg=agg_method)
+        # revert agg.data to match the coord system
+        agg.data = agg.data[::-1]
     except ValueError:
         agg = xr.DataArray(np.zeros(shape=(ysize, xsize), dtype=np.uint32),
                            coords={'x': np.linspace(new_xmin, new_xmax, xsize),
