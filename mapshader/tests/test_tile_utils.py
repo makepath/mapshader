@@ -205,8 +205,9 @@ def test_render_tiles_by_extent():
     xmax = -89.912952
     ymax = 30.057766
     level = 11
+    crs = None
     tiles = render_tiles_by_extent(xmin, ymin, xmax,
-                                   ymax, level, template=TEMPLATE)
+                                   ymax, crs, level, template=TEMPLATE)
     tile_list = list(tiles)
     assert len(tile_list) == 6
 
@@ -217,7 +218,8 @@ def test_get_tiles_by_extent():
     xmax = -89.912952
     ymax = 30.057766
     level = 11
-    tiles = get_tiles_by_extent(xmin, ymin, xmax, ymax, level)
+    crs = None
+    tiles = get_tiles_by_extent(xmin, ymin, xmax, ymax, crs, level)
     tile_list = list(tiles)
     assert len(tile_list) == 6
 

@@ -281,15 +281,14 @@ def get_tiles_by_extent(xmin, ymin, xmax, ymax, crs, level=8):
     # get the upper-left tile (xmin, ymax) and lower right tile (xmax, ymin)
     # we need to fetch tiles for this level depending on the coordinate
     # system (geodetic vs projected)
-    crs = crs.to_string()
-    if crs == "EPSG:4326":
+    if crs == None or crs.to_string() == "EPSG:4326":
         txmin, tymin = lng_lat_to_tile(xmin, ymax, level)
         txmax, tymax = lng_lat_to_tile(xmax, ymin, level)
-    elif crs == "EPSG:3857":
+    elif crs.to_string() == "EPSG:3857":
         txmin, tymin = cartesian_to_tile(xmin, ymax, level)
         txmax, tymax = cartesian_to_tile(xmax, ymin, level)
     else:
-        raise ValueError(f"Error: the crs {crs} is not supported!")
+        raise ValueError(f"Error: the crs {crs.to_string()} is not supported!")
     for y in range(tymax, tymin - 1, -1):
         for x in range(txmin, txmax + 1, 1):
             yield x, y, level, tile_to_quad(x, y, level)
@@ -390,7 +389,7 @@ def all_tiles_vector_source(source):
                 ymin=row[ymin_field],
                 xmax=row[xmax_field],
                 ymax=row[ymax_field],
-                crs=source.data.rio.crs,
+                crs=None,
                 level=z,
             )
             for x, y, z, q in tiles:
