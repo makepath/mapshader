@@ -24,10 +24,10 @@ MIN_LNG = -180
 MAX_LNG = 180
 
 # when using EPSG:4326 we need to use the projected bounds not lat/lng
-EPSG_4326_MIN_Y = -20048966.1
-EPSG_4326_MAX_Y = 20048966.1
-EPSG_4326_MIN_X = -20026376.39
-EPSG_4326_MAX_X = 20026376.39
+EPSG_3857_MIN_Y = -20037508.3427892
+EPSG_3857_MAX_Y = 20037508.3427892
+EPSG_3857_MIN_X = -20037508.3427892
+EPSG_3857_MAX_X = 20037508.3427892
 
 templates = {}
 templates["osm"] = "https://c.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png"
@@ -210,8 +210,8 @@ def cartesian_to_tile(x, y, level):
     Returns tile (x,y) coordinates containing the given cartesian point.
     """
     mapSize = get_map_dims_by_level(level)
-    tx = (x + EPSG_4326_MAX_X) / (2 * EPSG_4326_MAX_X)
-    ty = ((y * -1) + EPSG_4326_MAX_Y) / (2 * EPSG_4326_MAX_Y)
+    tx = (x + EPSG_3857_MAX_X) / (2 * EPSG_3857_MAX_X)
+    ty = ((y * -1) + EPSG_3857_MAX_Y) / (2 * EPSG_3857_MAX_Y)
 
     pixelX = int(clip_value(tx * mapSize, 0, mapSize - 1))
     pixelY = int(clip_value(ty * mapSize, 0, mapSize - 1))
