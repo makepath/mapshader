@@ -23,7 +23,7 @@ MAX_LAT = 85.05112878
 MIN_LNG = -180
 MAX_LNG = 180
 
-# when using EPSG:4326 we need to use the projected bounds not lat/lng
+# when using EPSG:3857 we need to use the projected bounds not lat/lng
 EPSG_3857_MIN_Y = -20037508.3427892
 EPSG_3857_MAX_Y = 20037508.3427892
 EPSG_3857_MIN_X = -20037508.3427892
