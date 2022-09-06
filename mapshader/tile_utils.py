@@ -281,7 +281,7 @@ def get_tiles_by_extent(xmin, ymin, xmax, ymax, crs, level=8):
     # get the upper-left tile (xmin, ymax) and lower right tile (xmax, ymin)
     # we need to fetch tiles for this level depending on the coordinate
     # system (geodetic vs projected)
-    if crs == None or crs.to_string() == "EPSG:4326":
+    if crs is None or crs.to_string() == "EPSG:4326":
         txmin, tymin = lng_lat_to_tile(xmin, ymax, level)
         txmax, tymax = lng_lat_to_tile(xmax, ymin, level)
     elif crs.to_string() == "EPSG:3857":
