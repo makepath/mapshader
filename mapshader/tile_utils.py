@@ -1,16 +1,14 @@
-'''
+"""
 Mostly direct port of awesome article by Joe Schwartz
 http://msdn.microsoft.com/en-us/library/bb259689.aspx
-'''
-from os import path, makedirs
-
+"""
 import math
-import requests
-
-from numba import jit
+from os import makedirs, path
 
 import dask.dataframe as dd
 import pandas as pd
+import requests
+from numba import jit
 
 try:
     import urllib.request as urlrequest
@@ -25,8 +23,14 @@ MAX_LAT = 85.05112878
 MIN_LNG = -180
 MAX_LNG = 180
 
+# when using EPSG:3857 we need to use the projected bounds not lat/lng
+EPSG_3857_MIN_Y = -20037508.3427892
+EPSG_3857_MAX_Y = 20037508.3427892
+EPSG_3857_MIN_X = -20037508.3427892
+EPSG_3857_MAX_X = 20037508.3427892
+
 templates = {}
-templates['osm'] = 'https://c.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png'
+templates["osm"] = "https://c.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png"
 
 
 ngjit = jit(nopython=True, nogil=True)
@@ -36,45 +40,45 @@ def normalize_url_template(template):
 
     full_url = None
 
-    if template.startswith('http'):
+    if template.startswith("http"):
         full_url = template
     else:
-        full_url = templates.get(template, templates['osm'])
+        full_url = templates.get(template, templates["osm"])
 
-    has_x = '{{x}}' in full_url
-    has_y = '{{y}}' in full_url
-    has_z = '{{z}}' in full_url
-    has_q = '{{q}}' in full_url
+    has_x = "{{x}}" in full_url
+    has_y = "{{y}}" in full_url
+    has_z = "{{z}}" in full_url
+    has_q = "{{q}}" in full_url
 
     if not (all([has_x, has_y, has_z]) or has_q):
-        raise ValueError('invalid template url: {}'.format(full_url))
+        raise ValueError("invalid template url: {}".format(full_url))
 
     return full_url
 
 
 @ngjit
 def clip_value(value, minValue, maxValue):
-    '''
+    """
     Makes sure that value is within a specific range.
     If not, then the lower or upper bounds is returned
-    '''
+    """
     return min(max(value, minValue), maxValue)
 
 
 @ngjit
 def get_map_dims_by_level(zoomLevel):
-    '''
+    """
     Returns the width/height in pixels of the entire map
     based on the zoom level.
-    '''
+    """
     return 256 << zoomLevel
 
 
 @ngjit
 def get_ground_resolution(latitude, level):
-    '''
+    """
     returns the ground resolution for based on latitude and zoom level.
-    '''
+    """
     latitude = clip_value(latitude, MIN_LAT, MAX_LAT)
     mapSize = get_map_dims_by_level(level)
     res = 2 * math.pi * EARTH_RADIUS / mapSize
@@ -83,19 +87,19 @@ def get_ground_resolution(latitude, level):
 
 @ngjit
 def get_map_scale(latitude, level, dpi=96):
-    '''
+    """
     returns the map scale on the dpi of the screen
-    '''
+    """
     dpm = dpi / 0.0254  # convert to dots per meter
     return get_ground_resolution(latitude, level) * dpm
 
 
 @ngjit
 def lat_lng_to_pixel(lat, lng, level):
-    '''
+    """
     returns the x and y values of the pixel
     corresponding to a latitude and longitude.
-    '''
+    """
     mapSize = get_map_dims_by_level(level)
     lat = clip_value(lat, MIN_LAT, MAX_LAT)
     lng = clip_value(lng, MIN_LNG, MAX_LNG)
@@ -111,9 +115,9 @@ def lat_lng_to_pixel(lat, lng, level):
 
 @ngjit
 def pixel_to_lng_lat(pixelX, pixelY, level):
-    '''
+    """
     converts a pixel x, y to a latitude and longitude.
-    '''
+    """
     mapSize = get_map_dims_by_level(level)
     x = (clip_value(pixelX, 0, mapSize - 1) / mapSize) - 0.5
     y = 0.5 - (clip_value(pixelY, 0, mapSize - 1) / mapSize)
@@ -126,34 +130,34 @@ def pixel_to_lng_lat(pixelX, pixelY, level):
 
 @ngjit
 def pixel_to_tile(pixelX, pixelY):
-    '''
+    """
     Converts pixel XY coordinates into tile
     XY coordinates of the tile containing
-    '''
-    return(int(pixelX / 256), int(pixelY / 256))
+    """
+    return (int(pixelX / 256), int(pixelY / 256))
 
 
 @ngjit
 def tile_to_pixel(tileX, tileY):
-    '''
+    """
     Converts tile XY coordinates into pixel
     XY coordinates of the upper-left pixel
-    '''
-    return(tileX * 256, tileY * 256)
+    """
+    return (tileX * 256, tileY * 256)
 
 
 @ngjit
 def tile_to_quad(x, y, z):
-    '''
+    """
     Computes quad_key value based on tile x, y and z values.
-    '''
-    quad_key = ''
+    """
+    quad_key = ""
     for i in range(z, 0, -1):
         digit = 0
         mask = 1 << (i - 1)
-        if(x & mask) != 0:
+        if (x & mask) != 0:
             digit += 1
-        if(y & mask) != 0:
+        if (y & mask) != 0:
             digit += 2
         quad_key += str(digit)
     return quad_key
@@ -161,9 +165,9 @@ def tile_to_quad(x, y, z):
 
 @ngjit
 def quad_to_tile(quad_key):
-    '''
+    """
     Computes tile x, y and z values based on quad_key.
-    '''
+    """
     tileX = 0
     tileY = 0
     tileZ = len(quad_key)
@@ -172,62 +176,81 @@ def quad_to_tile(quad_key):
         mask = 1 << (i - 1)
         value = quad_key[tileZ - i]
 
-        if value == '0':
+        if value == "0":
             continue
 
-        elif value == '1':
+        elif value == "1":
             tileX |= mask
 
-        elif value == '2':
+        elif value == "2":
             tileY |= mask
 
-        elif value == '3':
+        elif value == "3":
             tileX |= mask
             tileY |= mask
 
         else:
-            raise Exception('Invalid QuadKey')
+            raise Exception("Invalid QuadKey")
 
     return (tileX, tileY, tileZ)
 
 
 @ngjit
 def lng_lat_to_tile(lng, lat, level):
+    """
+    Returns tile (x,y) coordinates containing the given lng/lat.
+    """
     pixelX, pixelY = lat_lng_to_pixel(lat, lng, level)
     return pixel_to_tile(pixelX, pixelY)
 
 
 @ngjit
+def cartesian_to_tile(x, y, level):
+    """
+    Returns tile (x,y) coordinates containing the given cartesian point.
+    """
+    mapSize = get_map_dims_by_level(level)
+    tx = (x + EPSG_3857_MAX_X) / (2 * EPSG_3857_MAX_X)
+    ty = ((y * -1) + EPSG_3857_MAX_Y) / (2 * EPSG_3857_MAX_Y)
+
+    pixelX = int(clip_value(tx * mapSize, 0, mapSize - 1))
+    pixelY = int(clip_value(ty * mapSize, 0, mapSize - 1))
+    return pixel_to_tile(pixelX, pixelY)
+
+
+@ngjit
 def get_tile_origin(tileX, tileY, level):
-    '''
+    """
     Returns the upper-left hand corner lat/lng for a tile
-    '''
+    """
     pixelX, pixelY = tile_to_pixel(tileX, tileY)
     lng, lat = pixel_to_lng_lat(pixelX, pixelY, level)
     return (lat, lng)
 
 
 def render_template(template, x=None, y=None, z=None, q=None):
-    '''
+    """
     returns new tile url based on template
-    '''
+    """
     url = normalize_url_template(template)
 
-    has_x = '{{x}}' in url
-    has_y = '{{y}}' in url
-    has_z = '{{z}}' in url
-    has_q = '{{q}}' in url
+    has_x = "{{x}}" in url
+    has_y = "{{y}}" in url
+    has_z = "{{z}}" in url
+    has_q = "{{q}}" in url
 
     if all([has_x, has_y, has_z]):
-        return url.replace('{{x}}', str(x)).replace('{{y}}', str(y)).replace('{{z}}', str(z))  # NOQA
+        return (
+            url.replace("{{x}}", str(x)).replace("{{y}}", str(y)).replace("{{z}}", str(z))
+        )  # NOQA
     elif has_q:
-        return url.replace('{{q}}', str(q))
+        return url.replace("{{q}}", str(q))
     else:
-        raise ValueError('invalid template')
+        raise ValueError("invalid template")
 
 
-def get_tile(lng, lat, level=8, template='osm'):
-    '''
+def get_tile(lng, lat, level=8, template="osm"):
+    """
     get tile url based on lng, lat, level
 
     Parameters
@@ -240,7 +263,7 @@ def get_tile(lng, lat, level=8, template='osm'):
     Returns
     -------
     url: str or tuple(x, y, z) if template is None
-    '''
+    """
 
     x, y = lng_lat_to_tile(lng, lat, level)
 
@@ -250,26 +273,32 @@ def get_tile(lng, lat, level=8, template='osm'):
         return (x, y, level)
 
 
-def get_tiles_by_extent(xmin, ymin, xmax, ymax, level=8):
-    '''
+def get_tiles_by_extent(xmin, ymin, xmax, ymax, crs, level=8):
+    """
     Returns a list of tile urls by extent
-    '''
+    """
 
-    # upper-left tile
-    txmin, tymin = lng_lat_to_tile(xmin, ymax, level)
-    # lower-right tile
-    txmax, tymax = lng_lat_to_tile(xmax, ymin, level)
-
+    # get the upper-left tile (xmin, ymax) and lower right tile (xmax, ymin)
+    # we need to fetch tiles for this level depending on the coordinate
+    # system (geodetic vs projected)
+    if crs is None or crs.to_string() == "EPSG:4326":
+        txmin, tymin = lng_lat_to_tile(xmin, ymax, level)
+        txmax, tymax = lng_lat_to_tile(xmax, ymin, level)
+    elif crs.to_string() == "EPSG:3857":
+        txmin, tymin = cartesian_to_tile(xmin, ymax, level)
+        txmax, tymax = cartesian_to_tile(xmax, ymin, level)
+    else:
+        raise ValueError(f"Error: the crs {crs.to_string()} is not supported!")
     for y in range(tymax, tymin - 1, -1):
         for x in range(txmin, txmax + 1, 1):
             yield x, y, level, tile_to_quad(x, y, level)
 
 
-def render_tiles_by_extent(xmin, ymin, xmax, ymax, level=8, template='osm'):
-    '''
+def render_tiles_by_extent(xmin, ymin, xmax, ymax, crs, level=8, template="osm"):
+    """
     Returns a list of tile urls by extent
-    '''
-    for tile in get_tiles_by_extent(xmin, ymin, xmax, ymax, level):
+    """
+    for tile in get_tiles_by_extent(xmin, ymin, xmax, ymax, crs, level):
         yield render_template(template, *tile)
 
 
@@ -277,17 +306,17 @@ def save_request(tile_url, file_path):
     response = requests.get(tile_url)
     data = response.content
 
-    directory_path = file_path.split('/')[:-1]
-    directory_path = '/'.join(directory_path) + '/'
+    directory_path = file_path.split("/")[:-1]
+    directory_path = "/".join(directory_path) + "/"
     if not path.exists(directory_path):
         makedirs(directory_path)
 
-    with open(file_path, 'wb') as f:
+    with open(file_path, "wb") as f:
         f.write(data)
 
 
-def save_tile(output_path='.', **tile_kwargs):
-    '''
+def save_tile(output_path=".", **tile_kwargs):
+    """
     save a tile to disk based on lng, lat, level, etc.
 
     Parameters
@@ -298,16 +327,14 @@ def save_tile(output_path='.', **tile_kwargs):
     Returns
     -------
     output_path: echo of input path
-    '''
+    """
     tile_url = get_tile(**tile_kwargs)
     save_request(tile_url, output_path)
     return output_path
 
 
-def save_tile_by_extent(xmin, ymin, xmax, ymax,
-                        level=8, template='osm',
-                        output_path='.'):
-    '''
+def save_tile_by_extent(xmin, ymin, xmax, ymax, crs, level=8, template="osm", output_path="."):
+    """
     save a tile to disk based on xmin, ymin, xmax, ymax, level=8, etc.
 
     Parameters
@@ -320,11 +347,11 @@ def save_tile_by_extent(xmin, ymin, xmax, ymax,
     Returns
     -------
     output_path: echo of input path
-    '''
-    tile_list = get_tiles_by_extent(xmin, ymin, xmax, ymax, level)
+    """
+    tile_list = get_tiles_by_extent(xmin, ymin, xmax, ymax, crs, level)
     for tile in tile_list:
         x, y = tile
-        file_path = '{output_path}/{level}/{x}/{y}'.format(
+        file_path = "{output_path}/{level}/{x}/{y}".format(
             output_path=output_path, level=level, x=x, y=y
         )
         tile_url = render_template(template, *tile, z=level)
@@ -346,22 +373,25 @@ def all_tiles_vector_source(source):
     """
 
     # get necessary tiling settings from vector source object
-    min_zoom = source.tiling['min_zoom']
-    max_zoom = source.tiling['max_zoom']
-    xmin_field = source.tiling['xmin_field']
-    xmax_field = source.tiling['xmax_field']
-    ymin_field = source.tiling['ymin_field']
-    ymax_field = source.tiling['ymax_field']
+    min_zoom = source.tiling["min_zoom"]
+    max_zoom = source.tiling["max_zoom"]
+    xmin_field = source.tiling["xmin_field"]
+    xmax_field = source.tiling["xmax_field"]
+    ymin_field = source.tiling["ymin_field"]
+    ymax_field = source.tiling["ymax_field"]
 
     # list all tiles that we need to compute
     all_tiles = []
     for i, row in source.data.iterrows():
         for z in range(min_zoom, max_zoom + 1):
-            tiles = get_tiles_by_extent(xmin=row[xmin_field],
-                                        ymin=row[ymin_field],
-                                        xmax=row[xmax_field],
-                                        ymax=row[ymax_field],
-                                        level=z)
+            tiles = get_tiles_by_extent(
+                xmin=row[xmin_field],
+                ymin=row[ymin_field],
+                xmax=row[xmax_field],
+                ymax=row[ymax_field],
+                crs=None,
+                level=z,
+            )
             for x, y, z, q in tiles:
                 t = dict(x=x, y=y, z=z, q=q)
                 all_tiles.append(t)
@@ -383,8 +413,8 @@ def all_tiles_raster_source(source):
     """
 
     # get necessary tiling settings from vector source object
-    min_zoom = source.tiling['min_zoom']
-    max_zoom = source.tiling['max_zoom']
+    min_zoom = source.tiling["min_zoom"]
+    max_zoom = source.tiling["max_zoom"]
 
     extent = source.full_extent
     # unpack extent and convert to tile coordinates
@@ -392,11 +422,14 @@ def all_tiles_raster_source(source):
 
     all_tiles = []
     for z in range(min_zoom, max_zoom + 1):
-        tiles = get_tiles_by_extent(xmin=xmin,
-                                    ymin=ymin,
-                                    xmax=xmax,
-                                    ymax=ymax,
-                                    level=z)
+        tiles = get_tiles_by_extent(
+            xmin=xmin,
+            ymin=ymin,
+            xmax=xmax,
+            ymax=ymax,
+            crs=source.data.rio.crs,
+            level=z,
+        )
         for x, y, z, q in tiles:
             t = dict(x=x, y=y, z=z, q=q)
             all_tiles.append(t)
@@ -418,14 +451,14 @@ def list_tiles(source, npartitions=200):
     tiles_ddf: dask.DataFrame
     """
 
-    if source.source_type == 'vector':
+    if source.source_type == "vector":
         all_tiles = all_tiles_vector_source(source)
-    elif source.source_type == 'raster':
+    elif source.source_type == "raster":
         all_tiles = all_tiles_raster_source(source)
 
     # Create a Pandas DataFrame of Tile to Process based on Map Source feature extents
     tiles_df = pd.DataFrame(all_tiles)
-    tiles_df = tiles_df.drop_duplicates().sort_values(by=['z', 'x', 'y'])
+    tiles_df = tiles_df.drop_duplicates().sort_values(by=["z", "x", "y"])
 
     # Create Dask DataFrame and persist across cluster
     tiles_ddf = dd.from_pandas(tiles_df, npartitions=npartitions)
@@ -449,11 +482,7 @@ def save_tiles_to_outpath(source, tiles_ddf, outpath):
 
     def tile_partition(df, output_location, source=None):
         def tile_row(row):
-            _ = render_tile(source,
-                            output_location,
-                            x=row['x'],
-                            y=row['y'],
-                            z=row['z'])
+            _ = render_tile(source, output_location, x=row["x"], y=row["y"], z=row["z"])
             return True
 
         return df.apply(tile_row, axis=1)
