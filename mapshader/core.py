@@ -525,7 +525,13 @@ def render_map(source: MapSource,  # noqa: C901
         Height of the output aggregate in pixels.
     width : int
         Width of the output aggregate in pixels.
+
+    Returns
+    -------
+    img : xarray.DataArray
+        A DataArray representing an image.
     """
+
     if x is not None and y is not None and z is not None:
         xmin, ymin, xmax, ymax = tile_def.get_tile_meters(x, y, z)
 
@@ -587,10 +593,12 @@ def tile_to_disk(img, output_location, z=0, x=0, y=0, tile_format='png'):
     ----------
     img: xarray.DataArray
         aggregation data array of the tile to write to image
-    x, y, z : float
-        The coordinates to be used to get the bounds inclusive space along the axis.
     output_location: str
         Path to write tile image
+    x, y, z : float
+        The coordinates to be used to get the bounds inclusive space along the axis.
+    tile_format: str
+        Format of output image
 
     Returns
     -------
@@ -616,18 +624,22 @@ def tile_to_disk(img, output_location, z=0, x=0, y=0, tile_format='png'):
 
 def tile_to_s3(img, output_location, z=0, x=0, y=0, tile_format='png'):
     """
+    Write a tile image to a S3 bucket
 
     Parameters
     ----------
-    img
-    output_location
-    z
-    x
-    y
-    tile_format
+    img: xarray.DataArray
+        aggregation data array of the tile to write to image
+    output_location: str
+        Path to write tile image
+    x, y, z : float
+        The coordinates to be used to get the bounds inclusive space along the axis.
+    tile_format: str
+        Format of output image
 
     Returns
     -------
+        None
 
     """
 
@@ -655,6 +667,25 @@ def tile_to_s3(img, output_location, z=0, x=0, y=0, tile_format='png'):
 
 
 def render_tile(source, output_location, z=0, x=0, y=0, tile_format='png'):
+    """
+    Create a tile from a source and save as an image to a output location.
+
+    Parameters
+    ----------
+    source: MapSource
+        MapSource object to define the map.
+    output_location: str
+        Path to write tile image. Can be a path to local disk or a S3 bucket.
+    x, y, z : float
+        The coordinates to be used to get the bounds inclusive space along the axis.
+    tile_format: str (default='png')
+        Format of output image
+
+    Returns
+    -------
+        None
+    """
+
     agg = render_map(source, x=int(x), y=int(y), z=int(z), height=256, width=256)
 
     if 0 in agg.shape:
@@ -692,6 +723,7 @@ def get_source_data(source: MapSource, simplify=None):
     gdf : GeoDataFrame or dict
         The Mapsource data
     """
+
     if isinstance(source.data, spd.GeoDataFrame):
         gdf = source.data.to_geopandas()
 

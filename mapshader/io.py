@@ -14,12 +14,18 @@ def load_raster(file_path, transforms, force_recreate_overviews,
                 xmin=None, ymin=None, xmax=None, ymax=None, chunks=None,
                 layername='data'):
     """
-    Load raster data.
+    Load raster data from a path into a xarray DataArray. The input data can be in one of following
+    extensions: .tif, .nc, or .vrt. If a NetCDF file (.nc) is provided, a layer name must be
+    specified. Transforms can be applied while loading.
 
     Parameters
     ----------
     file_path : str
         Relative path to the file.
+    transforms: List
+        List of transforms to apply to the raster data.
+    force_recreate_overviews: bool
+        Whether to force recreate overview data.
     xmin : float
         X-axis minimum range.
     ymin : float
@@ -80,12 +86,20 @@ def load_vector(
     region_of_interest,
 ):
     """
-    Load vector data.
+    Load vector data from a file path to a geopandas or dask-geopandas DataFrame. If the data is
+    from a S3 bucket, storage options with access key ID and secret access key must be provided.
 
     Parameters
     ----------
     filepath : str
         Relative path to the file.
+    storage_options: Dict
+        Dictionary that contains user information including access key ID and secret access key
+    geometry: str
+        Geometry column in the data frame
+    region_of_interest: list-like object
+        Only select data that lies within, or intersects with this region.
+        The region is a list-like object with 4 values of minx, miny, maxx, maxy
 
     Returns
     -------
